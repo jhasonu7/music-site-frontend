@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="utility.css">
+    <title>Swarify - Web Player: Music for everyone</title>
+    <link rel="icon" type="image/svg+xml" href="fav.svg">
+    <script src="https://sdk.scdn.co/spotify-player.js"></script>
+</head>
+
+<body>
+
+    <div class="container flex bg-black">
+        <div class="left sidebar">
+            <div class="close-btn">×</div>
+            <div class="home bg-grey rounded m-1 p-1">
+                <div class="logo"><img width="110"  src="swarify.svg" alt=""></div>
+                <ul>
+                    <li><img class="invert" src="home.svg" alt="home">Home</li>
+
+                </ul>
+            </div>
+
+            <div class="library bg-grey rounded m-1 p-1">
+                <div class="heading">
+                    <img class="invert" src="playlist.svg" alt="">
+                    <h2>
+                        Your Library
+                    </h2>
+                </div>
+
+                <div class="songList">
+
+                    <ul>
+
+                    </ul>
+                </div>
+
+               <footer class="swarify-footer">
+    <div class="swarify-footer-container">
+        <nav class="swarify-footer-nav">
+            <ul class="swarify-footer-links">
+                <li><a href="index2.html#legal">Legal</a></li>
+                <li><a href="index2.html#privacy-policy">Privacy Center</a></li>
+                <li><a href="index2.html#privacy-policy">Privacy Policy</a></li>
+                <li><a href="index2.html#privacy-policy">Cookies</a></li>
+                <li><a href="index2.html#privacy-policy">About Ads</a></li>
+            </ul>
+        </nav>
+        <p class="swarify-footer-copyright">&copy; 2025 Swarify AB</p>
+    </div>
+</footer>
+            </div>
+
+
+        </div>
+        <div class="right bg-grey rounded">
+            <div class="top-bar">
+                <div class="header">
+                    <div class="nav">
+                       
+                        <div class="hamburgerContainer">
+
+                            <img width="40" class="invert hamburger" src="hamburger.svg" alt="">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M15 6L9.70711 11.2929C9.37377 11.6262 9.20711 11.7929 9.20711 12C9.20711 12.2071 9.37377 12.3738 9.70711 12.7071L15 18"
+                                    stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M9 18L14.2929 12.7071C14.6262 12.3738 14.7929 12.2071 14.7929 12C14.7929 11.7929 14.6262 11.6262 14.2929 11.2929L9 6"
+                                    stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="search-box">
+                        <span class="search-icon">
+                            <img src="search.svg" alt="Search" />
+                        </span>
+                        <input type="text" id="search-input" placeholder="What do you want to play?">
+
+                        <span class="divider"></span>
+
+                    </div>
+                    <div class="buttons">
+                        <!-- Login/Signup buttons (initially visible, hidden when logged in) -->
+                        <button class="signupbtn" id="top-signup-btn">Sign up</button>
+                        <button class="loginbtn" id="top-login-btn">Log in</button>
+
+                        <!-- User Avatar and Dropdown (initially hidden, shown when logged in) -->
+                        <div id="user-avatar-container" class="user-avatar-container hidden">
+                            <div id="user-avatar" class="user-avatar"></div>
+                            <!-- Removed 'hidden' class from user-dropdown to allow CSS transitions -->
+                            <div id="user-dropdown" class="user-dropdown">
+                                <span id="dropdown-username" class="dropdown-username"></span>
+                                <button id="dropdown-logout-btn" class="dropdown-logout-btn">Log out</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="spotifyPlaylists">
+                <div class="section-heading">
+                    <h1>Trending songs</h1>
+                </div>
+                <div class="carousel-wrapper">
+
+
+                    <div class="cardcontainer">
+                        <div class="card">
+                            <img src="https://i.scdn.co/image/ab67616d00001e02a7e251b543c77a6ed356dfbe"
+                                alt="Saiyaara Album Art">
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">Saiyaara (From "Saiyaara")</div>
+                            <div class="card-artists">Tanishk Bagchi, Faheem Abdullah, Arslan Nizami, Irshad Kamil</div>
+                        </div>
+                        <div class="card">
+                            <img src="https://i.scdn.co/image/ab67616d0000b273781faf59a3cb980fe3b493f8"
+                                alt="Saiyaara Album Art">
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">Dhun (From "Saiyaara")</div>
+                            <div class="card-artists">Mithoon,Arjit singh</div>
+                        </div>
+                        <div class="card">
+                            <img src="https://i.scdn.co/image/ab67616d0000b273bac6fad80a0e81256ee15c40"
+                                alt="Saiyaara Album Art">
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">JEE NA PAAYE</div>
+                            <div class="card-artists">Haniska Pareek,Priyankit Jaiswal</div>
+                        </div>
+                        <div class="card">
+                            <img src="https://i.scdn.co/image/ab67616d0000b2730a47bbe7141fdfe0eb2cdba7" alt="Sahiba">
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">Sahiba</div>
+                            <div class="card-artists">Aditya</div>
+                        </div>
+                        <div class="card">
+                            <img src="https://i.scdn.co/image/ab67616d0000b273f42805148e916145f858318b"
+                                alt="Ishg Bawla|Coke studio bharat">
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">Ishq Bawla|Coke studio bharat</div>
+                            <div class="card-artists">Dhanda Nyoliwa</div>
+                        </div>
+                        <div class="card">
+                            <img src="https://i.scdn.co/image/ab67616d0000b273fa06cc36705ff81cd22c884c"
+                                alt="Ishg Bawla|Coke studio bharat">
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">Show Off</div>
+                            <div class="card-artists">Prem Dholon,Iqbal</div>
+                        </div>
+                        <div class="card">
+                            <img src="https://i.scdn.co/image/ab67616d0000b273f7f5503cfc6a54d31e65b112"
+                                alt="Ishg Bawla|Coke studio bharat">
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">Shower</div>
+                            <div class="card-artists">BeckyG</div>
+                        </div>
+                        <div class="card">
+                            <img src="https://i.scdn.co/image/ab67616d0000b273786a26c64ff6b997a9552910"
+                                alt="Ishg Bawla|Coke studio bharat">
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">At Peace</div>
+                            <div class="card-artists">Karan Ujla.Ikky</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="AlbumPlaylists">
+                <div class="section-heading">
+                    <h1>Popular albums</h1>
+                </div>
+                <div class="carousel-wrapper">
+
+
+                    <div class="cardcontainer">
+                        <div class="card">
+                            <img src="https://i.scdn.co/image/ab67616d0000b2736404721c1943d5069f0805f3"
+                                alt="Saiyaara Album Art">
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">Aashiqui 2</div>
+                            <div class="card-artists">Mithoon, Ankit Tiwari, Jeet Gannguli</div>
+                        </div>
+                        <div class="card">
+                            <img src="https://i.scdn.co/image/ab67616d0000b273707ea5b8023ac77d31756ed4"
+                                alt="Saiyaara Album Art">
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">Yeh Jawaani Hai Deewani</div>
+                            <div class="card-artists">Pritam</div>
+                        </div>
+                        <div class="card">
+                            <img src="https://i.scdn.co/image/ab67616d0000b273711c1639b4bc0f9978ae77a6"
+                                alt="Saiyaara Album Art">
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">Sanam Teri Kasam</div>
+                            <div class="card-artists">Himesh Reshmiya,Sameer</div>
+                        </div>
+                        <div class="card">
+                            <img src="https://i.scdn.co/image/ab67616d0000b2731aa5adad8593923dcdf1a7d0"
+                                alt="Saiyaara Album Art">
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">Unlimited love songs</div>
+                            <div class="card-artists">Arjit Singh</div>
+                        </div>
+                        <div class="card">
+                            <img src="https://i.scdn.co/image/ab67616d00001e02a2d5857ebcd5a4d5695ca8d4"
+                                alt="Aur Mohabbat Album Art">
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">Aur Mohabbat Kitni Karoon</div>
+                            <div class="card-artists">Pritam, Arijit Singh, Sandeep Srivastava</div>
+                        </div>
+
+                        <div class="card">
+                            <img src="https://i.scdn.co/image/ab67616d0000b27383141000ee8ce3b893a0b425"
+                                alt="Aur Mohabbat Album Art">
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">Finding Her</div>
+                            <div class="card-artists">Kushgra Barat,Saheed</div>
+                        </div>
+                        <div class="card">
+                            <img src="https://i.scdn.co/image/ab67616d0000b273773c5f60bcb309ef8802e4ef"
+                                alt="Aur Mohabbat Album Ar">
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">Raanjhan</div>
+                            <div class="card-artists">Sachet-Parampara, Parampara Tandon, Kausar Munir</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="popular-artists">
+                <div class="section-heading">
+                    <h1>Popular artists</h1>
+                </div>
+                <div class="carousel-wrapper">
+                    <div class="artist-card-container">
+                        <div class="card artist-card">
+                            <img src="https://i.scdn.co/image/ab67616100005174cb6926f44f620555ba444fca" alt="Pritam">
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">Pritam</div>
+                            <div class="card-artists">Artist</div>
+                        </div>
+                        <div class="card artist-card">
+                            <img src="https://i.scdn.co/image/ab67616100005174b19af0ea736c6228d6eb539c
+                                " alt="A.R. Rahman">
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">A.R. Rahman</div>
+                            <div class="card-artists">Artist</div>
+                        </div>
+                        <div class="card artist-card">
+                            <img src="https://i.scdn.co/image/ab676161000051745ba2d75eb08a2d672f9b69b7
+                                " alt="Arijit Singh">
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">Arijit Singh</div>
+                            <div class="card-artists">Artist</div>
+                        </div>
+                        <div class="card artist-card">
+                            <img src="https://i.scdn.co/image/ab67616100005174bb4064bef3a825344d5eb79e
+" alt="Sachin-Jigar">
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">Sachin-Jigar</div>
+                            <div class="card-artists">Artist</div>
+                        </div>
+                        <div class="card artist-card">
+                            <img src="https://i.scdn.co/image/ab6761610000517490b6c3d093f9b02aad628eaf"
+                                alt="Vishal-Shekhar" />
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">Vishal-Shekhar</div>
+                            <div class="card-artists">Artist</div>
+                        </div>
+                        <div class="card artist-card">
+                            <img src="https://i.scdn.co/image/ab67616100005174c40600e02356cc86f0debe84"
+                                alt="Atif Aslam" />
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">Atif Aslam</div>
+                            <div class="card-artists">Artist</div>
+                        </div>
+                        <div class="card artist-card">
+                            <img src="https://i.scdn.co/image/ab676161000051740f0be2054fe9594026a6b843"
+                                alt="Anirudh Ravichander" />
+                            <div class="play-button">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
+                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
+                                </svg>
+                            </div>
+                            <div class="card-title">Anirudh Ravichander</div>
+                            <div class="card-artists">Artist</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div id="albumOverlay" class="album-overlay hidden">
+                <div class="album-overlay-content">
+                    <button class="close-overlay">×</button>
+
+                    <div id="albumDetails" class="album-details">
+                        <div class="album-header flex">
+                            <img id="albumDetails-cover" src="" alt="Album Cover" class="album-cover" />
+                            <div class="album-info">
+                                <span class="album-type">Album</span>
+                                <h1 id="albumDetails-title"></h1>
+                                <p id="albumDetails-artist"></p>
+                                <p id="albumDetails-meta"></p>
+                                <div class="album-buttons">
+                                    <button id="album-play" class="big-play-btn">▶</button>
+                                    <button class="btn1">+</button>
+                                    <button class="btn2">⤓</button>
+                                    <button class="btn3">⋯</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="album-tracks">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Title</th>
+                                        <th>Artist</th>
+                                        <th>Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="albumDetails-tracks"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="album-full-embed-container"
+                    style="width: 100%; height: 352px; margin-top: 20px; border-radius: 12px; overflow: hidden; display: none;">
+                </div>
+
+                <div class="album-tracks">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Title</th>
+                                <th>Artist</th>
+                                <th>Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody id="albumDetails-tracks"></tbody>
+                    </table>
+                </div>
+
+            </div>
+
+
+            <div class="player-bar">
+                <div class="player-left">
+                    <img src="https://pickasso.spotifycdn.com/image/ab67c0de0000deef/dt/v1/img/radio/artist/7uIbLdzzSEqnX0Pkrb56cR/en"
+                        alt="Album Cover" id="player-img" />
+                    <div class="track-info">
+                        <div class="track-title" id="track-title">Explore the music</div>
+                        <div class="track-artist" id="track-artist">lets start playing</div>
+                    </div>
+                    <button class="btn add-to-library">＋</button>
+                </div>
+
+                <div class="player-center">
+                    <div class="controls">
+                        <button class="btn">⤮</button>
+                        <button class="btn" id="prev-track">⏮</button>
+                        <button class="btn play" id="play-pause">▶</button>
+                        <button class="btn" id="next-track">⏭</button>
+                        <button class="btn">💬</button>
+                    </div>
+                    <div class="progress">
+                        <span class="time" id="current-time">1:02</span>
+                        <input type="range" id="progress-bar" value="0" min="0" max="100" step="1" />
+                        <span class="time" id="duration">5:14</span>
+                    </div>
+                </div>
+
+                <div class="player-right">
+
+                    <button class="btn volume-icon">🔊</button>
+                    <input type="range" id="volume-bar" min="0" max="1" step="0.01" value="1" />
+
+                </div>
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+    <div id="popup-overlay" class="popup-overlay invisible opacity-0">
+        <div id="popup-container" class="popup-container">
+            <button class="close-button" onclick="closePopup()">&#x2715;</button>
+
+            <!-- Google Sign-In Initialization Div -->
+            <div id="g_id_onload"
+                data-client_id="292614491287-ogqrqnbvfe154houfqgt66iqo8ee662n.apps.googleusercontent.com"
+                data-callback="handleGoogleSignIn" data-auto_prompt="false">
+            </div>
+
+            <div id="initial-choice-screen" class="popup-screen active">
+                <div class="popup-content initial-choice-content">
+                    <div class="album-art-placeholder">
+                        <img src="https://raw.githubusercontent.com/jhasonu7/music-album/3585410edf2502fc38ef75f4c3988eaa14a5102e/Screenshot%202025-07-08%20105523.png" alt="Album Art"
+                            class="album-art-image">
+                    </div>
+                    <div class="initial-choice-text">
+                        <h2>Start listening with a free Swarify account</h2>
+                        <button class="main-button green-button" id="initial-signup-btn">Sign up for free</button>
+                        <button class="main-button transparent-button">Download app</button>
+                        <p class="small-text">Already have an account? <a href="#" id="initial-login-link">Log
+                                in</a></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="login-screen" class="popup-screen">
+                <button class="prev-button" id="login-back-btn">&#8592;</button>
+                <div class="popup-content">
+                     <div class="log2">
+        
+                        <img width="110" src="logo2.svg" alt="">
+                     </div>
+
+                    <h2>Log in to Swarify</h2>
+
+                    <!-- Google Sign-In Button for Login Screen -->
+                    <div class="g_id_signin auth-button google-button" data-type="standard" data-size="large"
+                        data-theme="filled_blue"
+                        data-text="signin_with"
+                        data-shape="rectangular"
+                        data-logo_alignment="left"
+                        data-width="100%">
+                    </div>
+
+                    <button class="auth-button facebook-button" id="login-facebook-btn">
+                        <span class="logo-placeholder">f</span> Continue with Facebook
+                    </button>
+                    <button class="auth-button phone-button" id="login-phone-otp-btn">
+                        Continue with phone number (OTP)
+                    </button>
+                    <button class="auth-button phone-button" id="login-phone-password-btn">
+                        Login with phone number (Password)
+                    </button>
+
+
+                    <div class="separator"><span>or</span></div>
+
+                    <div class="input-group">
+                        <label for="login-email-username">Email or username</label>
+                        <input type="text" id="login-email-username" placeholder="Email or username">
+                    </div>
+                    <div class="input-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" placeholder="Password">
+                    </div>
+                    <button class="main-button green-button" id="login-continue-button">Continue</button>
+
+                    <p class="small-text">Don't have an account? <a href="#" id="login-signup-link">Sign up for
+                            Swarify</a></p>
+                </div>
+            </div>
+
+            <div id="signup-screen" class="popup-screen">
+                <button class="prev-button" id="signup-back-btn">&#8592;</button>
+                <div class="popup-content">
+                   <div class="log2">
+        
+                        <img width="110" src="logo2.svg" alt="">
+                     </div>
+                    <h2>Sign up to start listening</h2>
+
+                    <div class="input-group">
+                        <label for="signup-email">Email address</label>
+                        <input type="email" id="signup-email" placeholder="name@domain.com">
+                        <p class="small-text"><a href="#" id="signup-use-phone-link">Use phone number instead.</a></p>
+                    </div>
+                    <div class="input-group">
+                        <label for="signup-password">Create a password</label>
+                        <input type="password" id="signup-password" placeholder="Password">
+                    </div>
+
+                    <button class="main-button green-button" id="signup-next-button">Next</button>
+
+                    <div class="separator"><span>or</span></div>
+
+                    <!-- Google Sign-In Button for Signup Screen -->
+                    <div class="g_id_signin auth-button google-button" data-type="standard" data-size="large"
+                        data-theme="filled_blue"
+                        data-text="signup_with"
+                        data-shape="rectangular"
+                        data-logo_alignment="left"
+                        data-width="100%">
+                    </div>
+
+                    <p class="small-text">Already have an account? <a href="#" id="signup-login-link">Log in</a>
+                    </p>
+                </div>
+            </div>
+
+            <div id="phone-signup-screen" class="popup-screen">
+                <button class="prev-button" id="phone-signup-back-btn">&#8592;</button>
+                <div class="popup-content">
+                  <div class="log2">
+        
+                        <img width="110" src="logo2.svg" alt="">
+                     </div>
+                    <h2>Sign up with phone number</h2>
+                    <div class="input-group">
+                        <label for="phone-number-signup">Phone number</label>
+                        <input type="tel" id="phone-number-signup" placeholder="+1 (555) 555-5555">
+                    </div>
+                    <div class="input-group">
+                        <label for="phone-signup-password">Create a password</label>
+                        <input type="password" id="phone-signup-password" placeholder="Password">
+                    </div>
+                    <button class="main-button green-button" id="phone-signup-next-button">Next</button>
+                    <p class="small-text"><a href="#" id="phone-signup-use-email-link">Use email instead.</a></p>
+                    <p class="small-text">Already have an account? <a href="#" id="phone-signup-login-link">Log in</a>
+                    </p>
+                </div>
+            </div>
+
+            <div id="phone-login-screen" class="popup-screen">
+                <button class="prev-button" id="phone-login-back-btn">&#8592;</button>
+                <div class="popup-content">
+                    <div class="log2">
+        
+                        <img width="110" src="logo2.svg" alt="">
+                     </div>
+                    <h2>Log in with phone number</h2>
+                    <div class="input-group">
+                        <label for="phone-number-login">Phone number</label>
+                        <input type="tel" id="phone-number-login" placeholder="+1 (555) 555-5555">
+                    </div>
+                    <div class="input-group">
+                        <label for="phone-login-password">Password</label>
+                        <input type="password" id="phone-login-password" placeholder="Password">
+                    </div>
+                    <button class="main-button green-button" id="phone-login-continue-button">Continue</button>
+                    <p class="small-text">Don't have an account? <a href="#" id="phone-login-signup-link">Sign up for
+                            Swarify</a></p>
+                </div>
+            </div>
+
+            <div id="phone-otp-input-screen" class="popup-screen">
+                <button class="prev-button" id="phone-otp-back-btn">&#8592;</button>
+                <div class="popup-content">
+                   <div class="log2">
+        
+                        <img width="110" src="logo2.svg" alt="">
+                     </div>
+                    <h2>Login with Phone (OTP)</h2>
+                    <div class="input-group">
+                        <label for="otp-phone-number-input">Phone number</label>
+                        <input type="tel" id="otp-phone-number-input" placeholder="+1 (555) 555-5555">
+                    </div>
+                    <button class="main-button green-button" id="send-otp-button">Send OTP</button>
+                    <p class="small-text">Already have an account? <a href="#" onclick="showLoginScreen()">Log in with
+                            password</a></p>
+                </div>
+            </div>
+
+            <div id="otp-verification-screen" class="popup-screen">
+                <button class="prev-button" id="otp-verification-back-btn">&#8592;</button>
+                <div class="popup-content">
+                   <div class="log2">
+        
+                        <img width="110" src="logo2.svg" alt="">
+                     </div>
+                    <h2>Verify OTP</h2>
+                    <div class="input-group">
+                        <label for="otp-code-input">Enter OTP</label>
+                        <input type="text" id="otp-code-input" placeholder="XXXXXX">
+                    </div>
+                    <p id="otp-timer-display" class="small-text">OTP valid for: 02:00</p>
+                    <button class="main-button green-button" id="verify-otp-button">Verify OTP</button>
+                    <button class="secondary-button" id="resend-otp-button" style="display: none;">Resend OTP</button>
+                    <p class="small-text">Didn't receive OTP? Check your backend console.</p>
+                </div>
+            </div>
+
+            <div id="email-otp-input-screen" class="popup-screen">
+                <div class="header-buttons">
+                    <button class="back-button" id="email-otp-back-btn">&#8592; Back</button>
+                    <button class="close-button" onclick="closePopup()">&#10006;</button>
+                </div>
+                <h2>Verify Your Email</h2>
+                <p>An OTP has been sent to <strong id="email-otp-display-email"></strong>. Please enter it below.</p>
+                <div class="input-group">
+                    <input type="text" id="email-otp-code-input" placeholder="Enter 6-digit OTP" maxlength="6"
+                        pattern="\d{6}" inputmode="numeric">
+                </div>
+                <div class="otp-timer">
+                    <span id="email-otp-timer-display">OTP valid for: 02:00</span>
+                    <button id="resend-email-otp-button" class="resend-button" style="display: none;">Resend
+                        OTP</button>
+                </div>
+                <button id="verify-email-otp-button" class="main-button green-button">Verify OTP</button>
+                <div class="separator"></div>
+                <p class="small-text">Did not receive the email? Check your spam folder.</p>
+            </div>
+
+            <div id="create-password-screen" class="popup-screen">
+                <div class="header-with-back">
+                    <button class="back-button" id="create-password-back-btn"></button>
+                    <h2>Create a password</h2>
+                </div>
+                <div class="content">
+                    <p>Set a password for future logins with your email.</p>
+                    <div class="input-group">
+                        <label for="new-password">Password</label>
+                        <input type="password" id="new-password" placeholder="Create a password" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="confirm-password">Confirm Password</label>
+                        <input type="password" id="confirm-password" placeholder="Confirm your password" required>
+                    </div>
+                    <button id="set-new-password-button" class="main-button green-button">Set Password</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Message Box HTML -->
+    <div id="custom-message-box" class="custom-message-box invisible opacity-0">
+        <span id="custom-message-text"></span>
+        <button id="custom-message-close-button" class="custom-message-close-button">&times;</button>
+    </div>
+
+    <!-- This button is for testing user count, can be removed or placed elsewhere -->
+    <button id="test-user-count-btn" class="hidden" style="position: fixed; bottom: 80px; left: 20px; background-color: #555; color: white; padding: 10px; border-radius: 5px; z-index: 999;">Test User Count (Admin)</button>
+
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.2/color-thief.umd.js"></script>
+
+    <script src="script.js"></script>
+
+</body>
+</html>

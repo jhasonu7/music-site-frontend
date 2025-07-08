@@ -1,0 +1,2814 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@700&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+
+:root {
+    --a: 0;
+    /* Define heights for different screen sizes */
+    --top-bar-height-desktop: 63px; /* Reduced from 120px */
+    --player-bar-height-desktop: 90px;
+
+    --top-bar-height-tablet: 70px; /* Reduced from 80px */
+    --player-bar-height-tablet: 80px;
+
+    --top-bar-height-mobile: 60px; /* Reduced from 70px */
+    --player-bar-height-mobile: 70px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box; /* Crucial for consistent sizing */
+    font-family: 'Roboto', sans-serif;
+}
+
+body {
+    background-color: black;
+    color: white;
+    height: 100vh; /* Body takes full viewport height */
+    overflow: hidden; /* Prevents body from scrolling, inner containers will scroll */
+    display: flex; /* Make body a flex container */
+    flex-direction: column; /* Stack children vertically */
+}
+
+/* Blur effect for player bar when popup is active */
+body.popup-active .player-bar {
+    filter: blur(5px); /* Increased blur for a more noticeable effect */
+    transition: filter 0.3s ease-in-out; /* Smooth transition for blur */
+}
+
+/* --- Main Layout Container --- */
+.container {
+    display: flex;
+    flex-direction: row;
+    width: 100vw; /* Ensure container takes full viewport width */
+    flex-grow: 1; /* Allow container to grow and take available space */
+    overflow: hidden; /* Prevents container content from overflowing horizontally */
+}
+
+/* Left Sidebar - Desktop View */
+.left {
+    width: 25%;
+    height: 100%; /* Takes full height of container */
+    overflow-y: auto; /* Allows vertical scrolling within sidebar */
+    background-color: #292424;
+    flex-shrink: 0; /* Prevents sidebar from shrinking */
+}
+
+.left img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+.logo img {
+    width: 120px;
+    height: auto;
+}
+
+/* --- Top Bar (Fixed position, positioned over .right) --- */
+.top-bar {
+    position: fixed; /* Stays in place when content scrolls */
+    top: 0;
+    left: 25%; /* Aligned with the start of the .right section */
+    width: 75%; /* Matches the width of the .right section */
+    background: linear-gradient(to right, #450707, #450707); /* Subtle gradient for depth */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.4); /* Thinner, subtle border */
+    border-radius: 10px 10px 10px 10px; /* Slightly more rounded corners */
+    padding: 1px 5px; /* Increased padding for more breathing room */
+    display: flex;
+    justify-content: space-between; /* Space out items */
+    align-items: center; /* Vertically center items */
+    height: var(--top-bar-height-desktop); /* Using variable for height */
+    box-sizing: border-box; /* Include padding in height */
+    z-index: 100; /* Ensure it's above other content */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); /* Added subtle shadow */
+    transition: all 0.3s ease; /* Smooth transition for height/style changes */
+}
+
+/* --- Right Content Area: Handles dynamic height and padding for fixed bars --- */
+.right {
+    width: 75%; /* Remains 75% of 100vw on desktop */
+    flex-grow: 1; /* Allows it to take available height */
+    /* IMPORTANT: Padding for fixed top and player bars */
+    padding-top: var(--top-bar-height-desktop); /* Adjust padding based on new top-bar height */
+    /* Increased padding-bottom to ensure content is not hidden under the player bar */
+    padding-bottom: calc(var(--player-bar-height-desktop) + 30px);
+    display: flex;
+    flex-direction: column; /* Stacks sections vertically */
+    margin: 0;
+    overflow-y: auto; /* Allows vertical scrolling for the main content area on desktop */
+    overflow-x: hidden; /* Prevents horizontal scroll from content */
+    -ms-overflow-style: auto; /* For IE/Edge: default scrollbar on desktop */
+    scrollbar-width: auto; /* For Firefox: default scrollbar on desktop */
+}
+
+/* --- Header (Internal to content, if it should stick below top-bar) --- */
+.header {
+    position: sticky; /* Make it sticky */
+    top: var(--top-bar-height-desktop); /* This header will stick at the position below the top-bar */
+    width: 101%;
+    display: flex;
+    border-radius: 30px;
+    justify-content: space-between;
+    background-color: rgb(70, 9, 9);
+    z-index: 10; /* Lower than top-bar, higher than normal content */
+    padding: 6px;
+    flex-shrink: 0; /* Prevents it from shrinking */
+}
+
+.header>* {
+    padding: 0; /* Resetting padding as already applied to .header */
+}
+
+/* --- Spotify Playlists Section (Height proportional to .right's available space) --- */
+.spotifyPlaylists {
+    box-sizing: border-box;
+    flex-grow: 1; /* Allows this section to fill all available vertical space */
+    width: 100%;
+    display: flex; /* Make it a flex container */
+    flex-direction: column; /* Stack its children (heading, carousel) vertically */
+    flex-shrink: 0; /* Prevent this section from shrinking if other sections are too large */
+    padding: 20px 0; /* Example padding, adjust as needed */
+    min-height: 0; /* Important for flex-grow to work correctly with content */
+}
+
+.section-heading {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    height: auto; /* Let content dictate height */
+    align-items: center;
+    padding: 0 10px 10px 10px; /* Adjusted padding-bottom for consistent gap */
+    margin: 0;
+    box-sizing: border-box;
+    flex-shrink: 0; /* Prevents heading from shrinking if space is tight */
+}
+
+.section-heading h1 {
+    position: relative;
+    left: 0.6%;
+    font-size: clamp(1.2rem, 2vw, 1.5rem); /* Responsive font size */
+}
+
+.carousel-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    width: 100%;
+    flex-grow: 1; /* Allow carousel to fill remaining height of spotifyPlaylists */
+    overflow: hidden; /* Prevents arrows from causing overflow */
+    min-height: 0; /* Essential for flex-grow in a column layout */
+}
+
+.cardcontainer {
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    width: 100%;
+    height: auto; /* Let content define height */
+    gap: 1%; /* Responsive gap between cards */
+    overflow-x: auto; /* Allows horizontal scrolling */
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    flex-shrink: 0; /* Ensure cardcontainer itself doesn't shrink vertically in carousel-wrapper */
+    align-items: flex-start; /* Align cards to the top of cardcontainer's height */
+    padding: 0 10px; /* Padding for cards within the carousel */
+    flex-wrap: nowrap; /* Prevent wrapping to ensure horizontal scroll */
+    margin-top: 10px; /* Adjusted top margin for consistent gap from heading */
+}
+
+/* Hide scrollbar in WebKit browsers */
+.cardcontainer::-webkit-scrollbar {
+    display: none;
+}
+
+/* --- Individual Card: Height responsive to its own width via aspect-ratio --- */
+.card {
+    position: relative;
+    box-sizing: border-box;
+    background-color: #181818;
+    padding: 10px; /* Keep padding to create space around content */
+    border-radius: 8px;
+    overflow: hidden; /* Hides content outside border-radius */
+    transition: background-color 0.4s ease-out;
+
+    /* Flexible width using flex-basis, min-width, and max-width */
+    flex: 0 0 180px; /* Base width: cards try to be 180px */
+    min-width: 150px; /* Allow shrinking down to 150px */
+    max-width: 250px; /* Allow growing up to 250px */
+
+    /* THIS IS THE KEY: Card's height scales proportionally to its calculated width */
+    aspect-ratio: 1 / 1.4; /* For every 1 unit of width, height is 1.4 units (taller than wide) */
+    /* Adjust this ratio to control the card's overall shape */
+
+    /* Internal layout to prevent overlap and distribute space */
+    display: flex;
+    flex-direction: column; /* Stack children vertically */
+    justify-content: flex-start; /* Align content to the top */
+    gap: 6px; /* Consistent spacing between internal elements (image, title, artists) */
+    /* Remove fixed height to let aspect-ratio and content manage height */
+    height: auto; /* Let aspect-ratio and content dictate height */
+}
+
+/* --- Image inside Card --- */
+.card img {
+    position: relative;
+    width: 100%; /* Image takes 100% of card's content width */
+    aspect-ratio: 1 / 1; /* Forces the image itself to be a perfect square */
+    object-fit: cover; /* Ensures image fills space, cropping if necessary */
+    border-radius: 8px;
+    display: block;
+    flex-shrink: 0; /* Prevents image from shrinking (important for sizing consistency) */
+}
+
+/* --- Play Button inside Card --- */
+.card .play-button {
+    position: absolute; /* Absolute positioning relative to .card */
+    bottom: 10px; /* Default position, will be overridden by media queries */
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    opacity: 0;
+    transform: scale(1);
+    transition: opacity 0.3s ease, transform 0.2s ease;
+    pointer-events: auto;
+    z-index: 2; /* Ensure it's above image/text */
+}
+
+.card:hover {
+    background-color: #282828;
+}
+
+.card:hover .play-button {
+    opacity: 1;
+}
+
+.card:hover img {
+    opacity: 0.8;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.card .play-button:hover {
+    transform: scale(1.2);
+}
+
+.card.hidden {
+    display: none;
+}
+
+/* --- Card Title and Artists --- */
+.card-title,
+.card-artists {
+    white-space: nowrap; /* Prevent text from wrapping */
+    overflow: hidden; /* Hide overflowing text */
+    text-overflow: ellipsis; /* Add "..." for overflowed text */
+    flex-shrink: 0; /* Prevents text from shrinking, maintaining its size */
+    color: white; /* Ensure title is white */
+}
+
+.card-artists {
+    color: #b3b3b3; /* Ensure artists are grey */
+}
+
+.card-title {
+    font-size: clamp(14px, 1.2vw, 15px); /* Responsive font size */
+    font-weight: 600;
+}
+
+.card-artists {
+    font-size: clamp(12px, 1vw, 13px); /* Responsive font size */
+}
+
+/* --- Carousel Arrows --- */
+.left-arrow,
+.right-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.6);
+    border: none;
+    color: white;
+    font-size: 24px;
+    padding: 8px 12px;
+    cursor: pointer;
+    z-index: 2;
+    border-radius: 4px;
+}
+
+.left-arrow:hover,
+.right-arrow:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.left-arrow {
+    left: 0; /* Aligned with container edge */
+}
+
+.right-arrow {
+    right: 0; /* Aligned with container edge */
+}
+
+/* --- Horizontal Scrolling Card Containers (Artist, Radio, Album) --- */
+.AlbumPlaylists {
+    position: relative;
+    top: 0; /* Set to 0 to rely on margin-top of card container */
+}
+
+.artist-card-container,
+.radio-card-container,
+.album-card-container {
+    position: relative;
+    display: flex;
+    gap: 0px;
+    overflow-x: auto; /* Allows horizontal scrolling */
+    scroll-behavior: smooth;
+    top: 0; /* Set to 0 to rely on margin-top */
+    left: 11px;
+    scrollbar-width: none; /* Firefox */
+    box-sizing: border-box;
+    width: 100%;
+    flex-wrap: nowrap; /* Ensure they don't wrap */
+    margin-top: 10px; /* Adjusted top margin for consistent gap from heading */
+}
+
+.artist-card-container::-webkit-scrollbar,
+.radio-card-container::-webkit-scrollbar,
+.album-card-container::-webkit-scrollbar {
+    display: none; /* Webkit browsers */
+}
+
+/* Specific card flex-basis for these containers */
+.artist-card-container .card,
+.radio-card-container .card,
+.album-card-container .card {
+    /* These cards are slightly more fixed in width, but still responsive */
+    flex: 0 0 180px; /* Cards try to be 180px */
+    min-width: 150px; /* Prevent them from being too small */
+    max-width: 250px; /* Prevent them from being too large */
+    height: auto; /* Let aspect-ratio and content dictate height */
+}
+
+/* Individual artist cards (background transparent) */
+.popular-artists {
+    position: relative;
+    top: 30px; /* Set to 0 to rely on margin-top of card container */
+}
+
+.card.artist-card {
+    background-color: transparent; /* Override default card background */
+    border-radius: 8px;
+    text-align: center;
+    padding: 10px;
+    transition: background-color 0.3s ease;
+    cursor: pointer;
+}
+
+/* Circular artist images */
+.card.artist-card img {
+    width: 100%; /* Take 100% of card's content width */
+    height: auto; /* Height adapts to maintain aspect ratio */
+    border-radius: 50%; /* Make circular */
+    object-fit: cover;
+    display: block;
+    margin: 0 auto 12px auto;
+    aspect-ratio: 1 / 1; /* Force square for the image */
+}
+
+.album-card .play-button {
+    bottom: 75px; /* Specific position for album cards */
+    right: 16px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.2s ease;
+    width: 48px;
+    height: 48px;
+    pointer-events: auto;
+}
+
+/* Titles and artist labels (using flex gap) */
+.card.artist-card .card-title {
+    font-size: clamp(14px, 1.2vw, 16px);
+    font-weight: 700;
+    margin: 0; /* Rely on flex gap */
+}
+
+.card.artist-card .card-artists {
+    font-size: clamp(12px, 1vw, 14px);
+    color: #b3b3b3;
+    margin: 0; /* Rely on flex gap */
+}
+
+.card.artist-card:hover {
+    background-color: #181818;
+}
+
+/* --- Left Sidebar Navigation --- */
+.home ul li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    list-style: none;
+    padding: 14px 10px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.heading {
+    display: flex;
+    gap: 15px;
+    width: 100%;
+    padding: 23px 14px;
+    font-weight: bold;
+    align-items: center;
+    font-size: 13px;
+}
+
+.heading img {
+    width: 30px;
+}
+
+.library {
+    min-height: 80vh;
+    position: relative;
+}
+
+.footer {
+    display: flex;
+    font-size: 10px;
+    color: grey;
+    gap: 13px;
+    position: absolute;
+    bottom: 0;
+    padding: 10px 0;
+}
+
+.footer a {
+    color: grey;
+}
+
+/* --- Music Player Container --- */
+.player-bar {
+    position: fixed; /* Stays in place */
+    bottom: 0;
+    /* On desktop, align with .right section */
+    left: 25%;
+    width: 75%;
+    background-color: #171a0f;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    color: white;
+    z-index: 999; /* Changed z-index to be lower than popup-overlay */
+    font-family: 'Roboto', sans-serif;
+    height: var(--player-bar-height-desktop); /* Use variable for height */
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+    overflow: hidden; /* Prevent overflow */
+    box-sizing: border-box; /* Include padding in height */
+    transition: filter 0.3s ease-in-out; /* Added transition for blur */
+}
+
+/* --- Player Bar Sections (Adjusted for responsiveness) --- */
+.player-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1; /* Allows it to grow/shrink */
+    min-width: 0; /* Essential for flex items with text-overflow */
+    max-width: 200px; /* Constrain max width for album section */
+}
+
+.player-left img {
+    width: 100%;
+    height: auto;
+    max-width: 56px; /* Max size of album cover */
+    object-fit: cover;
+    border-radius: 4px;
+    flex-shrink: 0; /* Prevent image from shrinking */
+}
+
+.track-info {
+    display: flex;
+    flex-direction: column;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1; /* Allow text to take space */
+    min-width: 0; /* Important for ellipsis to work */
+}
+
+.track-title {
+    font-size: 14px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.track-artist {
+    font-size: 12px;
+    color: #b3b3b3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.add-to-library {
+    background: none;
+    border: none;
+    color: #b3b3b3;
+    font-size: 20px;
+    cursor: pointer;
+    flex-shrink: 0; /* Prevent button from shrinking */
+}
+
+.player-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex: 2; /* Allows it to grow/shrink more than left/right */
+    max-width: 500px;
+    min-width: 0;
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    max-width: 300px; /* Max width for controls section */
+    flex-shrink: 0; /* Controls don't shrink */
+}
+
+.controls button {
+    background: none;
+    border: none;
+    color: #b3b3b3;
+    cursor: pointer;
+    font-size: 18px;
+    flex-shrink: 0; /* Prevent buttons from shrinking */
+}
+
+.controls button.play {
+    background-color: white;
+    color: black;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 500px;
+}
+
+.progress input[type="range"] {
+    flex-grow: 1;
+    height: 4px;
+    background: #404040;
+    appearance: none;
+    border-radius: 2px;
+}
+
+.progress input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    height: 12px;
+    width: 12px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.time {
+    font-size: 12px;
+    color: #b3b3b3;
+}
+
+.player-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    justify-content: flex-end;
+    max-width: 300px;
+    flex-shrink: 0;
+}
+
+.player-right input[type="range"] {
+    width: 80px;
+    height: 4px;
+    background: #404040;
+    appearance: none;
+    border-radius: 2px;
+}
+
+.player-right input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    height: 12px;
+    width: 12px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* --- Album Overlay (Fixed position, positioned over .right content) --- */
+.album-overlay {
+    position: fixed;
+    top: var(--top-bar-height-desktop); /* Starts below top-bar */
+    left: 25%; /* Starts where .left ends */
+    width: 75%; /* Matches .right width */
+    /* Height fills space between top-bar and player-bar */
+    height: calc(100vh - var(--top-bar-height-desktop) - var(--player-bar-height-desktop));
+    background: #2e0e0e; /* Default background, will be dynamically set by JS for album art color */
+    z-index: 999;
+    display: none; /* Hidden by default */
+    transition: all 0.3s ease-in-out;
+    overflow-y: hidden; /* The direct container should not scroll, its content should */
+    box-sizing: border-box;
+}
+
+.album-overlay.show {
+    display: block; /* Make it visible */
+}
+
+.album-overlay-content {
+    width: 100%;
+    height: 100%; /* Fills the calculated height of the overlay */
+    background: linear-gradient(to bottom, rgba(70, 9, 9, 0.8), #121212 50%); /* Gradient from image */
+    padding: 20px;
+    color: white;
+    border-radius: 10px;
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column; /* Stack children vertically */
+    /* align-items: center; /* Removed to allow left alignment */
+    overflow-y: auto; /* Allows internal content to scroll */
+    overflow-x: hidden;
+}
+
+.album-overlay-content::-webkit-scrollbar {
+    display: none;
+}
+
+.album-overlay-content {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.close-overlay {
+    background-color: black;
+    border: 1px solid white;
+    border-radius: 50%;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 7px;
+    right: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    z-index: 1000; /* Ensure close button is on top */
+}
+
+.close-overlay:hover {
+    transform: scale(0.9);
+}
+
+.album-header {
+    display: flex;
+    gap: 20px;
+    align-items: center; /* Changed from flex-start to center */
+    margin-bottom: 20px;
+    width: 100%; /* Ensure header takes full width */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    justify-content: flex-start; /* Changed from center to flex-start */
+    flex-shrink: 0; /* IMPORTANT: Prevents header from shrinking when content overflows */
+    padding: 20px; /* Added padding to match image */
+}
+
+.album-cover {
+    width: 180px; /* Increased size to match image */
+    height: 180px; /* Increased size to match image */
+    border-radius: 6px;
+    object-fit: cover;
+    flex-shrink: 0; /* Prevent shrinking */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); /* Added shadow */
+}
+
+.album-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: left; /* Changed from center to left */
+    flex-grow: 1; /* Allows info to take available space */
+}
+
+.album-info .album-type {
+    font-size: 14px;
+    color: #b3b3b3;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.album-info h1 {
+    font-size: clamp(28px, 4vw, 48px); /* Larger font size for title */
+    font-weight: bold;
+    margin: 0;
+}
+
+.album-info p {
+    font-size: clamp(14px, 2vw, 16px); /* Responsive font size */
+    color: #b3b3b3;
+    margin: 0;
+}
+
+.album-buttons {
+    display: flex; /* Ensure it's a flex container for the buttons */
+    padding: 20px;
+    gap: 15px; /* Increased gap */
+    justify-content: flex-start; /* Changed from center to flex-start */
+    align-items: center; /* Vertically align them */
+    flex-wrap: wrap; /* Allow buttons to wrap on very small screens */
+    flex-shrink: 0; /* IMPORTANT: Prevents button section from shrinking/scrolling away */
+    width: 100%; /* Take full width of parent */
+    margin-bottom: 20px; /* Added margin below buttons to separate from tracklist */
+}
+
+.album-tracklist {
+    background-color: transparent; /* Changed to transparent to blend with overlay gradient */
+    padding: 15px 25px;
+    border-top: none; /* Removed border-top */
+    width: 100%; /* Takes full width of parent */
+    flex-grow: 1; /* IMPORTANT: Allows tracklist to fill remaining vertical space */
+    overflow-y: auto; /* IMPORTANT: Makes only the tracklist scrollable */
+}
+
+.album-tracklist table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* Updated: Increased padding for better spacing */
+.album-tracklist th,
+.album-tracklist td {
+    padding: 12px 15px; /* Increased padding for more vertical space */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Lighter, more subtle border */
+    font-size: 16px; /* Slightly larger font */
+    color: #ddd;
+    text-align: left; /* Default to left alignment */
+}
+
+.album-tracklist th:first-child {
+    width: 40px; /* Narrower for # */
+    text-align: center;
+}
+
+/* Adjusted width for Title, Artist, and Duration columns */
+.album-tracklist th:nth-child(2) { /* Title column */
+    width: 40%; /* Allocate more space for title */
+}
+
+.album-tracklist th:nth-child(3) { /* Artist column */
+    width: 30%; /* Allocate space for artist */
+}
+
+.album-tracklist th:last-child {
+    width: 80px; /* Narrower for duration */
+    text-align: right;
+}
+
+.album-tracklist td:first-child {
+    text-align: center;
+}
+
+.album-tracklist td:last-child {
+    text-align: right;
+}
+
+/* Updated: Hover effect for table rows */
+.album-tracklist table tbody tr {
+    transition: background-color 0.3s ease, transform 0.3s ease, color 0.3s ease; /* Smooth transitions for hover */
+}
+
+.album-tracklist table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.15); /* More noticeable hover effect */
+    transform: scale(1.01); /* Slightly enlarge on hover */
+    color: white; /* Change text color to white on hover */
+    cursor: pointer;
+}
+
+/* Styles for the currently playing track in the album overlay */
+#albumDetails-tracks tr.playing td { /* Changed to albumDetails-tracks to match HTML */
+    color: #1ED760; /* Green color for playing track */
+    font-weight: bold;
+}
+
+#albumDetails-tracks tr.playing td:first-child { /* Changed to albumDetails-tracks to match HTML */
+    position: relative; /* Needed for positioning the ::before pseudo-element */
+    padding-left: 30px; /* Add padding to make space for the indicator */
+    color: transparent; /* Hide the number when playing */
+}
+
+/* Updated: Playing indicator icon similar to image */
+#albumDetails-tracks tr.playing td:first-child::before { /* Changed to albumDetails-tracks to match HTML */
+    content: "";
+    position: absolute;
+    left: 10px; /* Position at the very left of the cell */
+    top: 50%; /* Vertically center */
+    transform: translateY(-50%); /* Initial transform for positioning */
+    width: 16px; /* Width of the icon area */
+    height: 16px; /* Height of the icon area (max height for bars) */
+    display: flex;
+    justify-content: space-between; /* Distribute bars horizontally */
+    align-items: flex-end; /* Align bars to the bottom */
+    overflow: hidden; /* Hide overflow if bars extend beyond */
+    background: linear-gradient(to right,
+        #1ED760 0%, #1ED760 25%, /* First bar */
+        transparent 25%, transparent 37.5%, /* Gap */
+        #1ED760 37.5%, #1ED760 62.5%, /* Second bar */
+        transparent 62.5%, transparent 75%, /* Gap */
+        #1ED760 75%, #1ED760 100% /* Third bar */
+    );
+    background-size: 100% 100%; /* Ensure gradient covers the area */
+    animation: pulse-bars 1s infinite ease-in-out;
+}
+
+/* Removed the invalid nested pseudo-elements as they are not valid CSS */
+/* Individual bars within the playing indicator are now simulated with linear-gradient on ::before */
+
+
+@keyframes pulse-bars {
+    0% {
+        transform: translateY(-50%) scaleY(0.5);
+        opacity: 0.7;
+    }
+    50% {
+        transform: translateY(-50%) scaleY(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-50%) scaleY(0.5);
+        opacity: 0.7;
+    }
+}
+
+
+/* --- Hamburger Menu (Left) --- */
+.hamburgerContainer {
+    position: relative;
+    top: 0px;
+    left:-21px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    flex-shrink: 0; /* Prevent hamburger from shrinking */
+}
+
+.hamburgerContainer img,
+.hamburgerContainer svg {
+    width: 37px;
+    height: 37px;
+    transition: transform 0.2s;
+}
+
+.hamburgerContainer img:hover,
+.hamburgerContainer svg:hover {
+    transform: scale(1.2);
+}
+
+/* --- Search Box Styling (Responsive) --- */
+.search-box {
+    display: flex;
+    align-items: center;
+    background-color: #2a2a2a;
+    border-radius: 50px;
+    padding: 6px 12px;
+    flex-grow: 1; /* Allows it to grow in the top-bar */
+    max-width: 500px; /* Max width for larger screens */
+    min-height: 40px;
+    box-sizing: border-box;
+    overflow: hidden;
+    transition: all 0.2s ease; /* Added transition for hover effect */
+}
+
+.search-box:focus-within { /* Added focus-within for a more interactive feel */
+    background-color: #3a3a3a;
+    box-shadow: 0 0 0 2px #1ED760; /* Green border on focus */
+}
+
+.search-box input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #ddd;
+    font-size: clamp(14px, 1.5vw, 18px); /* Responsive font size */
+    flex-grow: 1;
+    padding: 6px;
+    margin: 0 10px;
+    word-wrap: break-word;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.search-box .search-icon img {
+    width: clamp(16px, 1.5vw, 24px); /* Responsive icon size */
+    filter: invert(1);
+    flex-shrink: 0;
+}
+
+/* --- Buttons --- */
+.buttons {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0; /* Prevent buttons from shrinking */
+}
+
+.signupbtn,
+.loginbtn {
+    font-size: 16px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease; /* Consistent transition */
+}
+
+.signupbtn {
+    background: transparent;
+    color: #9c9494;
+    font-weight: bold;
+    position: relative; /* For pseudo-element underline */
+}
+
+.signupbtn::after { /* Stylish underline on hover */
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background-color: #1ED760;
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+}
+
+.signupbtn:hover::after {
+    width: 100%;
+}
+
+.loginbtn {
+    font-weight: bold;
+    background: white;
+    color: black;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow for button */
+}
+
+.signupbtn:hover {
+    color: white;
+}
+
+.loginbtn:hover {
+    background: #f0f0f0;
+    color: black;
+    transform: translateY(-2px); /* Lift effect on hover */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Enhanced shadow */
+}
+
+/* --- Default state for .close-btn (hidden on desktop) --- */
+.close-btn {
+    display: none; /* Hidden by default on all screen sizes */
+    position: absolute; /* Keep absolute position relative to sidebar */
+    top: 10px; /* Adjust as needed */
+    right: 10px; /* Adjust as needed */
+    color: #fff;
+    font-size: 30px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    z-index: 10001; /* Ensure it's above the sidebar content and everything else */
+}
+
+.close-btn:hover {
+    transform: scale(1.1);
+}
+
+
+/* --- Responsive Media Queries --- */
+
+/* Tablet & Smaller Screens (max-width: 768px) */
+@media screen and (max-width: 768px) {
+    /* Sidebar (JS controlled) */
+    .sidebar {
+        position: fixed;
+        left: -260px;
+        top: 0;
+        width: 260px;
+        /* Calculate height to span between top and player bars */
+        height: 100vh;
+        background-color: #121212; /* Darker background for distinct look */
+        z-index: 10000; /* Higher than player-bar (9999) */
+        transition: left 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.4); /* Shadow for opened sidebar */
+        /* Padding to ensure content starts below top-bar and ends above player-bar (if content reaches those edges) */
+        padding-top: var(--top-bar-height-tablet);
+        padding-bottom: var(--player-bar-height-tablet);
+        box-sizing: border-box; /* Include padding in height calculation */
+
+        /* NEW: Make sidebar a flex container and hide its own scrollbar */
+        display: flex;
+        flex-direction: column;
+        overflow-y: hidden; /* Prevent the sidebar itself from having a scrollbar */
+    }
+
+    .sidebar.open {
+        left: 0;
+    }
+
+    /* Close button for sidebar - explicitly visible on tablet/mobile */
+    .close-btn {
+        display: block; /* Make it visible on small screens */
+    }
+
+    /* Right content area when sidebar is open/closed */
+    .right {
+        width: 100%; /* Take full width when sidebar is hidden */
+        transition: transform 0.3s ease;
+        padding-top: var(--top-bar-height-tablet); /* Adjust padding based on new top-bar height */
+        /* Increased padding-bottom to ensure content is not hidden under the player bar */
+        padding-bottom: calc(var(--player-bar-height-tablet) + 150px); /* Increased buffer for tablet */
+        margin-left: 0; /* No margin-left on tablet/mobile as left sidebar is hidden/overlay */
+        overflow-y: auto; /* Allow scrolling */
+        -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
+        scrollbar-width: none; /* Hide scrollbar for Firefox */
+    }
+
+    .right::-webkit-scrollbar { /* Hide scrollbar for WebKit browsers */
+        display: none;
+    }
+
+    .right.shifted {
+        transform: translateX(260px);
+    }
+
+    /* Overlay for sidebar (JS controlled) */
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9998; /* Below sidebar, above everything else */
+        display: none;
+    }
+
+    .overlay.show {
+        display: block;
+    }
+    /* Adjust top-bar for tablet */
+    .top-bar {
+        left: 0; /* Spans full width of viewport */
+        width: 100%;
+        height: var(--top-bar-height-tablet); /* Using new tablet height */
+        padding: 8px 15px; /* Slightly reduced padding for tablet */
+        border-radius: 0 0 20px 20px; /* Slightly less rounded for tablet */
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Internal Header */
+    .header {
+        top: var(--top-bar-height-tablet); /* Stick below tablet top-bar */
+        padding: 15px; /* Slightly less padding */
+    }
+
+    .search-box {
+        width: calc(100% - 140px); /* Adjust width to make space for other elements */
+        min-height: 36px;
+    }
+
+    .search-box input {
+        font-size: clamp(12px, 2vw, 16px);
+    }
+
+    .search-box .search-icon img {
+        width: clamp(14px, 2vw, 20px);
+    }
+
+    /* Player bar for tablet */
+    .player-bar {
+        height: var(--player-bar-height-tablet);
+        left: 0; /* Full width on tablet */
+        width: 100%; /* Full width on tablet */
+        z-index: 999; /* Ensure player bar is below the open sidebar but above content */
+    }
+
+    .player-left img {
+        width: 48px;
+        height: 48px;
+    }
+
+    .track-info {
+        gap: 2px;
+    }
+
+    .track-title {
+        font-size: 12px;
+    }
+
+    .track-artist {
+        font-size: 10px;
+    }
+
+    .controls {
+        gap: 12px;
+    }
+
+    .controls button {
+        font-size: 16px;
+    }
+
+    .progress {
+        gap: 8px;
+    }
+
+    .player-right input[type="range"] {
+        width: 60px;
+    }
+
+    /* Album overlay for tablet */
+    .album-overlay {
+        top: var(--top-bar-height-tablet);
+        left: 0; /* Full width on tablet */
+        width: 100%;
+        height: calc(100vh - var(--top-bar-height-tablet) - var(--player-bar-height-tablet));
+    }
+
+    .album-header {
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 15px;
+        text-align: center;
+    }
+
+    .album-cover {
+        max-width: 120px;
+        height: auto;
+        min-width: 80px;
+    }
+
+    .album-info h1 {
+        font-size: 18px;
+    }
+
+    .album-info p {
+        font-size: 14px;
+    }
+
+    .album-buttons {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .album-buttons button {
+        font-size: 14px;
+        padding: 8px 16px;
+    }
+
+    .album-tracks table {
+        font-size: 14px;
+    }
+
+    /* Card adjustments for tablet */
+    .card {
+        min-width: 130px; /* Base for cards */
+        flex: 0 0 130px; /* Prefer 130px, no shrinking from basis */
+        max-width: 160px;
+        padding: 8px; /* Slightly less padding */
+    }
+
+    .card .play-button {
+        width: 32px; /* Slightly smaller play button */
+        height: 32px;
+        bottom: 8px; /* Adjusted to be more visible */
+        right: 8px;
+    }
+
+    .card-title {
+        font-size: 13px; /* Slightly smaller font */
+    }
+
+    .card-artists {
+        font-size: 11px; /* Slightly smaller font */
+    }
+
+    /* Adjustments for artist cards on tablet */
+    .card.artist-card {
+        min-width: 120px; /* Slightly smaller for artists */
+        flex: 0 0 120px;
+    }
+
+    /* NEW: Library and Footer adjustments for tablet sidebar */
+    .library {
+        min-height: auto; /* Remove fixed min-height */
+        flex-grow: 1; /* Allow library to take available vertical space */
+        overflow-y: auto; /* Allow content inside library to scroll if it overflows */
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
+    }
+
+    .library::-webkit-scrollbar { /* Webkit browsers */
+        display: none;
+    }
+
+    .footer {
+        position: relative; /* Change from absolute to relative to flow with flex */
+        margin-top: auto; /* Pushes the footer to the bottom */
+        flex-shrink: 0;
+    }
+}
+
+/* Mobile Screens (max-width: 480px) */
+@media (max-width: 480px) {
+    /* Adjust top-bar for mobile */
+    .top-bar {
+        height: var(--top-bar-height-mobile); /* Using new mobile height */
+        padding: 6px 10px; /* Further reduced padding for mobile */
+        border-radius: 0 0 15px 15px; /* Less rounded for mobile */
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .left{
+        height: 100vh;
+    }
+
+    .hamburgerContainer img,
+    .hamburgerContainer svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    /* Right content area */
+    .right {
+        padding-top: var(--top-bar-height-mobile);
+        /* Increased padding-bottom to ensure content is not hidden under the player bar */
+        padding-bottom: calc(var(--player-bar-height-mobile) + 150px); /* Increased buffer for mobile */
+        overflow-y: auto; /* Allow scrolling */
+        -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
+        scrollbar-width: none; /* Hide scrollbar for Firefox */
+    }
+
+    .right::-webkit-scrollbar { /* Hide scrollbar for WebKit browsers */
+        display: none;
+    }
+
+    /* Internal Header */
+    .header {
+        top: var(--top-bar-height-mobile); /* Stick below mobile top-bar */
+        padding: 10px; /* Further reduced padding */
+    }
+
+    .search-box {
+        position: relative;
+        left:-13px;
+        width: calc(100% - 100px);
+        min-height: 32px;
+        margin-right: -30px;
+    }
+
+    .search-box input {
+        font-size: clamp(10px, 2.5vw, 14px);
+    }
+
+    .search-box .search-icon img {
+        width: clamp(12px, 2.5vw, 18px);
+    }
+
+    .signupbtn,
+    .loginbtn {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+
+    /* Player bar for mobile */
+    .player-bar {
+        height: var(--player-bar-height-mobile);
+        left: 0; /* Full width on mobile */
+        width: 100%; /* Full width on mobile */
+        padding: 0 10px; /* Reduced padding for mobile */
+        flex-wrap: wrap; /* Allow elements to wrap if needed */
+        justify-content: center; /* Center content horizontally */
+    }
+
+    .player-left {
+        width: 100%; /* Take full width */
+        justify-content: center; /* Center items */
+        margin-bottom: 5px; /* Space between sections */
+    }
+
+    .player-left img {
+        width: 40px;
+        height: 40px;
+    }
+
+    .track-info {
+        text-align: center;
+        flex-grow: 0; /* Don't grow too much */
+        width: auto; /* Let content define width */
+    }
+
+    .track-title {
+        font-size: 11px;
+    }
+
+    .track-artist {
+        font-size: 9px;
+    }
+
+    .add-to-library {
+        display: none; /* Hide for very small screens */
+    }
+
+    .player-center {
+        width: 100%; /* Take full width */
+        order: 3; /* Place below left and right sections */
+        margin-top: 5px;
+    }
+
+    .controls {
+        gap: 10px;
+    }
+
+    .controls button {
+        font-size: 14px;
+    }
+
+    .controls button.play {
+        width: 28px;
+        height: 28px;
+    }
+
+    .progress {
+        position: relative;
+        width: 90%; /* Adjust width for progress bar */
+        margin-top: 5px;
+        left:-20px;
+    }
+
+    .time {
+        font-size: 10px;
+    }
+
+    .player-right {
+        width: 100%; /* Take full width */
+        justify-content: center; /* Center items */
+        margin-top: 5px;
+    }
+
+    .player-right input[type="range"] {
+        width: 50px;
+    }
+
+    /* Album overlay for mobile */
+    .album-overlay {
+        top: var(--top-bar-height-mobile);
+        height: calc(100vh - var(--top-bar-height-mobile) - var(--player-bar-height-mobile));
+    }
+
+    .album-overlay-content {
+        padding: 10px;
+    }
+
+    .album-header {
+        flex-direction: column; /* Stack image and info vertically */
+        align-items: center; /* Center items */
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .album-cover {
+        width: 100px;
+        height: 100px;
+    }
+
+    .album-info h1 {
+        font-size: 16px;
+    }
+
+    .album-info p {
+        font-size: 11px;
+    }
+
+    .album-buttons {
+        gap: 8px;
+        padding: 10px;
+    }
+
+    .album-buttons button {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+
+    .album-tracklist {
+        padding: 10px 15px;
+    }
+
+    .album-tracklist th,
+    .album-tracklist td {
+        font-size: 12px;
+        padding: 6px 8px;
+    }
+
+    /* Card adjustments for mobile - increased size slightly */
+    .card {
+        min-width: 110px; /* New minimum for mobile */
+        flex: 0 0 110px;
+        max-width: 140px;
+        padding: 6px; /* Reduced padding */
+    }
+
+    .card .play-button {
+        width: 28px; /* Corrected from 25px */
+        height: 28px; /* Corrected from 25px */
+        bottom: 6px;
+        right: 6px;
+    }
+
+    .card-title {
+        font-size: 12px; /* Corrected from 11px */
+    }
+
+    .card-artists {
+        font-size: 10px; /* Corrected from 9px */
+    }
+    /* Further adjustment for artist cards on mobile */
+    .card.artist-card {
+        min-width: 100px; /* Slightly larger for artists */
+        flex: 0 0 100px;
+    }
+
+    /* Sidebar for mobile - Adjust height and z-index */
+    .sidebar {
+        height: 100vh;
+        padding-top: var(--top-bar-height-mobile);
+        padding-bottom: var(--player-bar-height-mobile);
+        /* NEW: Make sidebar a flex container and hide its own scrollbar */
+        display: flex;
+        flex-direction: column;
+        overflow-y: hidden; /* Prevent the sidebar itself from having a scrollbar */
+    }
+
+    /* Ensure close button is explicitly block for mobile */
+    .close-btn {
+        display: block;
+        font-size: 24px; /* Slightly smaller for mobile if 30px is too big */
+        width: 30px; /* Example: make it square */
+        height: 30px;
+        line-height: 30px; /* Center content vertically */
+        text-align: center;
+    }
+
+    /* NEW: Library and Footer adjustments for mobile sidebar */
+    .library {
+        min-height: auto; /* Remove fixed min-height */
+        flex-grow: 1; /* Allow library to take available vertical space */
+        overflow-y: auto; /* Allow content inside library to scroll if it overflows */
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
+    }
+
+    .library::-webkit-scrollbar { /* Webkit browsers */
+        display: none;
+    }
+
+    .footer {
+        position: relative; /* Change from absolute to relative to flow with flex */
+        margin-top: auto; /* Pushes the footer to the bottom */
+        flex-shrink: 0;
+    }
+}
+
+/* Adjustments for very small screens to ensure visibility */
+@media (max-width: 320px) {
+    .search-box input {
+        font-size: 10px;
+    }
+    .search-box .search-icon img {
+        width: 12px;
+    }
+    .buttons {
+        gap: 4px;
+    }
+    .signupbtn,
+    .loginbtn {
+        font-size: 10px;
+        padding: 3px 6px;
+    }
+    .card {
+        /* Further adjustment for very small screens */
+        min-width: 95px; /* Minimum card width */
+        flex: 0 0 95px;
+        padding: 4px;
+    }
+    .card .play-button {
+        width: 22px; /* Smallest play button */
+        height: 22px;
+        bottom: 4px;
+        right: 4px;
+    }
+    .card-title {
+        font-size: 9px;
+    }
+    .card-artists {
+        font-size: 7px;
+    }
+    /* Further adjustment for artist cards on very small screens */
+    .card.artist-card {
+        min-width: 85px;
+        flex: 0 0 85px;
+    }
+}
+
+/* --- Specific Styles for Album Overlay Buttons --- */
+.album-buttons {
+    /* These styles were already good, just re-included in the full set */
+    display: flex;
+    padding: 20px;
+    gap: 10px;
+    justify-content: flex-start; /* Changed to flex-start */
+    align-items: center; /* Vertically align them */
+    flex-wrap: wrap; /* Allow wrapping on very small screens */
+}
+
+#album-play {
+    background-color: #1ED760;
+    color: #1c0202;
+    border: none;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 56px; /* Increased size to match image */
+    height: 56px; /* Increased size to match image */
+    position: relative;
+    z-index: 2; /* Ensure it's above potential background elements within album-overlay-content */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); /* Added shadow */
+}
+
+.btn1,
+.btn2 {
+    background-color: transparent; /* Changed to transparent */
+    color: #b3b3b3; /* Changed color to match image */
+    border: 1px solid #b3b3b3; /* Changed border to match image */
+    padding: 0;
+    border-radius: 50%;
+    font-size: 24px; /* Slightly smaller */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 38px; /* Adjusted size */
+    height: 38px; /* Adjusted size */
+    position: relative;
+    z-index: 2; /* Ensure it's above potential background elements within album-overlay-content */
+}
+
+.btn1:hover,
+.btn2:hover {
+    transform: scale(1.1);
+    color: white; /* Hover color to white */
+    border-color: white; /* Hover border to white */
+}
+
+.btn3 {
+    padding: 0;
+    background-color: transparent; /* Changed to transparent */
+    border: none; /* No border for this button */
+    color: #b3b3b3; /* Changed color to match image */
+    font-size: 24px; /* Adjusted size */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    height: 38px; /* Adjusted size */
+    width: 38px; /* Adjusted size */
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.btn3:hover {
+    transform: scale(1.1);
+    color: white; /* Hover color to white */
+}
+
+#album-play:hover {
+    transform: scale(1.05); /* Slightly less aggressive scale on hover */
+    background-color: #1db954;
+}
+
+/* --- Search Box Hover Effect --- */
+.search-box:hover {
+    transform: scale(1.02);
+    background-color: rgb(66, 66, 66);
+}
+
+/* --- Track Highlight for Search --- */
+.highlighted {
+    background-color: rgba(30, 215, 96, 0.2);
+    border-left: 3px solid #1ED760;
+}
+
+/* Ensure the 'playing' class overrides or works with 'highlighted' if needed */
+#albumDetails-tracks tr.playing { /* Target the row for playing state */
+    background-color: rgba(30, 215, 96, 0.1); /* Subtle green background for playing row */
+}
+
+#albumDetails-tracks tr.playing td {
+    color: #1ED760; /* Green color for playing track text */
+    font-weight: bold;
+}
+
+/* For visual clarity, you might want to adjust the highlighted background if it's also playing */
+#albumDetails-tracks tr.playing.highlighted {
+    background-color: #1ED760; /* Solid green if both playing and highlighted */
+    color: black; /* Text color becomes black for contrast */
+}
+
+/* style.css */
+
+/* 1. Target the main album overlay content area */
+.album-details {
+    /* Removed padding-top and padding-bottom !important to allow album-overlay-content padding to apply */
+    width: 100%;
+}
+
+/* 2. Target the album header within the overlay */
+.album-details .album-header {
+    /* Removed margin-bottom and padding-bottom !important */
+    margin-bottom: 20px; /* Re-added margin for spacing below header */
+    padding-bottom: 0; /* Keep padding-bottom 0 if it's internal to the header, rely on margin-bottom for external spacing */
+}
+
+/* 3. Target the dedicated container for full HTML embeds */
+#album-full-embed-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    display: none;
+    border-radius: 12px;
+    background-color: transparent;
+    z-index: 10;
+}
+
+/* 4. Target the iframe directly inside the embed container */
+#album-full-embed-container iframe {
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block;
+    border: none;
+}
+
+/* 5. Adjust the album-tracks section if it's still visible and causing issues */
+.album-tracks {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+
+
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #121212;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    box-sizing: border-box;
+    /* Crucial: Prevents body scrolling when popup is active */
+    overflow: hidden; 
+}
+
+header, main {
+    padding: 20px;
+    text-align: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Pop-up Overlay */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000; /* Increased z-index to be on top of everything */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    padding: 0; /* Removed vertical padding to maximize popup height */
+    box-sizing: border-box;
+}
+
+.popup-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Pop-up Container */
+.popup-container {
+    background-color: #282828;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    width: 90%; /* Responsive width for smaller screens */
+    max-width: 480px; /* Max width for phones/tablets */
+    position: relative; /* For positioning close button */
+    box-sizing: border-box;
+    min-height: 200px; 
+    /* Setting a maximum height relative to viewport for the popup itself */
+    max-height: 100vh; /* Allow it to take full viewport height on small screens */
+    height: auto; /* Let height be determined by content */
+    /* CRITICAL: No internal scrolling for this container */
+    overflow: hidden; /* Prevent all internal scrolling within the popup */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center horizontally */
+}
+
+/* Screen management */
+.popup-screen {
+    position: absolute; /* Keep absolute for stacking effect */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%; /* Take full height of container */
+    
+    padding: 40px; /* Default padding for smaller screens */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* Align content to start for better space usage */
+    align-items: center; /* Horizontally center content */
+    
+    transition: opacity 0.3s ease;
+    opacity: 0;
+    pointer-events: none;
+    box-sizing: border-box;
+    overflow: hidden; /* Prevents individual screen content from overflowing */
+}
+
+.popup-screen.active {
+    opacity: 1;
+    pointer-events: auto;
+    position: static; /* Make active screen flow normally within flex parent */
+    flex-grow: 1;
+}
+
+/* Close Button */
+.close-button {
+    position: absolute;
+    top: 15px; /* Default top for smaller screens */
+    right: 15px; /* Default right for smaller screens */
+    background: none;
+    border: none;
+    color: #b3b3b3;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    z-index: 10; /* Ensure it's above other content */
+}
+
+.close-button:hover {
+    color: #fff;
+}
+
+/* Common Styles for Pop-up Content */
+.popup-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* Align content to start for better space usage */
+    flex-grow: 1; /* Allow content to grow within the screen */
+    min-height: 0; 
+}
+
+.popup-content h2 {
+    font-size: 30px; /* Increased font size */
+    margin-bottom: 30px;
+    color: #bab6b6;
+    line-height: 1.2;
+    text-align: center;
+    flex-shrink: 0; /* Prevent heading from shrinking */
+}
+
+.spotify-logo-placeholder {
+    width: 60px;
+    height: 60px;
+    background-color: #000000;
+    margin: 0 auto 30px auto; /* Centered with bottom margin */
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 32px; 
+    font-weight: bold;
+    color: #000000;
+    flex-shrink: 0; /* CRITICAL: Prevent it from shrinking or disappearing */
+}
+.spotify-logo-placeholder::before {
+    content: '';
+    width: 30px;
+    height: 30px;
+    display: block;
+    background-color: #fff;
+    border-radius: 50%;
+}
+
+
+/* Auth Buttons (Google, Facebook, Apple, Phone) */
+.auth-button {
+    width: 100%;
+    padding: 14px 20px;
+    margin-bottom: 15px;
+    border: 1px solid #878787;
+    border-radius: 50px;
+    background-color: transparent;
+    color: #bab6b6;
+    font-size: 17px; /* Increased font size */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; /* Added box-shadow and transform */
+    text-align: center;
+    min-height: 48px;
+    box-sizing: border-box;
+    flex-shrink: 0; /* Prevent buttons from shrinking */
+}
+
+.auth-button:hover {
+    border-color: #fff;
+    background-color: #3e3e3e;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Attractive feature */
+    transform: translateY(-2px); /* Attractive feature */
+}
+
+.auth-button .logo-placeholder {
+    margin-right: 15px;
+    font-size: 20px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+/* Specific Google Button Styling */
+.auth-button.google-button {
+    background-color: transparent; /* Changed to transparent to allow Google's styling */
+    color: #bab6b6;
+    border: none; /* Remove border for a solid fill */
+    padding: 0; /* Remove padding to allow inner content to control size */
+    overflow: hidden; /* Hide any overflow from the Google button's internal structure */
+    display: flex; /* Make it a flex container to center its content */
+    align-items: center; /* Center content vertically */
+    justify-content: center; /* Center content horizontally */
+    min-height: 48px; /* Ensure minimum height */
+    border-radius: 50px; /* Apply border-radius directly to the button */
+}
+
+/* Adjust the internal Google button element to fill its parent */
+.g_id_signin {
+    width: 100% !important; /* Force full width */
+    min-height: inherit; /* Inherit min-height from parent */
+    display: flex; /* Make it a flex container */
+    justify-content: center; /* Center content horizontally */
+    align-items: center; /* Center content vertically */
+    box-sizing: border-box; /* Include padding/border in width/height */
+    padding: 0 !important; /* Remove any internal padding */
+    /* Removed explicit height and max-height to allow Google's internal styling */
+}
+
+/* You might need to target elements *inside* the Google button if it still doesn't fill */
+/* This is often tricky as Google's GSI client injects its own styles */
+.g_id_signin > div { /* Targeting the direct child div of g_id_signin */
+    width: 100% !important;
+    border-radius: 50px !important; /* Apply border-radius to the inner button */
+    box-sizing: border-box; /* Include padding/border in width/height */
+    /* Removed explicit height and max-height to allow Google's internal styling */
+}
+
+.g_id_signin iframe {
+    width: 100% !important;
+    border-radius: 50px !important; /* Apply border-radius to the iframe */
+    background-color: transparent !important; /* Changed to transparent to allow Google's styling */
+    box-sizing: border-box; /* Include padding/border in width/height */
+    /* Removed explicit height and max-height to allow Google's internal styling */
+}
+
+
+/* Separator */
+.separator {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 25px 0;
+    color: #b3b3b3;
+    width: 100%;
+    flex-shrink: 0; /* Prevent separator from shrinking */
+}
+
+.separator::before,
+.separator::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #535353;
+}
+
+.separator:not(:empty)::before {
+    margin-right: .25em;
+}
+
+.separator:not(:empty)::after {
+    margin-left: .25em;
+}
+
+/* Input Group */
+.input-group {
+    text-align: left;
+    margin-bottom: 20px;
+    width: 100%;
+    flex-shrink: 0; /* Prevent input group from shrinking */
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 15px; /* Increased font size */
+    color:#bab6b6;
+    font-weight: bold;
+}
+
+.input-group input[type="text"],
+.input-group input[type="email"],
+.input-group input[type="tel"],
+.input-group input[type="password"] { /* Added password to this selector */
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #535353;
+    border-radius: 4px;
+    background-color: #3e3e3e;
+    color: #bab6b6;
+    font-size: 17px; /* Increased font size */
+    box-sizing: border-box;
+}
+
+.input-group input[type="text"]::placeholder,
+.input-group input[type="email"]::placeholder,
+.input-group input[type="tel"]::placeholder,
+.input-group input[type="password"]::placeholder { /* Added password to this selector */
+    color: #b3b3b3;
+}
+
+.input-group input[type="text"]:focus,
+.input-group input[type="email"]:focus,
+.input-group input[type="tel"]:focus,
+.input-group input[type="password"]:focus { /* Added password to this selector */
+    outline: none;
+    border-color: #1DB954;
+}
+
+/* Main Buttons (Green and Transparent) */
+.main-button {
+    width: 100%;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 50px;
+    font-size: 19px; /* Increased font size */
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Added box-shadow */
+    margin-top: 20px;
+    min-height: 48px;
+    box-sizing: border-box;
+    flex-shrink: 0; /* Prevent main buttons from shrinking */
+}
+
+.main-button:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4); /* Attractive feature */
+}
+
+.green-button {
+    background-color: linear-gradient(to right, #cf5151, #1d8d8f);
+    color: #bab6b6;
+    /* Attractive feature: Subtle gradient */
+    background-image: linear-gradient(to right, #cf5151, #1d8d8f); 
+}
+
+.green-button:hover {
+    background-color: linear-gradient(to right, #cf5151, #1d8d8f);
+    background-image: linear-gradient(to right, #cf5151, #1d8d8f); /* Attractive feature: Gradient shift */
+}
+
+.transparent-button {
+    background-color: transparent;
+    border: 1px solid #878787;
+    color: #d7cece;
+    margin-top: 15px;
+    font-size: 16px;
+    flex-shrink: 0; /* Prevent transparent buttons from shrinking */
+}
+
+.transparent-button:hover {
+    border-color: #fff;
+    background-color: #3e3e3e;
+}
+
+/* Small Text and Links */
+.small-text {
+    font-size: 15px; /* Increased font size */
+    color: #b3b3b3;
+    margin-top: 20px; /* Ensure space from above elements */
+    line-height: 1.4;
+    text-align: center;
+    flex-shrink: 0; /* Prevent this text from shrinking */
+    padding-bottom: 0; /* Ensure no extra padding pushing it down in some contexts */
+}
+
+.small-text a {
+    color: #bab6b6;
+    text-decoration: underline;
+}
+
+.small-text a:hover {
+    color: #1DB954;
+}
+
+
+/* Initial Choice Screen Specifics */
+.initial-choice-screen {
+    background-color: #282828; /* Changed to match popup container for consistency */
+    padding: 40px;
+    justify-content: center;
+    align-items: center;
+}
+
+.initial-choice-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px; /* Adjusted gap for spacing between items */
+    width: 100%;
+    flex-grow: 1;
+    justify-content: center; /* Center content within this flex container */
+    min-height: 0; /* Allow content to shrink if needed */
+}
+
+.album-art-placeholder {
+    width: 180px;
+    height: 180px;
+    background-color: #292727; /* Placeholder color, consider making it dynamic or removing if not used */
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.album-art-image {
+    width: 100%;
+    height: 100%;
+    border-radius:150px;
+    object-fit: cover;
+    display: block;
+}
+
+.initial-choice-text h2 {
+    font-size: 24px;
+    margin-bottom: 15px; /* Reduced margin */
+    color: #bab6b6;
+    line-height: 1.3;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* ====================================
+    Media Queries for Responsiveness
+    ==================================== */
+
+/* For Tablets and iPads (Portrait and Landscape) */
+@media (max-width: 768px) {
+    .popup-container {
+        width: 90%;
+        max-width: 480px;
+        max-height: 90vh; 
+    }
+
+    .popup-screen {
+        padding: 25px; /* Slightly reduced padding */
+        justify-content: flex-start; /* Ensure content starts from top for better visibility */
+        overflow: hidden; /* No scrolling */
+    }
+
+    .popup-content {
+        justify-content: flex-start; /* Ensure content starts from top */
+    }
+
+    .popup-content h2 {
+        font-size: 26px; /* Slightly smaller font */
+        margin-bottom: 20px; /* Reduced margin */
+    }
+
+    .spotify-logo-placeholder {
+        width: 48px; /* Slightly smaller */
+        height: 48px;
+        margin-bottom: 20px; /* Reduced margin */
+    }
+    .spotify-logo-placeholder::before {
+        width: 24px;
+        height: 24px;
+    }
+
+    .auth-button, .main-button {
+        padding: 12px 18px;
+        font-size: 16px; /* Increased font size */
+        min-height: 44px;
+        margin-bottom: 10px; /* Reduced margin */
+    }
+    .main-button {
+        margin-top: 15px; /* Reduced margin */
+    }
+    .transparent-button {
+        margin-top: 10px; /* Reduced margin */
+    }
+
+    .separator {
+        margin: 20px 0; /* Reduced margin */
+    }
+
+    .input-group {
+        margin-bottom: 15px; /* Reduced margin */
+    }
+
+    .input-group label {
+        font-size: 14px; /* Increased font size */
+        margin-bottom: 5px;
+    }
+
+    .input-group input {
+        padding: 10px 12px;
+        font-size: 16px; /* Increased font size */
+    }
+
+    .initial-choice-screen {
+        padding: 25px;
+    }
+
+    .album-art-placeholder {
+        width: 150px; /* Slightly smaller */
+        height: 150px;
+    }
+
+    .initial-choice-text h2 {
+        font-size: 22px; /* Slightly smaller */
+        margin-bottom: 10px; /* Reduced margin */
+    }
+
+    .small-text {
+        font-size: 14px; /* Increased font size */
+        margin-top: 10px; /* Reduced margin */
+    }
+
+    /* Close button on tablets */
+    .close-button {
+        display: block;
+        top: 15px;
+        right: 15px;
+        font-size: 24px;
+    }
+    /* Prev button on tablets */
+    .prev-button {
+        position: absolute; /* Ensure it's absolutely positioned */
+        top: 15px; /* Aligns with close button */
+        left: 15px; /* Positioning on the left */
+        font-size: 24px; /* Similar size to close button */
+        display: block; /* Ensure it's always visible */
+        background: none; /* Make transparent */
+        border: none; /* Remove border */
+    }
+}
+
+/* For Mobile Devices (Phones) */
+@media (max-width: 480px) {
+    .popup-overlay {
+        padding: 0; /* Removed vertical padding to maximize popup height */
+    }
+
+    .popup-container {
+        width: 95%;
+        border-radius: 6px;
+        max-height: 100vh; /* Allow it to take full viewport height on small screens */
+    }
+
+    .popup-screen {
+        padding: 8px; /* Further reduced padding */
+        justify-content: flex-start; /* Ensure content starts from top */
+        overflow: hidden; /* No scrolling */
+    }
+
+    .close-button {
+        font-size: 20px;
+        top: 8px; /* Adjusted top position */
+        right: 8px; /* Adjusted right position */
+        display: block; /* Ensure visible on phones */
+    }
+    /* Prev button on phones */
+    .prev-button {
+        position: absolute; /* Ensure it's absolutely positioned */
+        font-size: 25px;
+        top: 0px; /* Adjusted top position */
+        left: 8px; /* Adjusted left position */
+        display: block; /* Ensure it's always visible */
+        background: none; /* Make transparent */
+        border: none; 
+        color:white/* Remove border */
+    }
+
+    .popup-content h2 {
+        font-size: 20px; /* Further reduced font size */
+        margin-bottom: 8px; /* Further reduced margin */
+    }
+
+    .spotify-logo-placeholder {
+        width: 35px; /* Further reduced size */
+        height: 35px;
+        margin-bottom: 8px; /* Further reduced margin */
+    }
+    .spotify-logo-placeholder::before {
+        width: 16px; /* Further reduced inner circle */
+        height: 16px;
+    }
+
+    .auth-button, .main-button {
+        padding: 7px 10px; /* Further reduced padding */
+        font-size: 13px; /* Further reduced font size */
+        min-height: 36px; /* Reduced min-height */
+        margin-bottom: 5px; /* Further reduced margin */
+    }
+    .main-button {
+        margin-top: 7px; /* Further reduced margin */
+    }
+    .transparent-button {
+        margin-top: 5px; /* Further reduced margin */
+    }
+
+    .separator {
+        margin: 8px 0; /* Further reduced margin */
+    }
+
+    .input-group {
+        margin-bottom: 7px; /* Further reduced margin */
+    }
+
+    .input-group label {
+        font-size: 11px; /* Increased font size */
+        margin-bottom: 2px;
+    }
+
+    .input-group input {
+        padding: 6px 7px;
+        font-size: 13px; /* Increased font size */
+    }
+
+    .initial-choice-screen {
+        padding: 8px; /* Further reduced padding */
+    }
+
+    .album-art-placeholder {
+        width: 90px; /* Further reduced size */
+        height: 90px;
+    }
+
+    .initial-choice-text h2 {
+        font-size: 16px; /* Further reduced font size */
+        margin-bottom: 5px; /* Further reduced margin */
+    }
+
+    .small-text {
+        font-size: 11px; /* Increased font size */
+        margin-top: 5px; /* Further reduced margin */
+    }
+}
+
+/* For even smaller mobile devices (e.g., iPhone SE) */
+@media (max-width: 375px) {
+    .popup-screen {
+        padding: 5px; /* Even more reduced padding */
+    }
+
+    .popup-content h2 {
+        font-size: 15px; /* Even more reduced font size */
+        margin-bottom: 6px;
+    }
+
+    .spotify-logo-placeholder {
+        width: 28px; /* Smallest logo size */
+        height: 28px;
+        margin-bottom: 6px;
+    }
+    .spotify-logo-placeholder::before {
+        width: 12px;
+        height: 12px;
+    }
+
+    .auth-button, .main-button {
+        font-size: 11px;
+        padding: 6px 8px;
+        min-height: 32px; /* Smallest button height */
+        margin-bottom: 4px;
+    }
+    .main-button {
+        margin-top: 5px;
+    }
+    .transparent-button {
+        margin-top: 4px;
+    }
+
+    .separator {
+        margin: 6px 0;
+    }
+
+    .input-group {
+        margin-bottom: 6px;
+    }
+
+    .input-group label {
+        font-size: 9px;
+        margin-bottom: 1px;
+    }
+
+    .input-group input {
+        padding: 5px 6px;
+        font-size: 11px;
+    }
+
+    .initial-choice-screen {
+        padding: 5px;
+    }
+
+    .album-art-placeholder {
+        width: 80px; /* Smallest album art size */
+        height: 80px;
+    }
+
+    .initial-choice-text h2 {
+        font-size: 13px;
+        margin-bottom: 4px;
+    }
+
+    .small-text {
+        font-size: 9px;
+        margin-top: 4px;
+    }
+}
+
+/* ====================================
+    Desktop Specific Overrides (Larger Popup, Close Button Visible and Adjusted, No Internal Scroll)
+    =================================== */
+@media (min-width: 769px) { /* Applies to screens wider than typical tablets */
+    .popup-container {
+        max-width: 730px; 
+        max-height: 95vh; /* Increased max-height to give more room */
+        height: auto; /* Let height be determined by content */
+        overflow: hidden; /* Keep overflow hidden as requested */
+    }
+
+    .popup-screen {
+        padding: 10px 60px; /* Further reduced top/bottom padding */
+        justify-content: flex-start; /* Aligns content to the top */
+        flex-grow: 1; 
+        overflow: hidden; /* No scrolling */
+    }
+
+    /* Ensure the close button is visible on desktop and positioned correctly */
+    .close-button {
+        display: block; 
+        top: 15px; /* Adjusted top position */
+        right: 15px; /* Adjusted right position */
+        font-size: 24px; /* Adjusted font size */
+    }
+    .prev-button {
+        position: absolute; /* Ensure it's absolutely positioned */
+        top: 15px; /* Adjusted to match close button */
+        left: 15px; /* Adjusted to match close button */
+        font-size: 24px; /* Adjusted to match close button */
+        background: none; /* Make transparent */
+        border: none;
+        color: white; /* Remove border */
+    }
+
+    .popup-content {
+        justify-content: flex-start; /* Aligns content to the top */
+        flex-grow: 1; 
+        min-height: 0; /* Allow content to shrink */
+    }
+
+    .popup-content h2 {
+        font-size: 28px; /* Increased font size */
+        margin-bottom: 10px; /* Further reduced margin-bottom */
+    }
+
+    .spotify-logo-placeholder {
+        width: 45px; /* Smaller logo */
+        height: 45px;
+        margin-bottom: 10px; /* Further reduced margin-bottom */
+        flex-shrink: 0; 
+    }
+    .spotify-logo-placeholder::before {
+        width: 22px; /* Smaller inner circle */
+        height: 22px;
+    }
+
+    .auth-button {
+        padding: 10px 15px; /* Reduced padding */
+        font-size: 16px; /* Increased font size */
+        min-height: 44px; /* Slightly smaller min-height */
+        margin-bottom: 5px; /* Further reduced margin-bottom */
+    }
+
+    .main-button {
+        padding: 10px 15px; /* Reduced padding */
+        font-size: 17px; /* Increased font size */
+        min-height: 44px; /* Slightly smaller min-height */
+        margin-top: 5px; /* Reduced margin-top */
+    }
+
+    .separator {
+        margin: 10px 0; /* Further reduced margin */
+    }
+
+    .input-group {
+        margin-bottom: 8px; /* Further reduced margin-bottom */
+    }
+
+    .input-group label {
+        font-size: 14px; /* Increased font size */
+    }
+
+    .input-group input {
+        padding: 8px 12px; /* Reduced padding */
+        font-size: 16px; /* Increased font size */
+    }
+
+    .small-text {
+        font-size: 13px; /* Increased font size */
+        margin-top: 5px; /* Reduced margin-top */
+        padding-bottom: 0;
+    }
+}
+
+
+/* For the custom message box */
+.custom-message-box {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 15px 25px;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 250px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.custom-message-box.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.custom-message-close-button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5em;
+    cursor: pointer;
+    margin-left: 15px;
+    padding: 0 5px;
+}
+
+/* Tailwind-like classes for message box (add these to your utility.css or style.css) */
+.bg-green-600 { background-color: #22c55e; } /* Example green for success */
+.bg-red-600 { background-color: #ef4444; }   /* Example red for error */
+.bg-blue-600 { background-color: #3b82f6; }  /* Example blue for info */
+.invisible { visibility: hidden; }
+.opacity-0 { opacity: 0; }
+.opacity-100 { opacity: 1; }
+
+/* For the user avatar and dropdown */
+.user-avatar-container {
+    position: relative;
+    display: flex; /* Changed from inline-block to flex */
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-left: 10px; /* Adjust as needed */
+    z-index: 20; /* Ensure it's above other elements */
+}
+
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #1ED760; /* Spotify green, or a dark color */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1em;
+    text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease-in-out;
+}
+
+.user-avatar:hover {
+    transform: scale(1.05);
+}
+
+.user-dropdown {
+    position: absolute;
+    top: 100%; /* Position below the avatar */
+    right: 0;
+    background-color: #282828; /* Dark background */
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    min-width: 150px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px); /* Start slightly below */
+    transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out, visibility 0.2s ease-in-out;
+}
+
+.user-dropdown.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-username {
+    color: #b3b3b3; /* Lighter grey for text */
+    font-size: 0.9em;
+    padding: 5px 0;
+    border-bottom: 1px solid #404040; /* Separator */
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+.dropdown-logout-btn {
+    background-color: #404040; /* Darker button */
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: bold;
+    transition: background-color 0.2s ease;
+}
+
+.dropdown-logout-btn:hover {
+    background-color: #535353; /* Lighter on hover */
+}
+
+/* For the login/signup buttons in the top bar */
+.top-bar .buttons .signupbtn,
+.top-bar .buttons .loginbtn {
+    /* Ensure these are styled as per your original design,
+       and their display property will be controlled by JS */
+    display: block; /* Default, will be overridden by JS */
+}
+
+/* General utility classes for hiding elements */
+.hidden {
+    display: none !important;
+}
+
+/* User Avatar and Dropdown Styles */
+.user-avatar-container {
+    position: relative; /* Needed for absolute positioning of the dropdown */
+    display: flex; /* Use flex to center the initial */
+    align-items: center;
+    justify-content: center;
+    width: 40px; /* Size of the avatar circle */
+    height: 40px;
+    border-radius: 50%; /* Make it a circle */
+    background-color: #282828; /* Dark background for the avatar */
+    color: white; /* Text color for the initial */
+    font-weight: bold;
+    font-size: 1.2em;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: background-color 0.3s ease;
+}
+
+.user-avatar-container:hover {
+    background-color: #4a4a4a; /* Slightly lighter on hover */
+}
+
+/* Initially hidden state for the container (when not logged in) */
+.user-avatar-container.hidden {
+    display: none;
+}
+
+/* Dropdown Menu Styles */
+.user-dropdown {
+    position: absolute;
+    top: 100%; /* Position below the avatar */
+    right: 0; /* Align to the right of the avatar */
+    background-color: #282828; /* Dark background for the dropdown */
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    min-width: 150px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 1000; /* Ensure it's above other content */
+
+    /* Animation properties for smooth appearance */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px); /* Start slightly above */
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out, visibility 0.2s;
+}
+
+/* State when the dropdown is shown */
+.user-dropdown.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-username {
+    color: #b3b3b3; /* Lighter grey for username */
+    font-size: 0.9em;
+    padding: 5px 0;
+    text-align: center;
+    border-bottom: 1px solid #3a3a3a; /* Separator */
+    margin-bottom: 5px;
+}
+
+.dropdown-logout-btn {
+    background-color: transparent;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    text-align: left;
+    width: 100%;
+    cursor: pointer;
+    font-size: 1em;
+    border-radius: 4px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dropdown-logout-btn:hover {
+    background-color: #3a3a3a; /* Darker on hover */
+    color: #1ED760; /* Spotify green on hover */
+}
+
+/* Ensure header has space for the avatar */
+.top-bar .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px 20px; /* Adjust padding as needed */
+}
+
+/* Adjust search box to accommodate avatar */
+.search-box {
+    flex-grow: 1; /* Allow search box to take available space */
+    max-width: 550px; /* Limit search box width */
+    margin-right: -15px; /* Space between search and buttons/avatar */
+}
+
+/* Ensure buttons container aligns correctly */
+.buttons {
+    position: relative;
+    display: flex;
+    right: -20px;
+    align-items: center;
+    gap: 2px; /* Space between login/signup and avatar */
+}
+
+/* You can put this CSS in a <style> tag in your HTML's <head>
+   or in a separate .css file linked to your HTML. */
+
+.swarify-footer {
+    position: relative;
+    bottom: -250px;
+    background-color: #000; /* Black background */
+    color: #fff; /* White text color for the footer */
+    padding: 24px; /* Adjust padding as needed, similar to Tailwind's p-6 */
+    /* Adjust margin as needed, similar to Tailwind's mt-12 */
+    text-align: center; /* Center all content horizontally */
+    font-size: 14px; /* Small font size, similar to Tailwind's text-sm */
+}
+
+.swarify-footer-container {
+    max-width: 1200px; /* Max width for content, adjust as needed */
+    margin-left: auto; /* Center the container */
+    margin-right: auto; /* Center the container */
+}
+
+.swarify-footer-nav {
+    margin-bottom: 16px; /* Space between nav links and copyright */
+}
+
+.swarify-footer-links {
+    list-style: none; /* Remove bullet points from list */
+    padding: 0; /* Remove default padding */
+    margin: 0; /* Remove default margin */
+    display: flex; /* Arrange links horizontally */
+    flex-wrap: wrap; /* Allow links to wrap to the next line on small screens */
+    justify-content: center; /* Center the links horizontally */
+    gap: 16px; /* Space between list items, similar to Tailwind's space-x-4 */
+    /* For older browsers not supporting gap: */
+    /* margin: 0 -8px; */ /* Negative margin to offset padding on items */
+}
+
+/* For older browsers (if using margin for gap) */
+/* .swarify-footer-links li {
+    padding: 0 8px;
+} */
+
+
+.swarify-footer-links a {
+    color: #fff; /* White color for links */
+    text-decoration: none; /* Remove underline */
+    transition: color 0.3s ease; /* Smooth transition for hover effect */
+    font-weight: 500; /* Medium font weight for links */
+}
+
+.swarify-footer-links a:hover {
+    color: #1DB954; /* Spotify green on hover */
+}
+
+.swarify-footer-copyright {
+    color: #a0a0a0; /* Light gray for copyright text, similar to Tailwind's text-gray-400 */
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) { /* Similar to Tailwind's md breakpoint */
+    .swarify-footer-links {
+        gap: 24px; /* Increase space between links on larger screens, similar to md:space-x-6 */
+        /* For older browsers not supporting gap: */
+        /* margin: 0 -12px; */
+    }
+    /* For older browsers (if using margin for gap) */
+    /* .swarify-footer-links li {
+        padding: 0 12px;
+    } */
+}

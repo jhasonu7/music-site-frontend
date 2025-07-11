@@ -1,9 +1,18 @@
-// --- YouTube Iframe API Loader ---
-// This code loads the IFrame Player API asynchronously.
-const tag = document.createElement('script');
-tag.src = "https://www.youtube.com/iframe_api";
-const firstScriptTag = document.getElementsByTagName('script')[0];
-firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+// script.js - Frontend Logic for Music Website
+
+// --- Configuration ---
+// IMPORTANT: Replace this with your actual ngrok static domain
+const BACKEND_BASE_URL = 'https://dear-touching-mongoose.ngrok-free.app';
+
+// IMPORTANT: Replace this with your actual Netlify frontend domain for CORS setup on the backend
+// This is used for your backend's CORS configuration (e.g., in Flask-CORS or Express CORS options)
+const NETLIFY_FRONTEND_DOMAIN = 'https://your-netlify-frontend-domain.netlify.app'; // e.g., https://my-music-site.netlify.app
+
+// --- DOM Elements (assuming these exist in your HTML) ---
+const trendingSongsContainer = document.querySelector('.trending-songs-container'); // Adjust selector as needed
+const popularAlbumsContainer = document.querySelector('.popular-albums-container'); // Adjust selector as needed
+const popularArtistsContainer = document.querySelector('.popular-artists-container'); // Adjust selector as needed
+const errorMessageDisplay = document.getElementById('error-message-display'); // An element to show errors
 
 // --- Global Variables ---
 let currentAlbum = null; // Stores the currently loaded album data
@@ -793,13 +802,19 @@ function attachEventListenersToHtmlCards() {
 
 // --- Fetch Albums from Backend ---
 async function fetchAlbums() {
+    showMessageBox('Loading albums...', 'info'); // Changed to showMessageBox for consistency
     try {
-        // IMPORTANT: The frontend is running on http://10.239.241.228:5500.
-        // Assuming your backend is running on the same IP address but on port 5000.
-        // If your backend is on a different IP, please update this URL accordingly.
-        const response = await fetch('https://dear-touching-mongoose.ngrok-free.app');
+        const response = await fetch(`${BACKEND_BASE_URL}/api/albums`, { // Corrected endpoint to /api/albums
+            method: 'GET',
+            headers: {
+                'ngrok-skip-browser-warning': 'true', // Crucial for ngrok free plan
+                'Content-Type': 'application/json'
+            }
+        });
+
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorText = await response.text(); // Read error response as text
+            throw new Error(`HTTP error! status: ${response.status}. Details: ${errorText.substring(0, 200)}...`);
         }
         allAlbumsData = await response.json();
         console.log("Albums fetched from backend:", allAlbumsData);
@@ -813,7 +828,7 @@ async function fetchAlbums() {
                 existingErrorMessage.remove();
             }
         }
-
+        showMessageBox('Albums loaded successfully!', 'success'); // Success message
     } catch (error) {
         console.error("Error fetching albums:", error);
         const cardContainer = document.querySelector('.spotifyPlaylists .cardcontainer');
@@ -831,13 +846,14 @@ async function fetchAlbums() {
             `;
             errorMessageDiv.innerHTML = `
                 <p>Failed to load albums from backend. Please ensure your backend server is running and accessible at:</p>
-                <p style="font-weight: bold; color: #1ED760;">https://dear-touching-mongoose.ngrok-free.app</p>
-                <p>Check your server logs for more details.</p>
+                <p style="font-weight: bold; color: #1ED760;">${BACKEND_BASE_URL}</p>
+                <p>Check your server logs for more details. Error: ${error.message}</p>
             `;
             // Clear existing content and append the error message
             cardContainer.innerHTML = ''; // Clear any existing cards/content
             cardContainer.appendChild(errorMessageDiv);
         }
+        showMessageBox(`Failed to load albums: ${error.message}`, 'error'); // Error message
     }
 }
 
@@ -952,9 +968,16 @@ async function searchAndOpenAlbum(searchQuery) {
     try {
         // Always attempt backend search
         console.log(`Attempting backend search for query: "${searchQuery}"...`);
-        const response = await fetch(`https://6dfa294df64a.ngrok-free.app/api/albums?search=${encodeURIComponent(searchQuery)}`);
+        const response = await fetch(`${BACKEND_BASE_URL}/api/albums?search=${encodeURIComponent(searchQuery)}`, { // Corrected to use BACKEND_BASE_URL
+            method: 'GET',
+            headers: {
+                'ngrok-skip-browser-warning': 'true', // Crucial for ngrok free plan
+                'Content-Type': 'application/json'
+            }
+        });
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorText = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}. Details: ${errorText.substring(0, 200)}...`);
         }
         const searchResults = await response.json();
         console.log("Backend search results:", searchResults);
@@ -1617,9 +1640,9 @@ function toggleSidebar() {
     }
 }
 
-
 /*login-sign functionality */
-const BACKEND_URL = 'https://dear-touching-mongoose.ngrok-free.app'; // IMPORTANT: Match your backend's PORT
+// The BACKEND_URL constant is already defined at the very top of the script as BACKEND_BASE_URL.
+// Using BACKEND_BASE_URL for consistency.
 
 // --- Custom Message Box (instead of alert/confirm) ---
 // Moved showMessageBox to the top so it's always defined before use
@@ -1696,7 +1719,7 @@ const startEmailOtpTimer = (duration) => {
         seconds = parseInt(timer % 60, 10);
 
         minutes = minutes < 10 ? "0" + minutes : minutes;
-        seconds = seconds < 10 ? "0" + seconds : seconds; // Fix for negative seconds
+        seconds = seconds < 10 ? "0" : "" + seconds; // Corrected for seconds < 0
 
         if (emailOtpTimerDisplay) emailOtpTimerDisplay.textContent = `OTP valid for: ${minutes}:${seconds}`;
 
@@ -1732,7 +1755,7 @@ const startPhoneOtpTimer = (duration) => {
         seconds = parseInt(timer % 60, 10);
 
         minutes = minutes < 10 ? "0" + minutes : minutes;
-        seconds = seconds < 0 ? "0" : "" + seconds; // Fix for negative seconds
+        seconds = seconds < 10 ? "0" : "" + seconds; // Corrected for seconds < 0
 
         if (phoneOtpTimerDisplay) phoneOtpTimerDisplay.textContent = `OTP valid for: ${minutes}:${seconds}`;
 
@@ -1797,10 +1820,11 @@ async function registerUser(email, password, phoneNumber = null, button) {
     button.textContent = 'Registering...';
 
     try {
-        const response = await fetch(`${BACKEND_URL}/api/auth/register`, {
+        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/register`, { // Use BACKEND_BASE_URL
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true' // Crucial for ngrok free plan
             },
             body: JSON.stringify({ email, password, phoneNumber })
         });
@@ -1849,10 +1873,11 @@ async function loginUser(identifier, password, button) {
     button.textContent = 'Logging in...';
 
     try {
-        const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/login`, { // Use BACKEND_BASE_URL
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true' // Crucial for ngrok free plan
             },
             body: JSON.stringify({ identifier, password })
         });
@@ -1910,10 +1935,11 @@ async function getUserCount(button) {
     button.textContent = 'Fetching...';
 
     try {
-        const response = await fetch(`${BACKEND_URL}/api/admin/users/count`, {
+        const response = await fetch(`${BACKEND_BASE_URL}/api/admin/users/count`, { // Use BACKEND_BASE_URL
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${token}` // Send the JWT token
+                'Authorization': `Bearer ${token}`, // Send the JWT token
+                'ngrok-skip-browser-warning': 'true' // Crucial for ngrok free plan
             }
         });
 
@@ -1948,10 +1974,11 @@ window.handleGoogleSignIn = async (response) => {
     showMessageBox('Attempting Google login...', 'info');
 
     try {
-        const backendResponse = await fetch(`${BACKEND_URL}/api/auth/google`, {
+        const backendResponse = await fetch(`${BACKEND_BASE_URL}/api/auth/google`, { // Use BACKEND_BASE_URL
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true' // Crucial for ngrok free plan
             },
             body: JSON.stringify({ token: id_token })
         });
@@ -2006,10 +2033,11 @@ async function verifyEmailOtp(email, otpCode, button) {
     button.textContent = 'Verifying...';
 
     try {
-        const response = await fetch(`${BACKEND_URL}/api/auth/verify-email-otp`, {
+        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/verify-email-otp`, { // Use BACKEND_BASE_URL
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true' // Crucial for ngrok free plan
             },
             body: JSON.stringify({ email, otpCode })
         });
@@ -2025,6 +2053,7 @@ async function verifyEmailOtp(email, otpCode, button) {
             console.log('User logged in via Email OTP. Token stored:', data.token);
             updateLoginUI(); // Update UI after login
 
+            // Check if password needs to be set (for Google registrations without password)
             if (data.setPasswordRequired) {
                 localStorage.setItem('userEmailForPasswordSet', email);
                 showCreatePasswordScreen(); // Show the new screen to set password
@@ -2056,11 +2085,12 @@ async function setPasswordForUser(email, newPassword, button) {
     button.textContent = 'Setting Password...';
 
     try {
-        const response = await fetch(`${BACKEND_URL}/api/auth/set-password`, { // NEW BACKEND ENDPOINT
+        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/set-password`, { // Use BACKEND_BASE_URL
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('userToken')}` // Send the current token
+                'Authorization': `Bearer ${localStorage.getItem('userToken')}`, // Send the current token
+                'ngrok-skip-browser-warning': 'true' // Crucial for ngrok free plan
             },
             body: JSON.stringify({ email, newPassword })
         });
@@ -2095,10 +2125,11 @@ async function sendPhoneOtp(phoneNumber, button) {
     button.textContent = 'Sending OTP...';
 
     try {
-        const response = await fetch(`${BACKEND_URL}/api/auth/send-otp`, {
+        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/send-otp`, { // Use BACKEND_BASE_URL
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true' // Crucial for ngrok free plan
             },
             body: JSON.stringify({ phoneNumber })
         });
@@ -2136,10 +2167,11 @@ async function verifyPhoneOtp(phoneNumber, otpCode, button) {
     button.textContent = 'Verifying...';
 
     try {
-        const response = await fetch(`${BACKEND_URL}/api/auth/verify-otp`, {
+        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/verify-otp`, { // Use BACKEND_BASE_URL
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true' // Crucial for ngrok free plan
             },
             body: JSON.stringify({ phoneNumber, otpCode })
         });
@@ -2328,12 +2360,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // If coming from 'goBack' or initial load, ensure it slides in correctly
         if (!pushToHistory && currentActiveScreenId) { // If going back, or initial load, it comes from right
-             screenToShow.classList.add('slide-in-right'); // Add slide-in-right class
-             // Force reflow to ensure transform is applied before removing
-             void screenToShow.offsetWidth;
-             screenToShow.classList.remove('slide-in-right'); // Remove to trigger transition to 0
+            screenToShow.classList.add('slide-in-right'); // Add slide-in-right class
+            // Force reflow to ensure transform is applied before removing
+            void screenToShow.offsetWidth;
+            screenToShow.classList.remove('slide-in-right'); // Remove to trigger transition to 0
         } else {
-             screenToShow.style.transform = 'translateX(0)'; // Ensure it's at 0 for non-back transitions
+            screenToShow.style.transform = 'translateX(0)'; // Ensure it's at 0 for non-back transitions
         }
 
 
@@ -2746,9 +2778,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
                 try {
                     // This assumes you have a backend endpoint specifically for resending email OTP
-                    const response = await fetch(`${BACKEND_URL}/api/auth/resend-email-otp`, {
+                    const response = await fetch(`${BACKEND_BASE_URL}/api/auth/resend-email-otp`, { // Use BACKEND_BASE_URL
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'ngrok-skip-browser-warning': 'true' // Crucial for ngrok free plan
+                        },
                         body: JSON.stringify({ email })
                     });
                     const data = await response.json();
@@ -2802,6 +2837,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    // --- Sidebar and Overlay Event Listeners ---
+    if (hamburger) {
+        hamburger.addEventListener('click', toggleSidebar);
+    }
+    if (closeBtn) {
+        closeBtn.addEventListener('click', toggleSidebar);
+    }
+    if (overlay) {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay && sidebar && sidebar.classList.contains('open')) {
+                toggleSidebar(); // Close sidebar if overlay itself is clicked
+            }
+        });
+    }
+
+    // Close album overlay button listener
+    if (closeOverlayBtn) {
+        closeOverlayBtn.addEventListener('click', closeAlbumOverlay);
+    }
+
     // --- Initial Setup on DOM Content Loaded (moved from above) ---
     // Handle Spotify callback on page load (checks URL for access token)
     handleSpotifyCallback();
@@ -2823,34 +2878,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (volumeBar) {
         audio.volume = volumeBar.value;
     }
-    togglePlayerControls(true);
-
-    // Event listeners for hamburger and close button (using the new toggleSidebar function)
-    if (hamburger) {
-        hamburger.addEventListener('click', toggleSidebar);
-    }
-
-    if (closeBtn) {
-        closeBtn.addEventListener('click', toggleSidebar);
-    }
-
-    // Event listener for clicking the overlay to close the sidebar
-    if (overlay) {
-        overlay.addEventListener('click', () => {
-            // Only close sidebar if it's open
-            if (sidebar && sidebar.classList.contains('open')) {
-                toggleSidebar();
-            }
-        });
-    }
-
-    // Attach event listener for the main album overlay close button
-    if (closeOverlayBtn) {
-        closeOverlayBtn.addEventListener('click', closeAlbumOverlay);
-    }
+    togglePlayerControls(true); // Ensure controls are enabled initially
 
     // Initial state: player bar should always be visible
     if (playerBar) {
         playerBar.style.display = 'flex'; // Ensure player bar is visible on load
     }
 });
+
+// --- YouTube Iframe API Loader ---
+// This code loads the IFrame Player API asynchronously.
+// This block should ideally be at the very top of the script or loaded via HTML <script> tag.
+// Moved to the top for better loading order.
+// const tag = document.createElement('script');
+// tag.src = "https://www.youtube.com/iframe_api";
+// const firstScriptTag = document.getElementsByTagName('script')[0];
+// firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+// This function is called by the YouTube Iframe API when it's ready
+// function onYouTubeIframeAPIReady() {
+//     console.log("YouTube Iframe API is ready.");
+// }

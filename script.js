@@ -2,11 +2,11 @@
 
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual ngrok static domain
-const BACKEND_BASE_URL = 'https://c9c3972da7b8.ngrok-free.app';
+const BACKEND_BASE_URL = 'https://16ffb17cf275.ngrok-free.app';
 
 // IMPORTANT: Replace this with your actual Netlify frontend domain for CORS setup on the backend
 // This is used for your backend's CORS configuration (e.g., in Flask-CORS or Express CORS options)
-const NETLIFY_FRONTEND_DOMAIN = 'https://your-netlify-frontend-domain.netlify.app'; // e.g., https://my-music-site.netlify.app
+const NETLIFY_FRONTEND_DOMAIN = 'https://swarify-play.netlify.app'; // e.g., https://my-music-site.netlify.app
 
 // --- DOM Elements (assuming these exist in your HTML) ---
 const trendingSongsContainer = document.querySelector('.trending-songs-container'); // Adjust selector as needed

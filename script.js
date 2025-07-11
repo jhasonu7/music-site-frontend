@@ -2,7 +2,7 @@
 
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual ngrok static domain
-const BACKEND_BASE_URL = 'https://16ffb17cf275.ngrok-free.app';
+const BACKEND_BASE_URL = 'https://64ddb76ab48c.ngrok-free.app';
 
 // IMPORTANT: Replace this with your actual Netlify frontend domain for CORS setup on the backend
 // This is used for your backend's CORS configuration (e.g., in Flask-CORS or Express CORS options)

@@ -797,7 +797,7 @@ async function fetchAlbums() {
         // IMPORTANT: The frontend is running on http://10.239.241.228:5500.
         // Assuming your backend is running on the same IP address but on port 5000.
         // If your backend is on a different IP, please update this URL accordingly.
-        const response = await fetch('https://240453584c92.ngrok-free.app/api/albums');
+        const response = await fetch('https://6dfa294df64a.ngrok-free.app/api/albums');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -831,7 +831,7 @@ async function fetchAlbums() {
             `;
             errorMessageDiv.innerHTML = `
                 <p>Failed to load albums from backend. Please ensure your backend server is running and accessible at:</p>
-                <p style="font-weight: bold; color: #1ED760;">https://240453584c92.ngrok-free.app</p>
+                <p style="font-weight: bold; color: #1ED760;">https://6dfa294df64a.ngrok-free.app</p>
                 <p>Check your server logs for more details.</p>
             `;
             // Clear existing content and append the error message
@@ -952,7 +952,7 @@ async function searchAndOpenAlbum(searchQuery) {
     try {
         // Always attempt backend search
         console.log(`Attempting backend search for query: "${searchQuery}"...`);
-        const response = await fetch(`https://240453584c92.ngrok-free.app/api/albums?search=${encodeURIComponent(searchQuery)}`);
+        const response = await fetch(`https://6dfa294df64a.ngrok-free.app/api/albums?search=${encodeURIComponent(searchQuery)}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -1619,7 +1619,7 @@ function toggleSidebar() {
 
 
 /*login-sign functionality */
-const BACKEND_URL = 'https://240453584c92.ngrok-free.app'; // IMPORTANT: Match your backend's PORT
+const BACKEND_URL = 'https://6dfa294df64a.ngrok-free.app'; // IMPORTANT: Match your backend's PORT
 
 // --- Custom Message Box (instead of alert/confirm) ---
 // Moved showMessageBox to the top so it's always defined before use

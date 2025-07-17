@@ -1630,6 +1630,15 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
     albumDetailsContent = document.getElementById('albumDetails');
     if (!albumDetailsContent) { console.error("Error: albumDetails element (main content) not found."); return; }
     if (!closeOverlayBtn) { console.error("Error: closeOverlayBtn element not found."); return; }
+    if (!albumHeader) { console.error("Error: albumHeader element not found."); return; } // Added check
+    if (!albumDetailsCover) { console.error("Error: albumDetailsCover element not found."); return; } // Added check
+    if (!albumDetailsTitle) { console.error("Error: albumDetailsTitle element not found."); return; } // Added check
+    if (!albumDetailsArtist) { console.error("Error: albumDetailsArtist element not found."); return; } // Added check
+    if (!albumDetailsMeta) { console.error("Error: albumDetailsMeta element not found."); return; } // Added check
+    if (!albumTracksSection) { console.error("Error: albumTracksSection element not found."); return; } // Added check
+    if (!albumPlayButton) { console.error("Error: albumPlayButton element not found."); return; } // Added check
+    if (!albumDetailsTracksBody) { console.error("Error: albumDetailsTracksBody element not found."); return; } // Added check
+
 
     // IMPORTANT CHANGE:
     // Only clear albumFullEmbedContainer if we are about to load a *new* embedded album into it.
@@ -1855,9 +1864,17 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
         if (albumDetailsContent) {
             albumDetailsContent.style.display = 'block';
             // Apply styling to the main album details content area
-            albumDetailsContent.style.padding = '20px'; // Add overall padding
-            albumDetailsContent.style.maxWidth = '100%'; // Ensure it takes full width
             albumDetailsContent.style.boxSizing = 'border-box'; // Include padding in width
+            albumDetailsContent.style.maxWidth = '100%'; // Ensure it takes full width
+
+            // Responsive padding for albumDetailsContent
+            if (window.innerWidth < 386) { // New breakpoint for very small screens
+                albumDetailsContent.style.padding = '5px'; // Even more reduced padding
+            } else if (window.innerWidth < 768) {
+                albumDetailsContent.style.padding = '10px'; // Reduced padding for mobile
+            } else {
+                albumDetailsContent.style.padding = '20px'; // Default padding for larger screens
+            }
             console.log("albumDetailsContent set to display: block and styled.");
         }
 
@@ -1865,11 +1882,12 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
             albumHeader.style.display = 'flex';
             albumHeader.style.alignItems = 'flex-end'; // Align items to the bottom
             albumHeader.style.gap = '20px'; // Gap between cover and text
-            albumHeader.style.marginBottom = '30px'; // Space below header
-            albumHeader.style.padding = '20px'; // Padding inside the header
             albumHeader.style.backgroundColor = 'rgba(0, 0, 0, 0.3)'; // Slightly darker background for header
             albumHeader.style.borderRadius = '8px'; // Rounded corners for the header
             albumHeader.style.flexWrap = 'wrap'; // Allow wrapping on smaller screens
+            
+            // Reduced margin-bottom to decrease space between header and tracks
+            albumHeader.style.marginBottom = '15px'; 
             console.log("albumHeader styled.");
 
             // Responsive adjustments for albumHeader and albumDetailsCover
@@ -1937,7 +1955,14 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
 
         if (albumTracksSection) {
             albumTracksSection.style.display = 'block';
-            albumTracksSection.style.padding = '0 20px 20px'; // Padding for the tracks section
+            // Responsive padding for the tracks section
+            if (window.innerWidth < 386) { // New breakpoint for very small screens
+                albumTracksSection.style.padding = '0 5px 20px'; // Even more reduced horizontal padding
+            } else if (window.innerWidth < 768) {
+                albumTracksSection.style.padding = '0 10px 20px'; // Reduced horizontal padding
+            } else {
+                albumTracksSection.style.padding = '0 20px 20px'; // Default padding
+            }
             console.log("albumTracksSection styled.");
         }
         if (albumPlayButton) {
@@ -1985,12 +2010,28 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
                 th.style.textTransform = 'uppercase';
                 th.style.fontSize = '0.8em';
             });
+
             // Adjust specific column widths for responsiveness
             if (tableHeaders.length >= 4) {
-                tableHeaders[0].style.width = '5%'; // Number column
-                tableHeaders[1].style.width = '45%'; // Title column
-                tableHeaders[2].style.width = '35%'; // Artist column
-                tableHeaders[3].style.width = '15%'; // Duration column
+                if (window.innerWidth < 386) {
+                    // Very small mobile specific column widths
+                    tableHeaders[0].style.width = '6%'; // Number column
+                    tableHeaders[1].style.width = '44%'; // Title column
+                    tableHeaders[2].style.width = '28%'; // Artist column
+                    tableHeaders[3].style.width = '22%'; // Duration column (ensures visibility)
+                } else if (window.innerWidth < 768) {
+                    // Mobile specific column widths
+                    tableHeaders[0].style.width = '8%'; // Number column (slightly larger to ensure visibility)
+                    tableHeaders[1].style.width = '42%'; // Title column
+                    tableHeaders[2].style.width = '30%'; // Artist column (reduced)
+                    tableHeaders[3].style.width = '20%'; // Duration column (increased for full visibility)
+                } else {
+                    // Larger screen column widths
+                    tableHeaders[0].style.width = '5%'; // Number column
+                    tableHeaders[1].style.width = '45%'; // Title column
+                    tableHeaders[2].style.width = '35%'; // Artist column
+                    tableHeaders[3].style.width = '15%'; // Duration column
+                }
             }
             console.log("Table headers styled and column widths adjusted.");
         }
@@ -2140,48 +2181,6 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
                 closeOverlayBtn.style.zIndex = '1000';
                 console.log("closeOverlayBtn styled and displayed.");
             }
-        } else {
-            console.log("Detected album with no tracks and no embed.");
-            // Ensure albumFullEmbedContainer is hidden for albums with no tracks/no embed
-            if (albumFullEmbedContainer) {
-                albumFullEmbedContainer.style.display = 'none';
-                // Its content was already cleared at the beginning of openAlbumDetails
-                console.log("albumFullEmbedContainer explicitly hidden and cleared for no tracks/no embed album.");
-            }
-
-            if (albumDetailsContent) {
-                albumDetailsContent.style.display = 'block';
-                console.log("albumDetailsContent set to display: block for no tracks/no embed album.");
-            }
-
-            if (albumHeader) albumHeader.style.display = 'flex';
-            if (albumTracksSection) albumTracksSection.style.display = 'block';
-            if (albumPlayButton) {
-                albumPlayButton.style.display = 'inline-flex'; // Changed to inline-flex for centering icon
-                albumPlayButton.style.justifyContent = 'center'; // Center horizontally
-                albumPlayButton.style.alignItems = 'center'; // Center vertically
-            }
-            if (albumDetailsTracksBody) {
-                albumDetailsTracksBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #aaa; padding: 20px;">No individual tracks listed for this album.</td></tr>`;
-                console.log("albumDetailsTracksBody set to 'No tracks' message.");
-            }
-            if (closeOverlayBtn) {
-                closeOverlayBtn.style.display = 'flex';
-                closeOverlayBtn.style.position = 'absolute';
-                closeOverlayBtn.style.top = '15px';
-                closeOverlayBtn.style.right = '16px';
-                closeOverlayBtn.style.backgroundColor = 'rgb(26, 2, 2)';
-                closeOverlayBtn.style.color = 'white';
-                closeOverlayBtn.style.border = 'none';
-                closeOverlayBtn.style.borderRadius = '50%';
-                closeOverlayBtn.style.width = '34px';
-                closeOverlayBtn.style.height = '34px';
-                closeOverlayBtn.style.justifyContent = 'center';
-                closeOverlayBtn.style.alignItems = 'center';
-                closeOverlayBtn.style.cursor = 'pointer';
-                closeOverlayBtn.style.zIndex = '1000';
-                console.log("closeOverlayBtn styled and displayed.");
-            }
         }
         // Always update the album play button icon when opening a non-embedded album
         updateAlbumPlayButtonIcon();
@@ -2215,6 +2214,7 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
         console.error("Error: One or more critical elements for albumOverlay visibility are missing. Overlay will not show.", { albumOverlay, topBar, rightPanel, playerBar });
     }
 }
+
 
 /**
  * Function to handle the click on the main album play button within the overlay.

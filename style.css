@@ -1306,6 +1306,7 @@ body.popup-active .player-bar {
     /* Player bar for mobile */
     .player-bar {
         height: var(--player-bar-height-mobile);
+    
         left: 0; /* Full width on mobile */
         width: 100%; /* Full width on mobile */
         padding: 0 10px; /* Reduced padding for mobile */
@@ -1345,10 +1346,12 @@ body.popup-active .player-bar {
     .player-center {
         width: 100%; /* Take full width */
         order: 3; /* Place below left and right sections */
-        margin-top: 5px;
+        margin-top: -6px;
     }
 
     .controls {
+        position: relative;
+        top:-17px;
         gap: 10px;
     }
 
@@ -1364,8 +1367,8 @@ body.popup-active .player-bar {
     .progress {
         position: relative;
         width: 90%; /* Adjust width for progress bar */
-        margin-top: 5px;
-        left:-20px;
+        margin-top: -12px;
+        left:-60px;
     }
 
     .time {
@@ -1375,7 +1378,7 @@ body.popup-active .player-bar {
     .player-right {
         width: 100%; /* Take full width */
         justify-content: center; /* Center items */
-        margin-top: 5px;
+        margin-top: -36px;
     }
 
     .player-right input[type="range"] {
@@ -2328,6 +2331,8 @@ header, main {
         font-size: 11px; /* Increased font size */
         margin-top: 5px; /* Further reduced margin */
     }
+
+    
 }
 
 /* For even smaller mobile devices (e.g., iPhone SE) */
@@ -2558,7 +2563,7 @@ header, main {
     height: 36px;
     border-radius: 50%;
     background-color: #1ED760; /* Spotify green, or a dark color */
-    color: white;
+    color: rgb(11, 1, 1);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2812,3 +2817,4 @@ header, main {
         padding: 0 12px;
     } */
 }
+

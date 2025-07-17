@@ -1955,14 +1955,16 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
 
         if (albumTracksSection) {
             albumTracksSection.style.display = 'block';
-            // Responsive padding for the tracks section
-            if (window.innerWidth < 386) { // New breakpoint for very small screens
-                albumTracksSection.style.padding = '0 5px 20px'; // Even more reduced horizontal padding
-            } else if (window.innerWidth < 768) {
-                albumTracksSection.style.padding = '0 10px 20px'; // Reduced horizontal padding
+            // Always apply bottom padding for smaller screens to lift tracks above player bar
+            if (window.innerWidth < 450) {
+                albumTracksSection.style.paddingBottom = '80px';
             } else {
-                albumTracksSection.style.padding = '0 20px 20px'; // Default padding
+                albumTracksSection.style.paddingBottom = '20px'; // Default bottom padding
             }
+
+            // Horizontal padding for albumTracksSection - removed and relying on albumDetailsContent
+            albumTracksSection.style.paddingLeft = '0';
+            albumTracksSection.style.paddingRight = '0';
             console.log("albumTracksSection styled.");
         }
         if (albumPlayButton) {
@@ -2013,24 +2015,23 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
 
             // Adjust specific column widths for responsiveness
             if (tableHeaders.length >= 4) {
-                if (window.innerWidth < 386) {
-                    // Very small mobile specific column widths
-                    tableHeaders[0].style.width = '6%'; // Number column
-                    tableHeaders[1].style.width = '44%'; // Title column
+                if (window.innerWidth < 400) { // New breakpoint for very small screens
+                    tableHeaders[0].style.width = '8%'; // Number column (increased for icon visibility)
+                    tableHeaders[1].style.width = '42%'; // Title column (adjusted)
                     tableHeaders[2].style.width = '28%'; // Artist column
-                    tableHeaders[3].style.width = '22%'; // Duration column (ensures visibility)
+                    tableHeaders[3].style.width = '22%'; // Duration column
                 } else if (window.innerWidth < 768) {
-                    // Mobile specific column widths
-                    tableHeaders[0].style.width = '8%'; // Number column (slightly larger to ensure visibility)
-                    tableHeaders[1].style.width = '42%'; // Title column
-                    tableHeaders[2].style.width = '30%'; // Artist column (reduced)
-                    tableHeaders[3].style.width = '20%'; // Duration column (increased for full visibility)
+                    // Mobile specific column widths (between 400px and 768px)
+                    tableHeaders[0].style.width = '10%'; // Number column (increased for icon visibility)
+                    tableHeaders[1].style.width = '40%'; // Title column (adjusted)
+                    tableHeaders[2].style.width = '30%'; // Artist column
+                    tableHeaders[3].style.width = '20%'; // Duration column
                 } else {
                     // Larger screen column widths
-                    tableHeaders[0].style.width = '5%'; // Number column
-                    tableHeaders[1].style.width = '45%'; // Title column
-                    tableHeaders[2].style.width = '35%'; // Artist column
-                    tableHeaders[3].style.width = '15%'; // Duration column
+                    tableHeaders[0].style.width = '5%';
+                    tableHeaders[1].style.width = '45%';
+                    tableHeaders[2].style.width = '35%';
+                    tableHeaders[3].style.width = '15%';
                 }
             }
             console.log("Table headers styled and column widths adjusted.");
@@ -2112,7 +2113,7 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
                             isPlaying = !audio.paused;
                         } else if (ytPlayer && clickedTrack.iframeSrc && clickedTrack.iframeSrc.includes('https://www.youtube.com/embed/')) {
                             const videoIdMatch = clickedTrack.iframeSrc.match(/\/embed\/([a-zA-Z0-9_-]+)/);
-                            const videoId = videoIdMatch ? videoIdMatch[1] : null;
+                            const videoId = videoIdMatch ? videoId[1] : null;
                             if (videoId && ytPlayer.getVideoData() && ytPlayer.getVideoData().video_id === videoId) {
                                 isPlaying = ytPlayer.getPlayerState() === YT.PlayerState.PLAYING;
                             }

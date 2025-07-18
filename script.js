@@ -1,7 +1,7 @@
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual ngrok static domain if you are using ngrok for your backend.
 // If your backend is hosted directly (e.g., on Render, Heroku), use that URL.
-const BACKEND_BASE_URL = 'https://16c53fd8b48f.ngrok-free.app'; // Example: 'https://your-ngrok-subdomain.ngrok-free.app' or 'https://your-backend-api.com'
+const BACKEND_BASE_URL = 'https://ff619e1f0436.ngrok-free.app'; // Example: 'https://your-ngrok-subdomain.ngrok-free.app' or 'https://your-backend-api.com'
 
 // IMPORTANT: Replace this with your actual Netlify frontend domain for CORS setup on the backend.
 // This is crucial for your backend's CORS configuration (e.g., in Flask-CORS or Express CORS options)
@@ -1590,11 +1590,6 @@ function updateMiniPlayerForEmbed(albumData) {
 }
 
 
-/**
- * Opens the album details overlay, populating it with album and track information.
- * It can also highlight a specific track if a search query resulted in a track match.
- * Playback is NOT stopped by this function directly. It prepares the UI for the album.
- */
 function openAlbumDetails(albumData, highlightTrackTitle = null) {
     console.log("openAlbumDetails called with albumData:", albumData);
 
@@ -1933,6 +1928,7 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
             albumDetailsCover.style.borderRadius = '8px'; // Rounded corners for cover
             albumDetailsCover.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.5)'; // Add shadow
             albumDetailsCover.style.objectFit = 'cover'; // Ensure image covers the area
+            albumDetailsCover.style.display = 'block'; // Ensure it's visible by default
             console.log("albumDetailsCover styled.");
         }
         // Adjust text elements within album header for better spacing
@@ -2124,7 +2120,7 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
                                     isPlaying = !state.paused;
                                 }
                             } catch (e) {
-                                console.warn("Error getting Spotify state for toggle:", e);
+                                console.warn("Error checking Spotify state for toggle:", e);
                             }
                         }
 
@@ -2215,6 +2211,7 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
         console.error("Error: One or more critical elements for albumOverlay visibility are missing. Overlay will not show.", { albumOverlay, topBar, rightPanel, playerBar });
     }
 }
+
 
 
 /**
@@ -2957,34 +2954,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // Message box for general messages (e.g., loading, errors)
-        const messageBox = document.createElement('div');
-        messageBox.id = 'global-message-box';
-        messageBox.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            left: 57%;
-            transform: translateX(-50%);
-            background-color: #333;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            z-index: 1000;
-            opacity: 0;
-            transition: opacity 0.5s ease-in-out;
-            pointer-events: none;
-        `;
-        document.body.appendChild(messageBox);
-
-        window.showMessageBox = (message, type = 'info', duration = 3000) => {
-            messageBox.textContent = message;
-            messageBox.style.backgroundColor = type === 'error' ? '#dc3545' : (type === 'success' ? '#28a745' : '#333');
-            messageBox.style.opacity = '1';
-
-            setTimeout(() => {
-                messageBox.style.opacity = '0';
-            }, duration);
-        };
-        console.log("DOMContentLoaded: Global message box initialized.");
+        // This part is moved to the top and modified to use the new fixed position.
+        // The original logic here is no longer needed.
 
     } catch (error) {
         console.error("DOMContentLoaded: An error occurred during initial setup:", error);
@@ -3057,47 +3028,95 @@ function updateLoginUI(isLoggedIn) {
 
 // --- Custom Message Box (instead of alert/confirm) ---
 // Moved showMessageBox to the top so it's always defined before use
-function showMessageBox(message, type = 'info') {
-    const messageBox = document.getElementById('custom-message-box');
-    const messageText = document.getElementById('custom-message-text');
-    const messageCloseButton = document.getElementById('custom-message-close-button');
+function showMessageBox(message, type = 'info', duration = 3000) {
+    let messageBox = document.getElementById('custom-message-box');
+    let messageText = document.getElementById('custom-message-text');
+    let messageCloseButton = document.getElementById('custom-message-close-button');
 
-    if (!messageBox || !messageText || !messageCloseButton) { // Ensure all elements are found
-        console.error('Custom message box elements not found! Falling back to console.log.');
-        console.log(`Message (${type}): ${message}`); // Log to console as fallback
-        return;
+    // Create message box elements if they don't exist
+    if (!messageBox) {
+        messageBox = document.createElement('div');
+        messageBox.id = 'custom-message-box';
+        messageBox.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            z-index: 99999999; /* Very high z-index to appear on top */
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            pointer-events: none; /* Allow clicks to pass through when hidden */
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 250px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        `;
+        document.body.appendChild(messageBox);
+
+        messageText = document.createElement('span');
+        messageText.id = 'custom-message-text';
+        messageBox.appendChild(messageText);
+
+        messageCloseButton = document.createElement('button');
+        messageCloseButton.id = 'custom-message-close-button';
+        messageCloseButton.innerHTML = '&times;'; // Close icon
+        messageCloseButton.style.cssText = `
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 0 5px;
+            line-height: 1;
+            margin-left: auto; /* Push to the right */
+        `;
+        messageBox.appendChild(messageCloseButton);
+
+        // Add event listener for the close button
+        messageCloseButton.addEventListener('click', () => {
+            messageBox.style.opacity = '0';
+            messageBox.style.transform = 'translateX(-50%) translateY(10px)'; // Slide down slightly on close
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+                messageBox.style.pointerEvents = 'none';
+            }, 500); // Match transition duration
+        });
     }
 
     messageText.textContent = message;
-    messageBox.classList.remove('info', 'error', 'success', 'bg-green-600', 'bg-red-600', 'bg-blue-600'); // Clear previous types and Tailwind colors
+    messageBox.style.backgroundColor = ''; // Reset background
+    messageBox.style.color = 'white'; // Default text color
 
-    // Add Tailwind classes based on type
+    // Apply colors based on type
     if (type === 'success') {
-        messageBox.classList.add('bg-green-600');
+        messageBox.style.backgroundColor = '#28a745'; // Green
     } else if (type === 'error') {
-        messageBox.classList.add('bg-red-600');
+        messageBox.style.backgroundColor = '#dc3545'; // Red
     } else { // 'info' or default
-        messageBox.classList.add('bg-blue-600');
+        messageBox.style.backgroundColor = '#007bff'; // Blue
     }
 
-    messageBox.classList.add('active'); // Show the message box
-    messageBox.classList.remove('invisible', 'opacity-0'); // Make visible
+    // Show the message box with animation
+    messageBox.style.display = 'flex'; // Ensure it's visible
+    messageBox.style.pointerEvents = 'auto'; // Enable interaction
+    messageBox.style.transform = 'translateX(-50%) translateY(0)'; // Slide up to final position
+    messageBox.style.opacity = '1';
 
-    // Close button listener (ensure it's only added once)
-    // Using a flag to prevent multiple listeners
-    if (!messageCloseButton.hasAttribute('data-listener-added')) {
-        messageCloseButton.addEventListener('click', () => {
-            messageBox.classList.remove('active');
-            messageBox.classList.add('invisible', 'opacity-0'); // Hide
-        });
-        messageCloseButton.setAttribute('data-listener-added', 'true');
-    }
-
-    // Automatically hide after 5 seconds
+    // Automatically hide after `duration` milliseconds
     setTimeout(() => {
-        messageBox.classList.remove('active');
-        messageBox.classList.add('invisible', 'opacity-0'); // Hide
-    }, 5000);
+        messageBox.style.opacity = '0';
+        messageBox.style.transform = 'translateX(-50%) translateY(10px)'; // Slide down slightly on auto-hide
+        setTimeout(() => {
+            messageBox.style.display = 'none';
+            messageBox.style.pointerEvents = 'none';
+        }, 500); // Match transition duration
+    }, duration);
 }
 
 
@@ -4322,4 +4341,3 @@ if (userAvatarContainer && userDropdown) {
         playerBar.style.display = 'flex'; // Ensure player bar is visible on load
     }
 });
-

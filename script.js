@@ -1,7 +1,7 @@
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual ngrok static domain if you are using ngrok for your backend.
 // If your backend is hosted directly (e.g., on Render, Heroku), use that URL.
-const BACKEND_BASE_URL = 'https://da9626359c5a.ngrok-free.app'; // Example: 'https://your-ngrok-subdomain.ngrok-free.app' or 'https://your-backend-api.com'
+const BACKEND_BASE_URL = 'http://127.0.0.1:5000'; // Example: 'https://your-ngrok-subdomain.ngrok-free.app' or 'https://your-backend-api.com'
 
 // IMPORTANT: Replace this with your actual Netlify frontend domain for CORS setup on the backend.
 // This is crucial for your backend's CORS configuration (e.g., in Flask-CORS or Express CORS options)
@@ -256,7 +256,6 @@ function toggleEmbeddedPlayerVideoOverlay(show) {
         // Disable player controls when video overlay is active
         togglePlayerControls(false);
         // Add yellow border to the playerBar
-
         playerBar.style.boxSizing = 'border-box'; // Ensure border doesn't add to layout size
     } else {
         embeddedVideoOverlayContainer.style.display = 'none';
@@ -1151,7 +1150,7 @@ function handleCardClick(event) {
         console.log(`handleCardClick: Found album in allAlbumsData: ${albumToOpen.title} by ${albumToOpen.artist}`);
         openAlbumDetails(albumToOpen);
     } else {
-        console.warn(`handleCardClick: Album data not found in backend for HTML card: "${cardTitle}" by "${cardArtist}". Data might not be loaded or ID incorrect.`);
+        console.warn(`handleCardClick: Album data not found in backend for HTML card: "${cardTitle}" by "${cardArtist}". Data might not be loaded or ID incorrect. allAlbumsData length: ${allAlbumsData.length}`);
         showMessageBox('Album details not found for this card. Data might not be loaded or ID incorrect.', 'error');
     }
 }
@@ -1200,7 +1199,7 @@ function handlePlayButtonClick(event) {
             console.log("Non-embedded album play button clicked. Autoplay prevented. Click a track to start playing!", 'info');
         }
     } else {
-        console.warn(`handlePlayButtonClick: Album with ID ${albumId} not found when trying to play.`);
+        console.warn(`handlePlayButtonClick: Album with ID ${albumId} not found when trying to play. allAlbumsData length: ${allAlbumsData.length}`);
         showMessageBox('Could not find album to play. Data might not be loaded or ID incorrect.', 'error');
     }
 }
@@ -1252,7 +1251,7 @@ async function fetchAlbums() {
                 tracks: processedTracks // Use the processed tracks array
             };
         });
-        console.log("fetchAlbums: Albums data transformed and stored:", allAlbumsData); // Log all fetched data
+        console.log("fetchAlbums: Albums data transformed and stored. Total albums:", allAlbumsData.length); // Log all fetched data
 
         // Remove any previous error message if fetch was successful
         const existingErrorMessage = document.querySelector('.backend-error-message');
@@ -2845,7 +2844,7 @@ if (dropdownLogoutBtn) {
 // --- Initial Setup on DOM Content Loaded ---
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("DOM Content Loaded: Script execution started.");
-    playerBar.style.display = 'none'; // Hide player bar initially
+    // REMOVED: playerBar.style.display = 'none'; // Hide player bar initially - now visible by default
 
     // Add padding to the player-left container for better spacing of the album cover/mini-player
     if (playerLeft) {
@@ -2863,30 +2862,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log("DOMContentLoaded: playerImg styling applied.");
     }
 
+    showMessageBox('Initializing app...', 'info', 5000); // Initial loading message
+
     try {
         // Attempt to handle Spotify callback on page load
-        await handleSpotifyCallback(); // Await this to ensure token and username are set
+        await handleSpotifyCallback();
         console.log("DOMContentLoaded: handleSpotifyCallback called.");
 
         // Load YouTube Iframe API
         loadYoutubeIframeAPI();
         console.log("DOMContentLoaded: loadYoutubeIframeAPI called.");
 
-        // Fetch and display initial content
+        // Set initial UI state for login (e.g., if no Spotify token found)
+        // Moved here to update UI after potential Spotify login
+        updateLoginUI();
+        console.log("DOMContentLoaded: updateLoginUI called.");
+
+        // Fetch and display initial content (these are placeholders now)
         if (typeof fetchAndDisplayTrendingSongs === 'function') fetchAndDisplayTrendingSongs();
         if (typeof fetchAndDisplayPopularAlbums === 'function') fetchAndDisplayPopularAlbums();
         if (typeof fetchAndDisplayPopularArtists === 'function') fetchAndDisplayPopularArtists();
         console.log("DOMContentLoaded: Initial content display functions called (if defined).");
 
-        // Set initial UI state for login (e.g., if no Spotify token found)
+        // IMPORTANT: Fetch and attach listeners after everything else
+        await fetchAlbums(); // This call includes attachEventListenersToHtmlCards()
+        console.log("DOMContentLoaded: fetchAlbums completed and listeners attached.");
 
         // Set initial volume for the native audio element
         if (volumeBar) {
             audio.volume = parseFloat(volumeBar.value);
             console.log("DOMContentLoaded: Initial native audio volume set.");
         }
-
-
 
         // Add an event listener to the player-left container to re-open the album overlay
         if (playerLeft) {
@@ -2952,16 +2958,107 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
             console.log("DOMContentLoaded: playerLeft click listener attached.");
         }
-
-        // Message box for general messages (e.g., loading, errors)
-        // This part is moved to the top and modified to use the new fixed position.
-        // The original logic here is no longer needed.
+        showMessageBox('App is ready!', 'success'); // Final ready message
 
     } catch (error) {
         console.error("DOMContentLoaded: An error occurred during initial setup:", error);
         showMessageBox(`Critical error during setup: ${error.message}`, 'error', 10000);
     }
     console.log("DOMContentLoaded: Script execution finished.");
+
+const searchInput = document.getElementById('search-input');
+    const voiceSearchBtn = document.getElementById('voice-search-btn');
+    const voiceStartSound = document.getElementById('voice-start-sound');
+    const voiceEndSound = document.getElementById('voice-end-sound');
+
+    // Check if browser supports Web Speech API
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (voiceSearchBtn && SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false; // Listen for a single utterance
+        recognition.lang = 'en-US'; // Set recognition language
+        recognition.interimResults = false; // Only return final results
+
+        let isListening = false; // Track listening state
+
+        // Function to play sound effects
+        function playSound(audioElement) {
+            if (audioElement) {
+                audioElement.currentTime = 0; // Rewind to start
+                audioElement.play().catch(e => console.warn("Audio playback failed:", e));
+            }
+        }
+
+        voiceSearchBtn.addEventListener('click', () => {
+            if (!isListening) {
+                playSound(voiceStartSound); // Play start sound
+                voiceSearchBtn.classList.add('listening'); // Add visual cue
+                searchInput.placeholder = "Listening...";
+                recognition.start();
+                isListening = true;
+                console.log("Voice search started.");
+            } else {
+                playSound(voiceEndSound); // Play end sound
+                voiceSearchBtn.classList.remove('listening'); // Remove visual cue
+                searchInput.placeholder = "Search...";
+                recognition.stop();
+                isListening = false;
+                console.log("Voice search stopped.");
+            }
+        });
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            console.log("Speech recognized:", transcript);
+            if (searchInput) {
+                searchInput.value = transcript; // Write voice input to search box
+                // Trigger an 'input' event so existing search listeners pick it up
+                const inputEvent = new Event('input', { bubbles: true });
+                searchInput.dispatchEvent(inputEvent);
+
+                // Optionally, trigger a search immediately if your search logic is tied to a button click
+                // const searchIcon = document.querySelector('.search-icon');
+                // if (searchIcon) {
+                //     searchIcon.click(); // Simulate click on search icon
+                // }
+            }
+            playSound(voiceEndSound); // Play end sound
+            voiceSearchBtn.classList.remove('listening'); // Remove visual cue
+            searchInput.placeholder = "Search...";
+            isListening = false;
+        };
+
+        recognition.onerror = (event) => {
+            console.error("Speech recognition error:", event.error);
+            showMessageBox(`Voice search error: ${event.error}`, 'error');
+            playSound(voiceEndSound); // Play end sound
+            voiceSearchBtn.classList.remove('listening'); // Remove visual cue
+            searchInput.placeholder = "Search...";
+            isListening = false;
+        };
+
+        recognition.onend = () => {
+            console.log("Speech recognition ended.");
+            if (isListening) { // If it ended without manual stop, means no speech detected or timed out
+                playSound(voiceEndSound); // Play end sound
+                voiceSearchBtn.classList.remove('listening'); // Remove visual cue
+                searchInput.placeholder = "Search...";
+                isListening = false;
+            }
+        };
+
+    } else if (voiceSearchBtn) {
+        // If SpeechRecognition is not supported, hide the button or inform the user
+        voiceSearchBtn.style.display = 'none';
+        console.warn("Web Speech API not supported in this browser.");
+        showMessageBox("Your browser does not support voice search.", 'info', 5000);
+    }
+
+
+
+
+
 });
 
 // Placeholder for loadYoutubeIframeAPI function
@@ -3021,19 +3118,15 @@ function updateLoginUI(isLoggedIn) {
     }
 }
 
-/*login-sign functionality */
-/*login-sign functionality */
 // The BACKEND_URL constant is already defined at the very top of the script as BACKEND_BASE_URL.
 // Using BACKEND_BASE_URL for consistency.
 
 // --- Custom Message Box (instead of alert/confirm) ---
-// Moved showMessageBox to the top so it's always defined before use
 function showMessageBox(message, type = 'info', duration = 3000) {
     let messageBox = document.getElementById('custom-message-box');
     let messageText = document.getElementById('custom-message-text');
     let messageCloseButton = document.getElementById('custom-message-close-button');
 
-    // Create message box elements if they don't exist
     if (!messageBox) {
         messageBox = document.createElement('div');
         messageBox.id = 'custom-message-box';
@@ -3042,20 +3135,20 @@ function showMessageBox(message, type = 'info', duration = 3000) {
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: #333;
-            color: white;
+            color: #333; /* Darker text for lighter backgrounds */
             padding: 10px 20px;
             border-radius: 8px;
-            z-index: 99999999; /* Very high z-index to appear on top */
+            z-index: 99999999;
             opacity: 0;
             transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
-            pointer-events: none; /* Allow clicks to pass through when hidden */
+            pointer-events: none;
             display: flex;
             align-items: center;
             gap: 10px;
             min-width: 250px;
             text-align: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* Enhanced shadow */
+            border: 1px solid rgba(0,0,0,0.1); /* Subtle border */
         `;
         document.body.appendChild(messageBox);
 
@@ -3065,67 +3158,77 @@ function showMessageBox(message, type = 'info', duration = 3000) {
 
         messageCloseButton = document.createElement('button');
         messageCloseButton.id = 'custom-message-close-button';
-        messageCloseButton.innerHTML = '&times;'; // Close icon
+        messageCloseButton.innerHTML = '&times;';
         messageCloseButton.style.cssText = `
             background: none;
             border: none;
-            color: white;
+            color: #555; /* Darker close button for contrast */
             font-size: 1.5em;
             cursor: pointer;
             padding: 0 5px;
             line-height: 1;
-            margin-left: auto; /* Push to the right */
+            margin-left: auto;
+            transition: color 0.2s ease;
         `;
         messageBox.appendChild(messageCloseButton);
 
-        // Add event listener for the close button
         messageCloseButton.addEventListener('click', () => {
             messageBox.style.opacity = '0';
-            messageBox.style.transform = 'translateX(-50%) translateY(10px)'; // Slide down slightly on close
+            messageBox.style.transform = 'translateX(-50%) translateY(10px)';
             setTimeout(() => {
                 messageBox.style.display = 'none';
                 messageBox.style.pointerEvents = 'none';
-            }, 500); // Match transition duration
+            }, 500);
         });
     }
 
     messageText.textContent = message;
     messageBox.style.backgroundColor = ''; // Reset background
-    messageBox.style.color = 'white'; // Default text color
+    messageBox.style.color = '#333'; // Default text color for lighter backgrounds
+    if (messageCloseButton) messageCloseButton.style.color = '#555'; // Default close button color
 
-    // Apply colors based on type
     if (type === 'success') {
-        messageBox.style.backgroundColor = '#28a745'; // Green
+        messageBox.style.backgroundColor = '#d4edda'; // Light green
+        messageBox.style.borderColor = '#28a745';
+        messageBox.style.color = '#155724'; // Dark green text
+        if (messageCloseButton) messageCloseButton.style.color = '#155724';
     } else if (type === 'error') {
-        messageBox.style.backgroundColor = '#dc3545'; // Red
-    } else { // 'info' or default
-        messageBox.style.backgroundColor = '#007bff'; // Blue
+        messageBox.style.backgroundColor = '#f8d7da'; // Light red
+        messageBox.style.borderColor = '#dc3545';
+        messageBox.style.color = '#721c24'; // Dark red text
+        if (messageCloseButton) messageCloseButton.style.color = '#721c24';
+    } else { // info
+        messageBox.style.backgroundColor = '#cce5ff'; // Light blue
+        messageBox.style.borderColor = '#007bff';
+        messageBox.style.color = '#004085'; // Dark blue text
+        if (messageCloseButton) messageCloseButton.style.color = '#004085';
     }
 
-    // Show the message box with animation
-    messageBox.style.display = 'flex'; // Ensure it's visible
-    messageBox.style.pointerEvents = 'auto'; // Enable interaction
-    messageBox.style.transform = 'translateX(-50%) translateY(0)'; // Slide up to final position
+    messageBox.style.display = 'flex';
+    messageBox.style.pointerEvents = 'auto';
+    messageBox.style.transform = 'translateX(-50%) translateY(0)';
     messageBox.style.opacity = '1';
 
-    // Automatically hide after `duration` milliseconds
     setTimeout(() => {
         messageBox.style.opacity = '0';
-        messageBox.style.transform = 'translateX(-50%) translateY(10px)'; // Slide down slightly on auto-hide
+        messageBox.style.transform = 'translateX(-50%) translateY(10px)';
         setTimeout(() => {
             messageBox.style.display = 'none';
             messageBox.style.pointerEvents = 'none';
-        }, 500); // Match transition duration
+        }, 500);
     }, duration);
 }
 
 
-// --- Global variables for timers (declared at a higher scope) ---
+// --- Global variables for timers ---
 let emailOtpTimerInterval;
 let emailOtpResendAvailableTime = 0;
 let phoneOtpTimerInterval;
 let phoneOtpResendAvailableTime = 0;
+let currentOtpContext = 'signup'; // Default context
 
+// Global variable to store the identifier for profile completion
+let identifierForProfileCompletion = null;
 
 /**
  * Starts the timer for email OTP validity.
@@ -3140,24 +3243,24 @@ const startEmailOtpTimer = (duration) => {
     const verifyEmailOtpButton = document.getElementById('verify-email-otp-button');
     const emailOtpTimerDisplay = document.getElementById('email-otp-timer-display');
 
-    if (resendEmailOtpButton) resendEmailOtpButton.classList.add('hidden'); // Hide resend
-    if (verifyEmailOtpButton) verifyEmailOtpButton.disabled = false; // Enable verify button
+    if (resendEmailOtpButton) resendEmailOtpButton.classList.add('hidden');
+    if (verifyEmailOtpButton) verifyEmailOtpButton.disabled = false;
 
-    clearInterval(emailOtpTimerInterval); // Clear any existing timer
+    clearInterval(emailOtpTimerInterval);
     emailOtpTimerInterval = setInterval(() => {
         minutes = parseInt(timer / 60, 10);
         seconds = parseInt(timer % 60, 10);
 
         minutes = minutes < 10 ? "0" + minutes : minutes;
-        seconds = seconds < 10 ? "0" : "" + seconds; // Corrected for seconds < 0
+        seconds = seconds < 10 ? "0" + seconds : "" + seconds;
 
         if (emailOtpTimerDisplay) emailOtpTimerDisplay.textContent = `OTP valid for: ${minutes}:${seconds}`;
 
         if (--timer < 0) {
             clearInterval(emailOtpTimerInterval);
             if (emailOtpTimerDisplay) emailOtpTimerDisplay.textContent = "OTP expired. Please resend.";
-            if (resendEmailOtpButton) resendEmailOtpButton.classList.remove('hidden'); // Show resend
-            if (verifyEmailOtpButton) verifyEmailOtpButton.disabled = true; // Disable verify after expiry
+            if (resendEmailOtpButton) resendEmailOtpButton.classList.remove('hidden');
+            if (verifyEmailOtpButton) verifyEmailOtpButton.disabled = true;
         }
         emailOtpResendAvailableTime = timer;
     }, 1000);
@@ -3171,42 +3274,48 @@ const startPhoneOtpTimer = (duration) => {
     let timer = duration;
     let minutes, seconds;
 
-    phoneOtpResendAvailableTime = duration; // Set initial time for resend logic
+    phoneOtpResendAvailableTime = duration;
     const resendPhoneOtpButton = document.getElementById('resend-otp-button');
     const sendPhoneOtpButton = document.getElementById('send-otp-button');
+    const verifyPhoneOtpButton = document.getElementById('verify-otp-button');
     const phoneOtpTimerDisplay = document.getElementById('otp-timer-display');
 
-    if (resendPhoneOtpButton) resendPhoneOtpButton.classList.add('hidden'); // Hide resend during active timer
-    if (sendPhoneOtpButton) sendPhoneOtpButton.disabled = true; // Disable send OTP button during timer
+    if (resendPhoneOtpButton) resendPhoneOtpButton.classList.add('hidden');
+    if (sendPhoneOtpButton && document.getElementById('phone-otp-input-screen').classList.contains('active')) {
+        sendPhoneOtpButton.disabled = true;
+    }
+    if (verifyPhoneOtpButton) verifyPhoneOtpButton.disabled = false;
 
-    clearInterval(phoneOtpTimerInterval); // Clear any existing timer
+    clearInterval(phoneOtpTimerInterval);
     phoneOtpTimerInterval = setInterval(() => {
         minutes = parseInt(timer / 60, 10);
         seconds = parseInt(timer % 60, 10);
 
         minutes = minutes < 10 ? "0" + minutes : minutes;
-        seconds = seconds < 10 ? "0" : "" + seconds; // Corrected for seconds < 0
+        seconds = seconds < 10 ? "0" + seconds : "" + seconds;
 
         if (phoneOtpTimerDisplay) phoneOtpTimerDisplay.textContent = `OTP valid for: ${minutes}:${seconds}`;
 
         if (--timer < 0) {
             clearInterval(phoneOtpTimerInterval);
             if (phoneOtpTimerDisplay) phoneOtpTimerDisplay.textContent = "OTP expired. Please resend.";
-            if (resendPhoneOtpButton) resendPhoneOtpButton.classList.remove('hidden'); // Show resend button
-            if (sendPhoneOtpButton) sendPhoneOtpButton.disabled = false; // Re-enable send OTP button
+            if (resendPhoneOtpButton) resendPhoneOtpButton.classList.remove('hidden');
+            if (sendPhoneOtpButton && document.getElementById('phone-otp-input-screen').classList.contains('active')) {
+                sendPhoneOtpButton.disabled = false;
+            }
+            if (verifyPhoneOtpButton) verifyPhoneOtpButton.disabled = true;
         }
-        phoneOtpResendAvailableTime = timer; // Update remaining time
+        phoneOtpResendAvailableTime = timer;
     }, 1000);
 };
 
 /**
  * Updates the main UI of the page to reflect login status.
- * Moved to a higher scope so it's accessible by all functions.
  */
 function updateLoginUI() {
     const userToken = localStorage.getItem('userToken');
     const loggedInUserEmail = localStorage.getItem('loggedInUserEmail');
-    const loggedInUserName = localStorage.getItem('loggedInUserName'); // For future use if backend provides name
+    const loggedInUserName = localStorage.getItem('loggedInUserName'); // Get stored name
 
     const topSignupBtn = document.getElementById('top-signup-btn');
     const topLoginBtn = document.getElementById('top-login-btn');
@@ -3221,17 +3330,28 @@ function updateLoginUI() {
         if (topLoginBtn) topLoginBtn.classList.add('hidden');
         if (userAvatarContainer) userAvatarContainer.classList.remove('hidden');
 
-        if (userAvatar && loggedInUserEmail) {
+        if (userAvatar && loggedInUserName) { // Use loggedInUserName for avatar
+            const initial = loggedInUserName.charAt(0).toUpperCase();
+            userAvatar.textContent = initial;
+            if (userAvatarContainer) userAvatarContainer.title = loggedInUserName; // Set title for native hover tooltip
+            if (dropdownUsername) dropdownUsername.textContent = loggedInUserName; // Show full name in dropdown
+        } else if (userAvatar && loggedInUserEmail) { // Fallback to email initial if name not found
             const initial = loggedInUserEmail.charAt(0).toUpperCase();
             userAvatar.textContent = initial;
-            if (dropdownUsername) dropdownUsername.textContent = loggedInUserName || loggedInUserEmail; // Show full email or name
+            if (userAvatarContainer) userAvatarContainer.title = loggedInUserEmail; // Set title for native hover tooltip
+            if (dropdownUsername) dropdownUsername.textContent = loggedInUserEmail;
+        } else {
+             // Fallback if no name or email is available (shouldn't happen with current flow)
+            userAvatar.textContent = 'G';
+            if (userAvatarContainer) userAvatarContainer.title = 'Guest';
+            if (dropdownUsername) dropdownUsername.textContent = 'Guest';
         }
     } else {
         // User is logged out
         if (topSignupBtn) topSignupBtn.classList.remove('hidden');
         if (topLoginBtn) topLoginBtn.classList.remove('hidden');
         if (userAvatarContainer) userAvatarContainer.classList.add('hidden');
-        if (userDropdown) userDropdown.classList.remove('show'); // Ensure dropdown is hidden
+        if (userDropdown) userDropdown.classList.remove('show');
     }
     console.log('UI updated. User logged in:', !!userToken);
 }
@@ -3250,35 +3370,55 @@ async function registerUser(email, password, phoneNumber = null, button) {
     button.textContent = 'Registering...';
 
     try {
-        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/register`, { // Use BACKEND_BASE_URL
+        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/register`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'ngrok-skip-browser-warning': 'true' // Crucial for ngrok free plan
+                'ngrok-skip-browser-warning': 'true'
             },
             body: JSON.stringify({ email, password, phoneNumber })
         });
 
         const data = await response.json();
 
-        if (response.ok) { // HTTP status 2xx (e.g., 201 Created)
+        if (response.ok) {
             if (data.requiresEmailVerification && email) {
                 localStorage.setItem('pendingEmailVerification', email);
+                // Store the temporary token for subsequent steps
+                if (data.token) {
+                    localStorage.setItem('userToken', data.token);
+                }
                 showMessageBox(data.message, 'success');
                 if (data.debugOtp) {
                     console.warn(`DEVELOPMENT EMAIL OTP: ${data.debugOtp}`);
-                    showMessageBox(`DEVELOPMENT ONLY: Email OTP is ${data.debugOtp}. Check console.`, 'info');
+                    showMessageBox(`Email OTP is ${data.debugOtp}`, 'info');
                 }
-                showEmailOtpInputScreen(); // Transition to OTP screen
+                currentOtpContext = 'signup';
+                showEmailOtpInputScreen();
                 startEmailOtpTimer(120);
+            } else if (data.profileCompletionRequired) {
+                // Store identifier and the token provided by backend
+                identifierForProfileCompletion = data.identifier;
+                if (data.token) {
+                    localStorage.setItem('userToken', data.token);
+                }
+                showMessageBox(data.message, 'info');
+                showCompleteProfileScreen();
             } else {
+                // This path should ideally not be hit with the new flow, but as a fallback
                 showMessageBox(data.message || 'Registration successful!', 'success');
-                // Store user email/name upon successful registration
-                localStorage.setItem('loggedInUserEmail', email || phoneNumber);
-                localStorage.setItem('loggedInUserName', data.name || email || phoneNumber); // Prefer name if available
-                showLoginScreen(); // Show login screen after successful signup
+                // If no token, it means something unexpected, but let's try to log them in if possible
+                if (data.token) {
+                    localStorage.setItem('userToken', data.token);
+                    localStorage.setItem('loggedInUserEmail', email || phoneNumber);
+                    localStorage.setItem('loggedInUserName', data.name || email || phoneNumber);
+                    closePopup();
+                    updateLoginUI();
+                } else {
+                    showLoginScreen(); // Prompt login if no token
+                }
             }
-        } else { // HTTP status 4xx or 5xx
+        } else {
             showMessageBox('Registration failed: ' + (data.message || 'An unknown error occurred.'), 'error');
             console.error('Backend registration error:', data.message);
         }
@@ -3303,39 +3443,51 @@ async function loginUser(identifier, password, button) {
     button.textContent = 'Logging in...';
 
     try {
-        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/login`, { // Use BACKEND_BASE_URL
+        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'ngrok-skip-browser-warning': 'true' // Crucial for ngrok free plan
+                'ngrok-skip-browser-warning': 'true'
             },
             body: JSON.stringify({ identifier, password })
         });
 
         const data = await response.json();
 
-        if (response.ok) { // HTTP status 2xx
-            showMessageBox(data.message || 'Logged in successfully!', 'success');
-            localStorage.setItem('userToken', data.token); // Store the JWT token
-            localStorage.setItem('loggedInUserEmail', data.email || identifier); // Store email/identifier
-            localStorage.setItem('loggedInUserName', data.name || data.email || identifier); // Store name/email
-            closePopup(); // Close the popup
-            console.log('User logged in. Token stored:', data.token);
-            updateLoginUI(); // Update UI after login
-        } else if (response.status === 403 && data.requiresEmailVerification) { // Specific handling for unverified email login
-            showMessageBox(data.message, 'info');
-            localStorage.setItem('pendingEmailVerification', data.email);
-            showEmailOtpInputScreen();
-            if (data.debugOtp) {
-                console.warn(`DEVELOPMENT EMAIL OTP: ${data.debugOtp}`);
-                showMessageBox(`DEVELOPMENT ONLY: Email OTP is ${data.debugOtp}. Check console.`, 'info');
+        if (response.ok) {
+            if (data.requiresEmailVerification) {
+                localStorage.setItem('pendingEmailVerification', data.email);
+                if (data.token) { // Ensure token is stored for email verification step
+                    localStorage.setItem('userToken', data.token);
+                }
+                showMessageBox(data.message, 'info');
+                if (data.debugOtp) {
+                    console.warn(`DEVELOPMENT EMAIL OTP: ${data.debugOtp}`);
+                    showMessageBox(`Email OTP is ${data.debugOtp}`, 'info');
+                }
+                currentOtpContext = 'login';
+                showEmailOtpInputScreen();
+                startEmailOtpTimer(120);
+            } else if (data.profileCompletionRequired) {
+                identifierForProfileCompletion = data.identifier;
+                if (data.token) { // Ensure token is stored for profile completion step
+                    localStorage.setItem('userToken', data.token);
+                }
+                showMessageBox(data.message, 'info');
+                showCompleteProfileScreen();
+            } else {
+                showMessageBox(data.message || 'Logged in successfully!', 'success');
+                localStorage.setItem('userToken', data.token);
+                localStorage.setItem('loggedInUserEmail', data.email || identifier);
+                localStorage.setItem('loggedInUserName', data.name || data.email || identifier);
+                closePopup();
+                console.log('User logged in. Token stored:', data.token);
+                updateLoginUI(); // Ensure UI is updated immediately upon successful login
             }
-            startEmailOtpTimer(120);
         } else if (!response.ok && data.message && data.message.includes('does not have a password')) {
             showMessageBox('This account was registered with Google and does not have a password. Please sign in with Google or set a password for your account.', 'info');
-            // Do not clear inputs here, let user see the identifier
-            // showLoginScreen(); // Keep on login screen
-        } else { // For any other non-2xx response (400, 401, 500 etc.)
+            // Optionally, guide user to Google login or password reset flow
+        } else {
             showMessageBox('Login failed: ' + (data.message || 'An unknown error occurred.'), 'error');
             console.error('Backend login error:', data.message);
         }
@@ -3365,11 +3517,11 @@ async function getUserCount(button) {
     button.textContent = 'Fetching...';
 
     try {
-        const response = await fetch(`${BACKEND_BASE_URL}/api/admin/users/count`, { // Use BACKEND_BASE_URL
+        const response = await fetch(`${BACKEND_BASE_URL}/api/admin/users/count`, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${token}`, // Send the JWT token
-                'ngrok-skip-browser-warning': 'true' // Crucial for ngrok free plan
+                'Authorization': `Bearer ${token}`,
+                'ngrok-skip-browser-warning': 'true'
             }
         });
 
@@ -3394,21 +3546,18 @@ async function getUserCount(button) {
  * Handles the Google Sign-In response from the GIS library.
  * @param {Object} response - The Google Identity Services response object containing the credential.
  */
-// IMPORTANT: Make this function globally accessible because Google SDK will call it
 window.handleGoogleSignIn = async (response) => {
     const id_token = response.credential;
     console.log('Google ID Token received:', id_token);
 
-    // No specific button to disable here as GIS handles its own UI,
-    // but could add a global loading indicator if desired.
     showMessageBox('Attempting Google login...', 'info');
 
     try {
-        const backendResponse = await fetch(`${BACKEND_BASE_URL}/api/auth/google`, { // Use BACKEND_BASE_URL
+        const backendResponse = await fetch(`${BACKEND_BASE_URL}/api/auth/google`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'ngrok-skip-browser-warning': 'true' // Crucial for ngrok free plan
+                'ngrok-skip-browser-warning': 'true'
             },
             body: JSON.stringify({ token: id_token })
         });
@@ -3418,24 +3567,32 @@ window.handleGoogleSignIn = async (response) => {
         if (backendResponse.ok) {
             if (data.requiresEmailVerification && data.email) {
                 localStorage.setItem('pendingEmailVerification', data.email);
+                if (data.token) { // Ensure token is stored for email verification step
+                    localStorage.setItem('userToken', data.token);
+                }
                 showMessageBox(data.message, 'info');
                 if (data.debugOtp) {
                     console.warn(`DEVELOPMENT GOOGLE EMAIL OTP: ${data.debugOtp}`);
-                    showMessageBox(`DEVELOPMENT ONLY: Google Email OTP is ${data.debugOtp}. Check console.`, 'info');
+                    showMessageBox(`Google Email OTP is ${data.debugOtp}`, 'info');
                 }
-                showEmailOtpInputScreen(); // Transition to the new email OTP screen
+                currentOtpContext = 'googleSignup';
+                showEmailOtpInputScreen();
                 startEmailOtpTimer(120);
-            } else if (data.userExists && !data.requiresEmailVerification) {
+            } else if (data.profileCompletionRequired) {
+                identifierForProfileCompletion = data.identifier || data.email;
+                if (data.token) { // Ensure token is stored for profile completion step
+                    localStorage.setItem('userToken', data.token);
+                }
+                showMessageBox(data.message, 'info');
+                showCompleteProfileScreen();
+            } else {
                 showMessageBox(data.message || 'Logged in successfully with Google!', 'success');
-                localStorage.setItem('userToken', data.token); // Store the JWT token
+                localStorage.setItem('userToken', data.token);
                 localStorage.setItem('loggedInUserEmail', data.email);
                 localStorage.setItem('loggedInUserName', data.name || data.email);
                 closePopup();
                 console.log('User logged in via existing Google account. Token stored:', data.token);
-                updateLoginUI();
-            } else {
-                console.error('Backend did not return expected data for Google auth.');
-                showMessageBox('Google login failed: Unexpected backend response.', 'error');
+                updateLoginUI(); // Ensure UI is updated immediately upon successful Google login
             }
         } else {
             showMessageBox('Google login initiation failed: ' + (data.message || 'An unknown error occurred.'), 'error');
@@ -3463,32 +3620,39 @@ async function verifyEmailOtp(email, otpCode, button) {
     button.textContent = 'Verifying...';
 
     try {
-        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/verify-email-otp`, { // Use BACKEND_BASE_URL
+        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/verify-email-otp`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'ngrok-skip-browser-warning': 'true' // Crucial for ngrok free plan
+                'ngrok-skip-browser-warning': 'true'
             },
             body: JSON.stringify({ email, otpCode })
         });
         const data = await response.json();
 
         if (response.ok) {
-            showMessageBox(data.message || 'Email verified successfully!', 'success');
-            localStorage.setItem('userToken', data.token); // Store the JWT token
-            localStorage.setItem('loggedInUserEmail', email); // Store the email
-            localStorage.setItem('loggedInUserName', data.name || email); // Store name or email
-            localStorage.removeItem('pendingEmailVerification'); // Clear the pending email
-            clearInterval(emailOtpTimerInterval); // Stop the email OTP timer
-            console.log('User logged in via Email OTP. Token stored:', data.token);
-            updateLoginUI(); // Update UI after login
-
-            // Check if password needs to be set (for Google registrations without password)
-            if (data.setPasswordRequired) {
+            if (data.profileCompletionRequired) {
+                identifierForProfileCompletion = data.identifier || data.email;
+                if (data.token) { // Ensure token is stored for profile completion step
+                    localStorage.setItem('userToken', data.token);
+                }
+                showMessageBox(data.message, 'success');
+                showCompleteProfileScreen();
+            } else if (data.setPasswordRequired) {
                 localStorage.setItem('userEmailForPasswordSet', email);
-                showCreatePasswordScreen(); // Show the new screen to set password
+                currentOtpContext = 'setPassword';
+                showMessageBox(data.message, 'success');
+                showCreatePasswordScreen();
             } else {
-                closePopup(); // Close the popup if no password needs to be set
+                showMessageBox(data.message || 'Email verified successfully!', 'success');
+                localStorage.setItem('userToken', data.token);
+                localStorage.setItem('loggedInUserEmail', email);
+                localStorage.setItem('loggedInUserName', data.name || email);
+                localStorage.removeItem('pendingEmailVerification');
+                clearInterval(emailOtpTimerInterval);
+                console.log('User logged in via Email OTP. Token stored:', data.token);
+                updateLoginUI(); // Call updateLoginUI here to ensure dropdown updates
+                closePopup();
             }
         } else {
             showMessageBox('Email OTP verification failed: ' + (data.message || 'An unknown error occurred.'), 'error');
@@ -3505,32 +3669,40 @@ async function verifyEmailOtp(email, otpCode, button) {
 
 /**
  * Sets a password for a user, typically after a Google registration where no password was initially set.
- * @param {string} email - The user's email address.
+ * @param {string} identifier - The user's email address or phone number.
  * @param {string} newPassword - The new password to set.
  * @param {HTMLElement} button - The button element to disable during the request.
  */
-async function setPasswordForUser(email, newPassword, button) {
+async function setPasswordForUser(identifier, newPassword, button) {
     button.disabled = true;
     const originalButtonText = button.textContent;
     button.textContent = 'Setting Password...';
 
     try {
-        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/set-password`, { // Use BACKEND_BASE_URL
+        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/set-password`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('userToken')}`, // Send the current token
-                'ngrok-skip-browser-warning': 'true' // Crucial for ngrok free plan
+                'Authorization': localStorage.getItem('userToken') ? `Bearer ${localStorage.getItem('userToken')}` : '',
+                'ngrok-skip-browser-warning': 'true'
             },
-            body: JSON.stringify({ email, newPassword })
+            body: JSON.stringify({ identifier, newPassword })
         });
         const data = await response.json();
 
         if (response.ok) {
             showMessageBox(data.message || 'Password set successfully!', 'success');
-            localStorage.removeItem('userEmailForPasswordSet'); // Clear temporary storage
-            closePopup(); // Close popup after successful password set
-            updateLoginUI(); // Ensure UI updates after password set and login
+            localStorage.removeItem('userEmailForPasswordSet');
+            localStorage.removeItem('passwordResetIdentifier');
+            
+            if (data.token) {
+                localStorage.setItem('userToken', data.token);
+                localStorage.setItem('loggedInUserEmail', data.email || identifier);
+                localStorage.setItem('loggedInUserName', data.name || identifier);
+                updateLoginUI(); // Call updateLoginUI here
+            }
+            
+            showLoginScreen(); 
         } else {
             showMessageBox('Failed to set password: ' + (data.message || 'An unknown error occurred.'), 'error');
             console.error('Backend set password error:', data.message);
@@ -3555,11 +3727,11 @@ async function sendPhoneOtp(phoneNumber, button) {
     button.textContent = 'Sending OTP...';
 
     try {
-        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/send-otp`, { // Use BACKEND_BASE_URL
+        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/send-otp`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'ngrok-skip-browser-warning': 'true' // Crucial for ngrok free plan
+                'ngrok-skip-browser-warning': 'true'
             },
             body: JSON.stringify({ phoneNumber })
         });
@@ -3567,12 +3739,17 @@ async function sendPhoneOtp(phoneNumber, button) {
 
         if (response.ok) {
             showMessageBox(data.message, 'success');
-            if (data.debugOtp) { // For development, show debug OTP
+            if (data.debugOtp) {
                 console.warn(`DEVELOPMENT OTP: ${data.debugOtp}`);
-                showMessageBox(`DEVELOPMENT ONLY: Phone OTP is ${data.debugOtp}. Check console.`, 'info');
+                showMessageBox(`Phone OTP is ${data.debugOtp}`, 'info');
             }
-            showScreen('otp-verification-screen'); // Move to verification screen
-            startPhoneOtpTimer(120); // Start 2-minute timer for OTP validity
+            const otpVerificationTitle = document.getElementById('otp-verification-title');
+            const otpVerificationMessage = document.getElementById('otp-verification-message');
+            if (otpVerificationTitle) otpVerificationTitle.textContent = 'Verify Phone OTP';
+            if (otpVerificationMessage) otpVerificationMessage.textContent = `An OTP has been sent to ${phoneNumber}. Please enter it below.`;
+
+            showScreen('otp-verification-screen');
+            startPhoneOtpTimer(120);
         } else {
             showMessageBox('Failed to send OTP: ' + (data.message || 'An unknown error occurred.'), 'error');
         }
@@ -3597,31 +3774,194 @@ async function verifyPhoneOtp(phoneNumber, otpCode, button) {
     button.textContent = 'Verifying...';
 
     try {
-        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/verify-otp`, { // Use BACKEND_BASE_URL
+        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/verify-otp`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'ngrok-skip-browser-warning': 'true' // Crucial for ngrok free plan
+                'ngrok-skip-browser-warning': 'true'
             },
             body: JSON.stringify({ phoneNumber, otpCode })
         });
         const data = await response.json();
 
         if (response.ok) {
-            showMessageBox(data.message || 'Phone verified successfully!', 'success');
-            localStorage.setItem('userToken', data.token); // Store the JWT token
-            localStorage.setItem('loggedInUserEmail', phoneNumber); // Store phone number as identifier
-            localStorage.setItem('loggedInUserName', data.name || phoneNumber); // Store name or phone number
-            closePopup(); // Close the popup
-            console.log('User logged in via OTP. Token stored:', data.token);
-            clearInterval(phoneOtpTimerInterval); // Stop the timer
-            updateLoginUI(); // Update UI after login
+            if (data.profileCompletionRequired) {
+                identifierForProfileCompletion = data.identifier || phoneNumber;
+                if (data.token) { // Ensure token is stored for profile completion step
+                    localStorage.setItem('userToken', data.token);
+                }
+                showMessageBox(data.message, 'success');
+                showCompleteProfileScreen();
+            } else {
+                showMessageBox(data.message || 'Phone verified successfully!', 'success');
+                localStorage.setItem('userToken', data.token);
+                localStorage.setItem('loggedInUserEmail', phoneNumber);
+                localStorage.setItem('loggedInUserName', data.name || phoneNumber);
+                closePopup();
+                console.log('User logged in via OTP. Token stored:', data.token);
+                clearInterval(phoneOtpTimerInterval);
+                updateLoginUI(); // Call updateLoginUI here to ensure dropdown updates
+            }
         } else {
             showMessageBox('OTP verification failed: ' + (data.message || 'An unknown error occurred.'), 'error');
         }
     } catch (error) {
         console.error('Network error during OTP verification:', error);
         showMessageBox('Network error during OTP verification. Please check your connection and try again.', 'error');
+    } finally {
+        button.disabled = false;
+        button.textContent = originalButtonText;
+    }
+}
+
+/**
+ * Sends a password reset OTP to the provided identifier (email or phone number).
+ * @param {string} identifier - The email address or phone number.
+ * @param {HTMLElement} button - The button element to disable during the request.
+ */
+async function sendPasswordResetOtp(identifier, button) {
+    button.disabled = true;
+    const originalButtonText = button.textContent;
+    button.textContent = 'Sending Code...';
+
+    try {
+        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/forgot-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true'
+            },
+            body: JSON.stringify({ identifier })
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+            showMessageBox(data.message || 'Verification code sent!', 'success');
+            localStorage.setItem('passwordResetIdentifier', identifier);
+            currentOtpContext = 'passwordReset';
+            
+            const otpVerificationTitle = document.getElementById('otp-verification-title');
+            const otpVerificationMessage = document.getElementById('otp-verification-message');
+            if (otpVerificationTitle) otpVerificationTitle.textContent = 'Verify Password Reset Code';
+            if (otpVerificationMessage) otpVerificationMessage.textContent = `A verification code has been sent to ${identifier}. Please enter it below.`;
+
+            showScreen('otp-verification-screen');
+            startPhoneOtpTimer(120);
+            if (data.debugOtp) {
+                console.warn(`DEVELOPMENT PASSWORD RESET OTP: ${data.debugOtp}`);
+                showMessageBox(`Password Reset OTP: ${data.debugOtp}`, 'info');
+            }
+        } else {
+            showMessageBox('Failed to send verification code: ' + (data.message || 'An unknown error occurred.'), 'error');
+        }
+    } catch (error) {
+        console.error('Network error during send password reset OTP:', error);
+        showMessageBox('Network error. Please check your connection and try again.', 'error');
+    } finally {
+        button.disabled = false;
+        button.textContent = originalButtonText;
+    }
+}
+
+/**
+ * Verifies the password reset OTP.
+ * @param {string} identifier - The email or phone number used for reset.
+ * @param {string} otpCode - The OTP code entered by the user.
+ * @param {HTMLElement} button - The button element to disable during the request.
+ */
+async function verifyPasswordResetOtp(identifier, otpCode, button) {
+    button.disabled = true;
+    const originalButtonText = button.textContent;
+    button.textContent = 'Verifying...';
+
+    try {
+        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/verify-password-reset-otp`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true'
+            },
+            body: JSON.stringify({ identifier, otpCode })
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+            showMessageBox(data.message || 'OTP verified. You can now set a new password.', 'success');
+            clearInterval(phoneOtpTimerInterval);
+            localStorage.setItem('userEmailForPasswordSet', identifier);
+            if (data.token) { // Ensure token from verification is stored for set-password step
+                localStorage.setItem('userToken', data.token);
+            }
+            currentOtpContext = 'passwordReset';
+            
+            const createPasswordTitle = document.getElementById('create-password-title');
+            const createPasswordMessage = document.getElementById('create-password-message');
+            if (createPasswordTitle) createPasswordTitle.textContent = 'Set New Password';
+            if (createPasswordMessage) createPasswordMessage.textContent = 'Please enter and confirm your new password.';
+
+            showCreatePasswordScreen();
+        } else {
+            showMessageBox('Verification failed: ' + (data.message || 'An unknown error occurred.'), 'error');
+        }
+    } catch (error) {
+        console.error('Network error during password reset OTP verification:', error);
+        showMessageBox('Network error. Please check your connection and try again.', 'error');
+    } finally {
+        button.disabled = false;
+        button.textContent = originalButtonText;
+    }
+}
+
+/**
+ * Completes the user's profile by adding name and DOB.
+ * @param {string} identifier - The user's email or phone number.
+ * @param {string} name - The user's full name.
+ * @param {string} dob - The user's date of birth (YYYY-MM-DD format).
+ * @param {HTMLElement} button - The button element to disable during the request.
+ */
+async function completeUserProfile(identifier, name, dob, button) {
+    button.disabled = true;
+    const originalButtonText = button.textContent;
+    button.textContent = 'Saving Profile...';
+
+    try {
+        const token = localStorage.getItem('userToken');
+
+        if (!token) {
+            showMessageBox('Access Denied: No token provided. Please log in again.', 'error');
+            console.error('Error: No user token found for profile completion.');
+            button.disabled = false;
+            button.textContent = originalButtonText;
+            closePopup();
+            return;
+        }
+
+        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/complete-profile`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ name, dob }) // Removed identifier from body as backend uses req.user.id
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+            showMessageBox(data.message || 'Profile completed successfully!', 'success');
+            localStorage.setItem('userToken', data.token);
+            localStorage.setItem('loggedInUserEmail', data.email || identifier);
+            localStorage.setItem('loggedInUserName', data.name || identifier);
+            localStorage.removeItem('identifierForProfileCompletion');
+            closePopup();
+            updateLoginUI(); // Call updateLoginUI here to ensure dropdown updates
+        } else {
+            showMessageBox('Failed to complete profile: ' + (data.message || 'An unknown error occurred.'), 'error');
+            console.error('Backend complete profile error:', data.message);
+        }
+    } catch (error) {
+        console.error('Network error during profile completion:', error);
+        showMessageBox('Network error during profile completion. Please check your connection and try again.', 'error');
     } finally {
         button.disabled = false;
         button.textContent = originalButtonText;
@@ -3644,6 +3984,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const otpVerificationScreen = document.getElementById('otp-verification-screen');
     const emailOtpInputScreen = document.getElementById('email-otp-input-screen');
     const createPasswordScreen = document.getElementById('create-password-screen');
+    const forgotPasswordInputScreen = document.getElementById('forgot-password-input-screen');
+    const completeProfileScreen = document.getElementById('complete-profile-screen'); // NEW
 
     // All possible screens - Map them to an easy-to-use object
     const screens = {
@@ -3655,15 +3997,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         'phone-otp-input-screen': phoneOtpInputScreen,
         'otp-verification-screen': otpVerificationScreen,
         'email-otp-input-screen': emailOtpInputScreen,
-        'create-password-screen': createPasswordScreen
+        'create-password-screen': createPasswordScreen,
+        'forgot-password-input-screen': forgotPasswordInputScreen,
+        'complete-profile-screen': completeProfileScreen // NEW
     };
 
-    // History stack to keep track of visited screens
-    const screenHistory = []; // Stores screen IDs
+    const screenHistory = [];
 
     // --- Buttons and Inputs ---
-    const closePopupButton = document.querySelector('#popup-container .close-button'); // Corrected selector for popup close button
-    // REMOVED: const mainLogoutButton = document.getElementById('main-logout-button');
+    const closePopupButton = document.querySelector('#popup-container .close-button');
     const testUserCountBtn = document.getElementById('test-user-count-btn');
 
     // Initial Choice Screen elements
@@ -3675,10 +4017,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const loginContinueButton = document.getElementById('login-continue-button');
     const loginEmailUsernameInput = document.getElementById('login-email-username');
     const loginPasswordInput = document.getElementById('login-password');
-    const loginFacebookBtn = document.getElementById('login-facebook-btn'); // Placeholder for Facebook
     const loginPhoneOtpBtn = document.getElementById('login-phone-otp-btn');
     const loginPhonePasswordBtn = document.getElementById('login-phone-password-btn');
     const loginSignupLink = document.getElementById('login-signup-link');
+    const forgotPasswordLink = document.getElementById('forgot-password-link');
 
     // Signup Screen elements
     const signupBackBtn = document.getElementById('signup-back-btn');
@@ -3702,6 +4044,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const phonePhoneNumberLoginInput = document.getElementById('phone-number-login');
     const phoneLoginPasswordInput = document.getElementById('phone-login-password');
     const phoneLoginSignupLink = document.getElementById('phone-login-signup-link');
+    const phoneForgotPasswordLink = document.getElementById('phone-forgot-password-link');
 
     // Phone OTP Input Screen elements
     const phoneOtpBackBtn = document.getElementById('phone-otp-back-btn');
@@ -3713,7 +4056,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const phoneOtpCodeInput = document.getElementById('otp-code-input');
     const verifyPhoneOtpButton = document.getElementById('verify-otp-button');
     const resendPhoneOtpButton = document.getElementById('resend-otp-button');
-    // const phoneOtpTimerDisplay = document.getElementById('otp-timer-display'); // Referenced in startPhoneOtpTimer
+    const otpVerificationTitle = document.getElementById('otp-verification-title');
+    const otpVerificationMessage = document.getElementById('otp-verification-message');
 
     // Email OTP specific elements
     const emailOtpBackBtn = document.getElementById('email-otp-back-btn');
@@ -3721,13 +4065,78 @@ document.addEventListener('DOMContentLoaded', async () => {
     const emailOtpCodeInput = document.getElementById('email-otp-code-input');
     const verifyEmailOtpButton = document.getElementById('verify-email-otp-button');
     const resendEmailOtpButton = document.getElementById('resend-email-otp-button');
-    // const emailOtpTimerDisplay = document.getElementById('email-otp-timer-display'); // Referenced in startEmailOtpTimer
+
+    // Forgot Password Input Screen elements
+    const forgotPasswordBackBtn = document.getElementById('forgot-password-back-btn');
+    const forgotPasswordIdentifierInput = document.getElementById('forgot-password-identifier-input');
+    const sendPasswordResetOtpButton = document.getElementById('send-password-reset-otp-button');
+    const forgotPasswordLoginLink = document.getElementById('forgot-password-login-link');
 
     // Set Password Screen elements
     const createPasswordBackBtn = document.getElementById('create-password-back-btn');
     const newPasswordInput = document.getElementById('new-password');
     const confirmPasswordInput = document.getElementById('confirm-password');
     const setNewPasswordButton = document.getElementById('set-new-password-button');
+    const createPasswordTitle = document.getElementById('create-password-title');
+    const createPasswordMessage = document.getElementById('create-password-message');
+
+    // Complete Profile Screen elements (NEW)
+    const completeProfileBackBtn = document.getElementById('complete-profile-back-btn');
+    const profileNameInput = document.getElementById('profile-name-input');
+    const profileDobInput = document.getElementById('profile-dob-input');
+    const completeProfileSubmitButton = document.getElementById('complete-profile-submit-button');
+
+    // Top bar elements for UI update
+    const topSignupBtn = document.getElementById('top-signup-btn');
+    const topLoginBtn = document.getElementById('top-login-btn');
+    const userAvatarContainer = document.getElementById('user-avatar-container');
+    const userAvatar = document.getElementById('user-avatar');
+    const userDropdown = document.getElementById('user-dropdown');
+    const dropdownUsername = document.getElementById('dropdown-username');
+    const dropdownLogoutBtn = document.getElementById('dropdown-logout-btn');
+
+    // NEW: Tooltip element for hover effect
+    let userAvatarTooltip = null;
+
+    /**
+     * Creates or updates a tooltip for the user avatar on hover.
+     * @param {string} userName - The name to display in the tooltip.
+     */
+    const createOrUpdateUserTooltip = (userName) => {
+        if (!userAvatarTooltip) {
+            userAvatarTooltip = document.createElement('div');
+            userAvatarTooltip.id = 'user-avatar-tooltip';
+            userAvatarTooltip.classList.add('user-avatar-tooltip', 'hidden');
+            document.body.appendChild(userAvatarTooltip);
+        }
+        userAvatarTooltip.textContent = userName;
+    };
+
+    /**
+     * Shows the user avatar tooltip.
+     * @param {Event} e - The mouseover event.
+     */
+    const showUserTooltip = (e) => {
+        const userName = localStorage.getItem('loggedInUserName') || localStorage.getItem('loggedInUserEmail') || 'Guest';
+        createOrUpdateUserTooltip(userName);
+
+        const rect = userAvatarContainer.getBoundingClientRect();
+        // Position the tooltip above and centered with the avatar
+        userAvatarTooltip.style.left = `${rect.left + rect.width / 2}px`;
+        userAvatarTooltip.style.top = `${rect.top - userAvatarTooltip.offsetHeight - 5}px`; // Adjust 5px for spacing
+        userAvatarTooltip.classList.remove('hidden');
+        userAvatarTooltip.classList.add('show');
+    };
+
+    /**
+     * Hides the user avatar tooltip.
+     */
+    const hideUserTooltip = () => {
+        if (userAvatarTooltip) {
+            userAvatarTooltip.classList.remove('show');
+            userAvatarTooltip.classList.add('hidden');
+        }
+    };
 
 
     /**
@@ -3740,7 +4149,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return id;
             }
         }
-        return null; // No active screen found
+        return null;
     };
 
     /**
@@ -3758,97 +4167,84 @@ document.addEventListener('DOMContentLoaded', async () => {
         const currentActiveScreenId = getActiveScreenId();
         if (pushToHistory && currentActiveScreenId && currentActiveScreenId !== screenToShowId) {
             screenHistory.push(currentActiveScreenId);
-            console.log('Screen pushed to history:', currentActiveScreenId, 'History:', screenHistory); // DEBUG
+            console.log('Screen pushed to history:', currentActiveScreenId, 'History:', screenHistory);
         } else if (!pushToHistory) {
-            console.log('Not pushing to history. Current history:', screenHistory); // DEBUG
+            console.log('Not pushing to history. Current history:', screenHistory);
         }
 
-        // Reset scroll position for the new screen
         screenToShow.scrollTop = 0;
 
-        // Animate transition for current active screen
         if (currentActiveScreenId && currentActiveScreenId !== screenToShowId) {
             const currentActiveScreen = screens[currentActiveScreenId];
             if (currentActiveScreen) {
                 currentActiveScreen.classList.remove('active');
-                currentActiveScreen.classList.add('slide-out-left'); // Add slide-out effect
-                currentActiveScreen.classList.add('opacity-0', 'pointer-events-none'); // Ensure properties for slide-out
+                currentActiveScreen.classList.add('slide-out-left');
+                currentActiveScreen.classList.add('opacity-0', 'pointer-events-none');
 
-                // Use a transitionend listener to set display: none after animation
                 currentActiveScreen.addEventListener('transitionend', function handler() {
                     currentActiveScreen.classList.remove('slide-out-left');
-                    currentActiveScreen.style.display = 'none'; // Fully hide after transition
+                    currentActiveScreen.style.display = 'none';
                     currentActiveScreen.removeEventListener('transitionend', handler);
                 }, { once: true });
             }
         }
 
-        // Prepare the new screen to slide in (initially off-screen and visible)
-        screenToShow.style.display = 'block'; // Or 'flex' if it's a flex container
-        screenToShow.classList.remove('opacity-0', 'pointer-events-none', 'slide-out-left'); // Remove old states
-        screenToShow.classList.add('active'); // Add active class to trigger transition
+        screenToShow.style.display = 'flex';
+        screenToShow.classList.remove('opacity-0', 'pointer-events-none', 'slide-out-left');
+        screenToShow.classList.add('active');
 
-        // If coming from 'goBack' or initial load, ensure it slides in correctly
-        if (!pushToHistory && currentActiveScreenId) { // If going back, or initial load, it comes from right
-            screenToShow.classList.add('slide-in-right'); // Add slide-in-right class
-            // Force reflow to ensure transform is applied before removing
+        if (!pushToHistory && currentActiveScreenId) {
+            screenToShow.classList.add('slide-in-right');
             void screenToShow.offsetWidth;
-            screenToShow.classList.remove('slide-in-right'); // Remove to trigger transition to 0
+            screenToShow.classList.remove('slide-in-right');
         } else {
-            screenToShow.style.transform = 'translateX(0)'; // Ensure it's at 0 for non-back transitions
+            screenToShow.style.transform = 'translateX(0)';
         }
 
-
-        // Adjust popup container height to fit content of the active screen
         setTimeout(() => {
             if (popupContainer) {
                 popupContainer.style.height = screenToShow.scrollHeight + 'px';
             }
-        }, 50); // Small delay to allow content to render and calculate its height
+        }, 50);
     };
 
     /**
      * Navigates back to the previous screen in the history stack.
      */
     window.goBack = () => {
-        console.log('goBack called. Current history:', screenHistory); // DEBUG
+        console.log('goBack called. Current history:', screenHistory);
         if (screenHistory.length > 0) {
             const prevScreenId = screenHistory.pop();
-            console.log('Popping from history:', prevScreenId, 'New history:', screenHistory); // DEBUG
-            showScreen(prevScreenId, false); // Don't push to history when going back
+            console.log('Popping from history:', prevScreenId, 'New history:', screenHistory);
+            showScreen(prevScreenId, false);
         } else {
-            console.log('History empty, closing popup.'); // DEBUG
-            closePopup(); // If no history, close the popup
+            console.log('History empty, closing popup.');
+            closePopup();
         }
     };
 
-    // Functions to switch between specific screens - now using the centralized showScreen
     window.showInitialChoiceScreen = () => {
-        screenHistory.length = 0; // Clear history when going to initial screen
-        console.log('showInitialChoiceScreen: History cleared.'); // DEBUG
-        showScreen('initial-choice-screen', false); // Show initial screen without pushing to history
+        screenHistory.length = 0;
+        console.log('showInitialChoiceScreen: History cleared.');
+        showScreen('initial-choice-screen', false);
     };
 
     window.showLoginScreen = () => {
         showScreen('login-screen');
+        if (phoneOtpTimerInterval) { clearInterval(phoneOtpTimerInterval); }
+        phoneOtpResendAvailableTime = 0;
     };
 
     window.showSignupScreen = () => {
         showScreen('signup-screen');
-        // Clear previous phone OTP timer if any
-        if (phoneOtpTimerInterval) {
-            clearInterval(phoneOtpTimerInterval);
-        }
-        phoneOtpResendAvailableTime = 0; // Reset
+        if (phoneOtpTimerInterval) { clearInterval(phoneOtpTimerInterval); }
+        phoneOtpResendAvailableTime = 0;
     };
 
     window.showPhoneSignup = () => {
         showScreen('phone-signup-screen');
-        // Clear previous phone OTP timer if any
-        if (phoneOtpTimerInterval) {
-            clearInterval(phoneOtpTimerInterval);
-        }
-        phoneOtpResendAvailableTime = 0; // Reset
+        if (phoneOtpTimerInterval) { clearInterval(phoneOtpTimerInterval); }
+        phoneOtpResendAvailableTime = 0;
     };
 
     window.showPhoneLogin = () => {
@@ -3857,40 +4253,39 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     window.showPhoneOtpInput = () => {
         showScreen('phone-otp-input-screen');
-        // Clear previous phone OTP timer if any
-        if (phoneOtpTimerInterval) {
-            clearInterval(phoneOtpTimerInterval);
-        }
-        phoneOtpResendAvailableTime = 0; // Reset
+        if (phoneOtpTimerInterval) { clearInterval(phoneOtpTimerInterval); }
+        phoneOtpResendAvailableTime = 0;
     };
 
-    /**
-     * Shows the email OTP input screen, displaying the pending email for verification.
-     */
     window.showEmailOtpInputScreen = () => {
         const pendingEmail = localStorage.getItem('pendingEmailVerification');
         if (pendingEmail) {
-            if (emailOtpDisplayEmail) emailOtpDisplayEmail.textContent = pendingEmail; // Display the email for clarity
+            if (emailOtpDisplayEmail) emailOtpDisplayEmail.textContent = pendingEmail;
             showScreen('email-otp-input-screen');
-            // Clear previous email OTP timer if any
-            if (emailOtpTimerInterval) {
-                clearInterval(emailOtpTimerInterval);
-            }
-            emailOtpResendAvailableTime = 0; // Reset
+            if (emailOtpTimerInterval) { clearInterval(emailOtpTimerInterval); }
+            emailOtpResendAvailableTime = 0;
         } else {
             showMessageBox('No email found for OTP verification. Please try Google login again.', 'error');
-            showInitialChoiceScreen(); // Go back to initial screen
+            showInitialChoiceScreen();
         }
     };
 
-    /**
-     * Shows the create password screen, clearing previous password inputs.
-     */
     window.showCreatePasswordScreen = () => {
-        // Clear password fields when showing the screen
         if (newPasswordInput) newPasswordInput.value = '';
         if (confirmPasswordInput) confirmPasswordInput.value = '';
         showScreen('create-password-screen');
+    };
+
+    window.showForgotPasswordInputScreen = () => {
+        if (forgotPasswordIdentifierInput) forgotPasswordIdentifierInput.value = '';
+        showScreen('forgot-password-input-screen');
+    };
+
+    // NEW: Function to show Complete Profile Screen
+    window.showCompleteProfileScreen = () => {
+        if (profileNameInput) profileNameInput.value = '';
+        if (profileDobInput) profileDobInput.value = '';
+        showScreen('complete-profile-screen');
     };
 
 
@@ -3899,11 +4294,11 @@ document.addEventListener('DOMContentLoaded', async () => {
      */
     window.openPopup = () => {
         if (popupOverlay) popupOverlay.classList.add('active');
-        popupOverlay.classList.remove('invisible', 'opacity-0'); // Make visible
-        document.body.classList.add('no-scroll'); // Prevent body scrolling
-        screenHistory.length = 0; // Clear history when opening fresh
-        console.log('openPopup: History cleared.'); // DEBUG
-        showScreen('initial-choice-screen', false); // Show initial screen without pushing to history
+        popupOverlay.classList.remove('invisible', 'opacity-0');
+        document.body.classList.add('no-scroll');
+        screenHistory.length = 0;
+        console.log('openPopup: History cleared.');
+        showScreen('initial-choice-screen', false);
     };
 
     /**
@@ -3911,43 +4306,40 @@ document.addEventListener('DOMContentLoaded', async () => {
      */
     window.closePopup = () => {
         if (popupOverlay) popupOverlay.classList.remove('active');
-        popupOverlay.classList.add('invisible', 'opacity-0'); // Hide
-        document.body.classList.remove('no-scroll'); // Allow body scrolling
+        popupOverlay.classList.add('invisible', 'opacity-0');
+        document.body.classList.remove('no-scroll');
         screenHistory.length = 0;
-        console.log('closePopup: History cleared and popup closed.'); // DEBUG
-        // When closing popup, ensure all screens are hidden
+        console.log('closePopup: History cleared and popup closed.');
         for (const id in screens) {
             const screen = screens[id];
             if (screen) {
                 screen.classList.remove('active');
                 screen.classList.add('opacity-0', 'pointer-events-none');
-                screen.classList.remove('slide-out-left', 'slide-in-right'); // Ensure this is clean
-                screen.style.display = 'none'; // Ensure it's fully hidden
+                screen.classList.remove('slide-out-left', 'slide-in-right');
+                screen.style.display = 'none';
             }
         }
-        // Also clear any pending OTP/password data
         localStorage.removeItem('pendingEmailVerification');
         localStorage.removeItem('userEmailForPasswordSet');
+        localStorage.removeItem('passwordResetIdentifier');
+        localStorage.removeItem('identifierForProfileCompletion'); // NEW: Clear profile completion identifier
+        hideUserTooltip(); // Hide tooltip when popup closes
     };
 
     // --- Initial Load Logic ---
-    // NO AUTOMATIC POPUP ON LOAD. User will click buttons.
-    // Call updateLoginUI on initial load to set the correct state for the main page
     updateLoginUI();
 
-    // Automatically show signup popup after a delay if not logged in
     setTimeout(() => {
         const userToken = localStorage.getItem('userToken');
-        if (!userToken) { // Only show if user is not logged in
+        if (!userToken) {
             openPopup();
         }
-    }, 2000); // 2-second delay
+    }, 2000);
 
     // --- Event Listeners ---
     if (closePopupButton) {
         closePopupButton.addEventListener('click', closePopup);
     }
-    // REMOVED: mainLogoutButton listener
     if (testUserCountBtn) {
         testUserCountBtn.addEventListener('click', () => getUserCount(testUserCountBtn));
     }
@@ -3960,58 +4352,55 @@ document.addEventListener('DOMContentLoaded', async () => {
         topLoginBtn.addEventListener('click', openPopup);
     }
 
+    // User Avatar and Dropdown Listeners
+    if (userAvatarContainer && userDropdown) {
+        let isDropdownOpen = false;
+
+        userAvatarContainer.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent click from propagating to document
+
+            if (!isDropdownOpen) {
+                userDropdown.classList.add('show');
+                // Ensure dropdown username is updated when opened by click
+                const loggedInUserName = localStorage.getItem('loggedInUserName') || localStorage.getItem('loggedInUserEmail') || 'Guest';
+                if (dropdownUsername) dropdownUsername.textContent = loggedInUserName;
+                
+                isDropdownOpen = true;
+                // Add a click listener to the document to close dropdown when clicking outside
+                document.addEventListener('click', outsideClickHandler);
+            } else {
+                userDropdown.classList.remove('show');
+                isDropdownOpen = false;
+                document.removeEventListener('click', outsideClickHandler);
+            }
+        });
+
+        // Event listeners for the new tooltip on hover
+        userAvatarContainer.addEventListener('mouseover', showUserTooltip);
+        userAvatarContainer.addEventListener('mouseout', hideUserTooltip);
 
 
-   // Updated User Avatar and Dropdown Listeners with Outside Click Handling
-if (userAvatarContainer && userDropdown) {
-    // Styling: Thick black border + black initials
-    userAvatarContainer.style.border = '3px solid black';
-    userAvatarContainer.style.color = 'black';
-    userAvatarContainer.style.fontWeight = 'bold';
-    userAvatarContainer.style.borderRadius = '50%'; // Ensure it's round
-
-    let isDropdownOpen = false;
-
-    userAvatarContainer.addEventListener('click', (e) => {
-        e.stopPropagation();
-
-        if (!isDropdownOpen) {
-            userDropdown.classList.add('show');
-            isDropdownOpen = true;
-
-            // Add document-level outside click listener
-            document.addEventListener('click', outsideClickHandler);
-        } else {
-            userDropdown.classList.remove('show');
-            isDropdownOpen = false;
-            document.removeEventListener('click', outsideClickHandler);
-        }
-    });
-
-    function outsideClickHandler(event) {
-        const clickedOutside = !userAvatarContainer.contains(event.target) && !userDropdown.contains(event.target);
-        if (clickedOutside) {
-            userDropdown.classList.remove('show');
-            isDropdownOpen = false;
-            document.removeEventListener('click', outsideClickHandler);
-        }
-    }
-}
-
+        function outsideClickHandler(event) {
+            // Check if the click was outside the avatar container and the dropdown itself
+            const clickedOutside = !userAvatarContainer.contains(event.target) && !userDropdown.contains(event.target);
+            if (clickedOutside) {
+                userDropdown.classList.remove('show');
+                isDropdownOpen = false;
+                document.removeEventListener('click', outsideClickHandler);
+            }
+        }
+    }
 
     if (dropdownLogoutBtn) {
         dropdownLogoutBtn.addEventListener('click', () => {
-            localStorage.removeItem('userToken'); // Clear the token
-            localStorage.removeItem('loggedInUserEmail'); // Clear stored email
-            localStorage.removeItem('loggedInUserName'); // Clear stored name
+            localStorage.removeItem('userToken');
+            localStorage.removeItem('loggedInUserEmail');
+            localStorage.removeItem('loggedInUserName');
             showMessageBox('You have been logged out.', 'info');
-            updateLoginUI(); // Update UI to reflect logged out state
-            closePopup(); // Close the popup
-            // Optionally, open the initial choice screen after logout
-            // openPopup(); // This will show the initial choice screen
+            updateLoginUI();
+            closePopup(); // Close popup after logout
         });
     }
-
 
     // Initial Choice Screen Listeners
     if (initialSignupBtn) {
@@ -4019,7 +4408,7 @@ if (userAvatarContainer && userDropdown) {
     }
     if (initialLoginLink) {
         initialLoginLink.addEventListener('click', (e) => {
-            e.preventDefault(); // Prevent default link behavior
+            e.preventDefault();
             showLoginScreen();
         });
     }
@@ -4038,17 +4427,18 @@ if (userAvatarContainer && userDropdown) {
                 return;
             }
             await loginUser(identifier, password, loginContinueButton);
-            // Clear inputs after attempt
             if (loginEmailUsernameInput) loginEmailUsernameInput.value = '';
             if (loginPasswordInput) loginPasswordInput.value = '';
         });
     }
-    if (loginFacebookBtn) {
-        loginFacebookBtn.addEventListener('click', () => {
-            showMessageBox('Facebook login is not implemented in this demo.', 'info');
-            // handleAuthClick('Facebook', 'Login'); // Original placeholder
+
+    if (forgotPasswordLink) {
+        forgotPasswordLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showForgotPasswordInputScreen();
         });
     }
+
     if (loginPhoneOtpBtn) {
         loginPhoneOtpBtn.addEventListener('click', showPhoneOtpInput);
     }
@@ -4075,13 +4465,12 @@ if (userAvatarContainer && userDropdown) {
                 showMessageBox('Please enter a valid email address.', 'error');
                 return;
             }
-            if (!password || password.length < 6) { // Basic validation
+            if (!password || password.length < 6) {
                 showMessageBox('Please enter a password with at least 6 characters.', 'error');
                 return;
             }
 
             await registerUser(email, password, null, signupNextButton);
-            // Clear inputs after successful registration attempt
             if (signupEmailInput) signupEmailInput.value = '';
             if (signupPasswordInput) signupPasswordInput.value = '';
         });
@@ -4153,6 +4542,14 @@ if (userAvatarContainer && userDropdown) {
             if (phoneLoginPasswordInput) phoneLoginPasswordInput.value = '';
         });
     }
+
+    if (phoneForgotPasswordLink) {
+        phoneForgotPasswordLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showForgotPasswordInputScreen();
+        });
+    }
+
     if (phoneLoginSignupLink) {
         phoneLoginSignupLink.addEventListener('click', (e) => {
             e.preventDefault();
@@ -4171,6 +4568,7 @@ if (userAvatarContainer && userDropdown) {
                 showMessageBox('Please enter your phone number to send OTP.', 'error');
                 return;
             }
+            currentOtpContext = 'login';
             await sendPhoneOtp(phoneNumber, sendPhoneOtpButton);
         });
     }
@@ -4181,26 +4579,50 @@ if (userAvatarContainer && userDropdown) {
     }
     if (verifyPhoneOtpButton) {
         verifyPhoneOtpButton.addEventListener('click', async () => {
-            const phoneNumber = otpPhoneNumberInput ? otpPhoneNumberInput.value.trim() : ''; // Get from previous screen's input
             const otpCode = phoneOtpCodeInput ? phoneOtpCodeInput.value.trim() : '';
 
-            if (!phoneNumber || !otpCode) {
-                showMessageBox('Please enter both phone number and OTP.', 'error');
+            if (!otpCode) {
+                showMessageBox('Please enter the OTP.', 'error');
                 return;
             }
-            await verifyPhoneOtp(phoneNumber, otpCode, verifyPhoneOtpButton);
-            if (phoneOtpCodeInput) phoneOtpCodeInput.value = ''; // Clear OTP input
+
+            if (currentOtpContext === 'passwordReset') {
+                const identifier = localStorage.getItem('passwordResetIdentifier');
+                if (!identifier) {
+                    showMessageBox('No identifier found for password reset. Please restart the process.', 'error');
+                    closePopup();
+                    return;
+                }
+                await verifyPasswordResetOtp(identifier, otpCode, verifyPhoneOtpButton);
+            } else {
+                const phoneNumber = otpPhoneNumberInput ? otpPhoneNumberInput.value.trim() : '';
+                if (!phoneNumber) {
+                    showMessageBox('No phone number found. Please go back and re-enter.', 'error');
+                    return;
+                }
+                await verifyPhoneOtp(phoneNumber, otpCode, verifyPhoneOtpButton);
+            }
+            if (phoneOtpCodeInput) phoneOtpCodeInput.value = '';
         });
     }
     if (resendPhoneOtpButton) {
         resendPhoneOtpButton.addEventListener('click', async () => {
-            if (phoneOtpResendAvailableTime <= 0) { // Only allow resend if timer has run out
-                const phoneNumber = otpPhoneNumberInput ? otpPhoneNumberInput.value.trim() : '';
-                if (!phoneNumber) {
-                    showMessageBox('No phone number found to resend OTP. Please go back and re-enter.', 'error');
-                    return;
+            if (phoneOtpResendAvailableTime <= 0) {
+                if (currentOtpContext === 'passwordReset') {
+                    const identifier = localStorage.getItem('passwordResetIdentifier');
+                    if (!identifier) {
+                        showMessageBox('No identifier found to resend OTP. Please restart the process.', 'error');
+                        return;
+                    }
+                    await sendPasswordResetOtp(identifier, resendPhoneOtpButton);
+                } else {
+                    const phoneNumber = otpPhoneNumberInput ? otpPhoneNumberInput.value.trim() : '';
+                    if (!phoneNumber) {
+                        showMessageBox('No phone number found to resend OTP. Please go back and re-enter.', 'error');
+                        return;
+                    }
+                    await sendPhoneOtp(phoneNumber, resendPhoneOtpButton);
                 }
-                await sendPhoneOtp(phoneNumber, resendPhoneOtpButton); // Reuse sendPhoneOtp function
             } else {
                 showMessageBox('Please wait before resending OTP.', 'info');
             }
@@ -4221,7 +4643,7 @@ if (userAvatarContainer && userDropdown) {
                 return;
             }
             await verifyEmailOtp(email, otpCode, verifyEmailOtpButton);
-            if (emailOtpCodeInput) emailOtpCodeInput.value = ''; // Clear OTP input
+            if (emailOtpCodeInput) emailOtpCodeInput.value = '';
         });
     }
     if (resendEmailOtpButton) {
@@ -4233,12 +4655,11 @@ if (userAvatarContainer && userDropdown) {
                     return;
                 }
                 try {
-                    // This assumes you have a backend endpoint specifically for resending email OTP
-                    const response = await fetch(`${BACKEND_BASE_URL}/api/auth/resend-email-otp`, { // Use BACKEND_BASE_URL
+                    const response = await fetch(`${BACKEND_BASE_URL}/api/auth/resend-email-otp`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'ngrok-skip-browser-warning': 'true' // Crucial for ngrok free plan
+                            'ngrok-skip-browser-warning': 'true'
                         },
                         body: JSON.stringify({ email })
                     });
@@ -4247,7 +4668,7 @@ if (userAvatarContainer && userDropdown) {
                         showMessageBox(data.message, 'success');
                         if (data.debugOtp) { console.warn(`DEVELOPMENT GOOGLE EMAIL OTP (Resent): ${data.debugOtp}`); }
                         startEmailOtpTimer(120);
-                        resendEmailOtpButton.classList.add('hidden'); // Hide resend button again
+                        resendEmailOtpButton.classList.add('hidden');
                     } else {
                         showMessageBox('Failed to resend email OTP: ' + (data.message || 'An unknown error occurred.'), 'error');
                     }
@@ -4261,23 +4682,44 @@ if (userAvatarContainer && userDropdown) {
         });
     }
 
+    // Forgot Password Input Screen Listeners
+    if (forgotPasswordBackBtn) {
+        forgotPasswordBackBtn.addEventListener('click', goBack);
+    }
+    if (sendPasswordResetOtpButton) {
+        sendPasswordResetOtpButton.addEventListener('click', async () => {
+            const identifier = forgotPasswordIdentifierInput ? forgotPasswordIdentifierInput.value.trim() : '';
+            if (!identifier) {
+                showMessageBox('Please enter your email or phone number.', 'error');
+                return;
+            }
+            await sendPasswordResetOtp(identifier, sendPasswordResetOtpButton);
+        });
+    }
+    if (forgotPasswordLoginLink) {
+        forgotPasswordLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showLoginScreen();
+        });
+    }
+
     // Set Password Screen Listeners
     if (createPasswordBackBtn) {
         createPasswordBackBtn.addEventListener('click', goBack);
     }
     if (setNewPasswordButton) {
         setNewPasswordButton.addEventListener('click', async () => {
-            const email = localStorage.getItem('userEmailForPasswordSet'); // Get the email
+            const identifier = localStorage.getItem('userEmailForPasswordSet') || localStorage.getItem('passwordResetIdentifier');
             const newPassword = newPasswordInput ? newPasswordInput.value.trim() : '';
             const confirmPassword = confirmPasswordInput ? confirmPasswordInput.value.trim() : '';
 
-            if (!email) {
-                showMessageBox('User email not found. Please try logging in again.', 'error');
+            if (!identifier) {
+                showMessageBox('User identifier not found. Please try logging in or resetting password again.', 'error');
                 closePopup();
                 return;
             }
 
-            if (!newPassword || newPassword.length < 6) { // Example password length validation
+            if (!newPassword || newPassword.length < 6) {
                 showMessageBox('Please enter a new password with at least 6 characters.', 'error');
                 return;
             }
@@ -4287,57 +4729,39 @@ if (userAvatarContainer && userDropdown) {
                 return;
             }
 
-            await setPasswordForUser(email, newPassword, setNewPasswordButton);
+            await setPasswordForUser(identifier, newPassword, setNewPasswordButton);
             if (newPasswordInput) newPasswordInput.value = '';
             if (confirmPasswordInput) confirmPasswordInput.value = '';
         });
     }
 
-    // --- Sidebar and Overlay Event Listeners ---
-    if (hamburger) {
-        hamburger.addEventListener('click', toggleSidebar);
+    // NEW: Complete Profile Screen Listeners
+    if (completeProfileBackBtn) {
+        completeProfileBackBtn.addEventListener('click', goBack);
     }
-    if (closeBtn) {
-        closeBtn.addEventListener('click', toggleSidebar);
-    }
-    if (overlay) {
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay && sidebar && sidebar.classList.contains('open')) {
-                toggleSidebar(); // Close sidebar if overlay itself is clicked
+    if (completeProfileSubmitButton) {
+        completeProfileSubmitButton.addEventListener('click', async () => {
+            const name = profileNameInput ? profileNameInput.value.trim() : '';
+            const dob = profileDobInput ? profileDobInput.value.trim() : ''; // YYYY-MM-DD format from input type="date"
+
+            if (!name) {
+                showMessageBox('Please enter your name.', 'error');
+                return;
             }
+            if (!dob) {
+                showMessageBox('Please enter your date of birth.', 'error');
+                return;
+            }
+
+            const identifier = identifierForProfileCompletion; // Get identifier stored from previous step
+            if (!identifier) {
+                showMessageBox('Could not find user identifier for profile completion. Please try logging in again.', 'error');
+                closePopup();
+                return;
+            }
+
+            await completeUserProfile(identifier, name, dob, completeProfileSubmitButton);
         });
     }
-
-    // Close album overlay button listener
-    if (closeOverlayBtn) {
-        closeOverlayBtn.addEventListener('click', closeAlbumOverlay);
-    }
-
-    // --- Initial Setup on DOM Content Loaded (moved from above) ---
-    // Handle Spotify callback on page load (checks URL for access token)
-    handleSpotifyCallback();
-
-    // Attempt to retrieve Spotify access token from localStorage
-    const storedToken = localStorage.getItem('spotifyAccessToken');
-    if (storedToken) {
-        spotifyAccessToken = storedToken;
-        // If a token is found, try to load the Spotify SDK
-        loadSpotifySDK(); // Call loadSpotifySDK here
-    }
-
-    // Fetch albums from your backend API (only to populate allAlbumsData for search)
-    await fetchAlbums();
-
-    // Attach event listeners to the existing HTML cards after albums data is fetched
-    attachEventListenersToHtmlCards();
-
-    if (volumeBar) {
-        audio.volume = volumeBar.value;
-    }
-    togglePlayerControls(true); // Ensure controls are enabled initially
-
-    // Initial state: player bar should always be visible
-    if (playerBar) {
-        playerBar.style.display = 'flex'; // Ensure player bar is visible on load
-    }
 });
+

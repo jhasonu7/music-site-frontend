@@ -1739,11 +1739,11 @@ header, main {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 10000; /* Increased z-index to be on top of everything */
+    z-index: 10000;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
-    padding: 0; /* Removed vertical padding to maximize popup height */
+    padding: 0;
     box-sizing: border-box;
 }
 
@@ -1754,69 +1754,67 @@ header, main {
 
 /* Pop-up Container */
 .popup-container {
-    background-color: #282828;
-    border-radius: 8px;
+    background-color: #282828; /* Will be overridden to #000 for mobile */
+    border-radius: 8px; /* Will be overridden to 0 for mobile */
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    width: 90%; /* Responsive width for smaller screens */
-    max-width: 480px; /* Max width for phones/tablets */
-    position: relative; /* For positioning close button */
+    width: 90%;
+    max-width: 480px; /* Default max-width for smaller desktops/tablets */
+    position: relative;
     box-sizing: border-box;
     min-height: 200px; 
-    /* Setting a maximum height relative to viewport for the popup itself */
-    max-height: 100vh; /* Allow it to take full viewport height on small screens */
-    height: auto; /* Let height be determined by content */
-    /* CRITICAL: No internal scrolling for this container */
-    overflow: hidden; /* Prevent all internal scrolling within the popup */
+    max-height: 100vh; /* Default max-height */
+    height: auto;
+    overflow: hidden; /* Prevent internal scrolling of the container itself */
     display: flex;
     flex-direction: column;
-    align-items: center; /* Center horizontally */
+    align-items: center;
 }
 
 /* Screen management */
 .popup-screen {
-    position: absolute; /* Keep absolute for stacking effect */
+    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%; /* Take full height of container */
-    
-    padding: 40px; /* Default padding for smaller screens */
+    padding: 40px;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start; /* Align content to start for better space usage */
-    align-items: center; /* Horizontally center content */
-    
+    justify-content: flex-start; /* Default, overridden for mobile */
+    align-items: center;
     transition: opacity 0.3s ease;
     opacity: 0;
     pointer-events: none;
     box-sizing: border-box;
-    overflow: hidden; /* Prevents individual screen content from overflowing */
+    overflow-y: auto; /* Changed from hidden to auto to allow scrolling */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 .popup-screen.active {
     opacity: 1;
     pointer-events: auto;
-    position: static; /* Make active screen flow normally within flex parent */
+    position: static;
     flex-grow: 1;
 }
 
 /* Close Button */
 .close-button {
     position: absolute;
-    top: 15px; /* Default top for smaller screens */
-    right: 15px; /* Default right for smaller screens */
+    top: 15px;
+    right: 15px;
     background: none;
     border: none;
-    color: #b3b3b3;
-    font-size: 24px;
+    color: #fff; /* Changed to white for better visibility */
+    font-size: 28px; /* Larger font size */
     cursor: pointer;
     padding: 0;
     line-height: 1;
-    z-index: 10; /* Ensure it's above other content */
+    z-index: 10;
+    font-weight: bold; /* Made bold */
 }
 
 .close-button:hover {
-    color: #fff;
+    color: #ccc;
 }
 
 /* Common Styles for Pop-up Content */
@@ -1825,70 +1823,73 @@ header, main {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start; /* Align content to start for better space usage */
-    flex-grow: 1; /* Allow content to grow within the screen */
+    justify-content: flex-start;
+    flex-grow: 1;
     min-height: 0; 
 }
 
 .popup-content h2 {
-    font-size: 30px; /* Increased font size */
+    font-size: 32px; /* Increased font size */
     margin-bottom: 30px;
-    color: #bab6b6;
+    color: #fff; /* Changed to white */
     line-height: 1.2;
     text-align: center;
-    flex-shrink: 0; /* Prevent heading from shrinking */
+    flex-shrink: 0;
+    font-weight: bold; /* Made bold */
 }
 
-.spotify-logo-placeholder {
-    width: 60px;
-    height: 60px;
-    background-color: #000000;
-    margin: 0 auto 30px auto; /* Centered with bottom margin */
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 32px; 
-    font-weight: bold;
-    color: #000000;
-    flex-shrink: 0; /* CRITICAL: Prevent it from shrinking or disappearing */
+/* Logo (Swarify logo, referenced by .log2 img in HTML) */
+.log2 img {
+    width: 110px; /* Default size */
+    margin-bottom: 30px;
+    flex-shrink: 0;
 }
-.spotify-logo-placeholder::before {
-    content: '';
-    width: 30px;
-    height: 30px;
+
+/* Album art (on initial screen) */
+.album-art-placeholder {
+    width: 180px;
+    height: 180px;
+    background-color: #292727;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.album-art-image {
+    width: 100%;
+    height: 100%;
+    border-radius:150px;
+    object-fit: cover;
     display: block;
-    background-color: #fff;
-    border-radius: 50%;
 }
-
 
 /* Auth Buttons (Google, Facebook, Apple, Phone) */
 .auth-button {
     width: 100%;
-    padding: 14px 20px;
+    padding: 18px 20px; /* Increased padding */
     margin-bottom: 15px;
     border: 1px solid #878787;
     border-radius: 50px;
     background-color: transparent;
-    color: #bab6b6;
-    font-size: 17px; /* Increased font size */
+    color: #fff; /* Changed to white */
+    font-size: 19px; /* Increased font size */
+    font-weight: bold; /* Made bold */
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; /* Added box-shadow and transform */
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     text-align: center;
-    min-height: 48px;
+    min-height: 55px; /* Increased min-height */
     box-sizing: border-box;
-    flex-shrink: 0; /* Prevent buttons from shrinking */
+    flex-shrink: 0;
 }
 
 .auth-button:hover {
     border-color: #fff;
     background-color: #3e3e3e;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Attractive feature */
-    transform: translateY(-2px); /* Attractive feature */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
 }
 
 .auth-button .logo-placeholder {
@@ -1900,47 +1901,40 @@ header, main {
 
 /* Specific Google Button Styling */
 .auth-button.google-button {
-    background-color: transparent; /* Changed to transparent to allow Google's styling */
-    color: #bab6b6;
-    border: none; /* Remove border for a solid fill */
-    padding: 0; /* Remove padding to allow inner content to control size */
-    overflow: hidden; /* Hide any overflow from the Google button's internal structure */
-    display: flex; /* Make it a flex container to center its content */
-    align-items: center; /* Center content vertically */
-    justify-content: center; /* Center content horizontally */
-    min-height: 48px; /* Ensure minimum height */
-    border-radius: 50px; /* Apply border-radius directly to the button */
+    background-color: transparent;
+    color: #fff;
+    border: none;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 55px; /* Increased min-height */
+    border-radius: 50px;
 }
 
-/* Adjust the internal Google button element to fill its parent */
 .g_id_signin {
-    width: 100% !important; /* Force full width */
-    min-height: inherit; /* Inherit min-height from parent */
-    display: flex; /* Make it a flex container */
-    justify-content: center; /* Center content horizontally */
-    align-items: center; /* Center content vertically */
-    box-sizing: border-box; /* Include padding/border in width/height */
-    padding: 0 !important; /* Remove any internal padding */
-    /* Removed explicit height and max-height to allow Google's internal styling */
+    width: 100% !important;
+    min-height: inherit;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 0 !important;
 }
 
-/* You might need to target elements *inside* the Google button if it still doesn't fill */
-/* This is often tricky as Google's GSI client injects its own styles */
-.g_id_signin > div { /* Targeting the direct child div of g_id_signin */
+.g_id_signin > div {
     width: 100% !important;
-    border-radius: 50px !important; /* Apply border-radius to the inner button */
-    box-sizing: border-box; /* Include padding/border in width/height */
-    /* Removed explicit height and max-height to allow Google's internal styling */
+    border-radius: 50px !important;
+    box-sizing: border-box;
 }
 
 .g_id_signin iframe {
     width: 100% !important;
-    border-radius: 50px !important; /* Apply border-radius to the iframe */
-    background-color: transparent !important; /* Changed to transparent to allow Google's styling */
-    box-sizing: border-box; /* Include padding/border in width/height */
-    /* Removed explicit height and max-height to allow Google's internal styling */
+    border-radius: 50px !important;
+    background-color: transparent !important;
+    box-sizing: border-box;
 }
-
 
 /* Separator */
 .separator {
@@ -1948,9 +1942,10 @@ header, main {
     align-items: center;
     text-align: center;
     margin: 25px 0;
-    color: #b3b3b3;
+    color: #fff; /* Changed to white */
     width: 100%;
-    flex-shrink: 0; /* Prevent separator from shrinking */
+    flex-shrink: 0;
+    font-weight: bold; /* Made bold */
 }
 
 .separator::before,
@@ -1973,36 +1968,37 @@ header, main {
     text-align: left;
     margin-bottom: 20px;
     width: 100%;
-    flex-shrink: 0; /* Prevent input group from shrinking */
+    flex-shrink: 0;
 }
 
 .input-group label {
     display: block;
     margin-bottom: 8px;
-    font-size: 15px; /* Increased font size */
-    color:#bab6b6;
-    font-weight: bold;
+    font-size: 17px; /* Increased font size */
+    color:#fff; /* Changed to white */
+    font-weight: bold; /* Made bold */
 }
 
 .input-group input[type="text"],
 .input-group input[type="email"],
 .input-group input[type="tel"],
 .input-group input[type="password"],
-.input-group input[type="date"] { /* Added date to this selector */
+.input-group input[type="date"] {
     width: 100%;
-    padding: 12px 15px;
+    padding: 15px 15px; /* Increased padding */
     border: 1px solid #535353;
     border-radius: 4px;
     background-color: #3e3e3e;
-    color: #bab6b6;
-    font-size: 17px; /* Increased font size */
+    color: #fff; /* Changed to white */
+    font-size: 18px; /* Increased font size */
     box-sizing: border-box;
+    font-weight: bold; /* Made bold */
 }
 
 .input-group input[type="text"]::placeholder,
 .input-group input[type="email"]::placeholder,
 .input-group input[type="tel"]::placeholder,
-.input-group input[type="password"]::placeholder { /* Added password to this selector */
+.input-group input[type="password"]::placeholder {
     color: #b3b3b3;
 }
 
@@ -2010,7 +2006,7 @@ header, main {
 .input-group input[type="email"]:focus,
 .input-group input[type="tel"]:focus,
 .input-group input[type="password"]:focus,
-.input-group input[type="date"]:focus { /* Added date to this selector */
+.input-group input[type="date"]:focus {
     outline: none;
     border-color: #1DB954;
 }
@@ -2018,40 +2014,41 @@ header, main {
 /* Main Buttons (Green and Transparent) */
 .main-button {
     width: 100%;
-    padding: 14px 20px;
+    padding: 16px 20px; /* Increased padding */
     border: none;
     border-radius: 50px;
-    font-size: 19px; /* Increased font size */
+    font-size: 20px; /* Increased font size */
     font-weight: bold;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Added box-shadow */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
     margin-top: 20px;
-    min-height: 48px;
+    min-height: 55px; /* Increased min-height */
     box-sizing: border-box;
-    flex-shrink: 0; /* Prevent main buttons from shrinking */
+    flex-shrink: 0;
 }
 
 .main-button:hover {
     transform: scale(1.02);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4); /* Attractive feature */
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
 }
 
 .green-button {
     background-image: linear-gradient(to right, #cf5151, #1d8d8f);
-    color: #bab6b6;
+    color: #fff; /* Changed to white */
 }
 
 .green-button:hover {
-    background-image: linear-gradient(to right, #cf5151, #1d8d8f); /* Attractive feature: Gradient shift */
+    background-image: linear-gradient(to right, #e06060, #229ea0); /* Slightly stronger gradient on hover */
 }
 
 .transparent-button {
     background-color: transparent;
     border: 1px solid #878787;
-    color: #d7cece;
+    color: #fff; /* Changed to white */
     margin-top: 15px;
-    font-size: 16px;
-    flex-shrink: 0; /* Prevent transparent buttons from shrinking */
+    font-size: 18px; /* Increased font size */
+    font-weight: bold; /* Made bold */
+    flex-shrink: 0;
 }
 
 .transparent-button:hover {
@@ -2061,30 +2058,30 @@ header, main {
 
 /* Small Text and Links */
 .small-text {
-    font-size: 15px; /* Increased font size */
-    color: #b3b3b3;
-    margin-top: 20px; /* Ensure space from above elements */
+    font-size: 16px; /* Increased font size */
+    color: #ccc; /* Slightly lighter grey for contrast */
+    margin-top: 20px;
     line-height: 1.4;
     text-align: center;
-    flex-shrink: 0; /* Prevent this text from shrinking */
-    padding-bottom: 0; /* Ensure no extra padding pushing it down in some contexts */
+    flex-shrink: 0;
+    padding-bottom: 0;
+    font-weight: bold; /* Made bold */
 }
 
 .small-text a {
-    color: #bab6b6;
-    text-decoration: none; /* Changed to none for a cleaner look */
-    transition: color 0.3s ease; /* Smooth transition for hover effect */
+    color: #fff; /* Changed to white */
+    text-decoration: none;
+    transition: color 0.3s ease;
 }
 
 .small-text a:hover {
-    color: #1DB954; /* Spotify green on hover */
-    text-decoration: underline; /* Add underline on hover for clarity */
+    color: #1DB954;
+    text-decoration: underline;
 }
-
 
 /* Initial Choice Screen Specifics */
 .initial-choice-screen {
-    background-color: #282828; /* Changed to match popup container for consistency */
+    background-color: #282828; /* Will be overridden to #000 for mobile */
     padding: 40px;
     justify-content: center;
     align-items: center;
@@ -2094,37 +2091,21 @@ header, main {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px; /* Adjusted gap for spacing between items */
+    gap: 20px;
     width: 100%;
     flex-grow: 1;
-    justify-content: center; /* Center content within this flex container */
-    min-height: 0; /* Allow content to shrink if needed */
-}
-
-.album-art-placeholder {
-    width: 180px;
-    height: 180px;
-    background-color: #292727; /* Placeholder color, consider making it dynamic or removing if not used */
-    border-radius: 8px;
-    overflow: hidden;
-    flex-shrink: 0; /* Prevent shrinking */
-}
-
-.album-art-image {
-    width: 100%;
-    height: 100%;
-    border-radius:150px;
-    object-fit: cover;
-    display: block;
+    justify-content: center;
+    min-height: 0;
 }
 
 .initial-choice-text h2 {
-    font-size: 24px;
-    margin-bottom: 15px; /* Reduced margin */
-    color: #bab6b6;
+    font-size: 28px; /* Increased font size */
+    margin-bottom: 15px;
+    color: #fff; /* Changed to white */
     line-height: 1.3;
     text-align: center;
     flex-shrink: 0;
+    font-weight: bold; /* Made bold */
 }
 
 /* Prev Button */
@@ -2134,16 +2115,17 @@ header, main {
     left: 15px;
     background: none;
     border: none;
-    color: #b3b3b3;
-    font-size: 24px;
+    color: #fff; /* Changed to white */
+    font-size: 28px; /* Larger font size */
     cursor: pointer;
     padding: 0;
     line-height: 1;
     z-index: 10;
+    font-weight: bold; /* Made bold */
 }
 
 .prev-button:hover {
-    color: #fff;
+    color: #ccc;
 }
 
 /* Specific styling for the header with back button (used in create-password-screen) */
@@ -2151,38 +2133,39 @@ header, main {
     display: flex;
     align-items: center;
     width: 100%;
-    margin-bottom: 30px; /* Space below the header */
-    position: relative; /* For absolute positioning of back button */
+    margin-bottom: 30px;
+    position: relative;
     flex-shrink: 0;
 }
 
 .header-with-back .prev-button {
-    position: static; /* Override absolute positioning for flex flow */
-    margin-right: 15px; /* Space between button and title */
-    color: #bab6b6; /* Ensure color consistency */
+    position: static;
+    margin-right: 15px;
+    color: #fff; /* Changed to white */
 }
 
 .header-with-back h2 {
-    margin: 0; /* Remove default h2 margin */
-    flex-grow: 1; /* Allow title to take remaining space */
-    text-align: center; /* Center the title */
-}
-
-/* For the content div within create-password-screen */
-.create-password-screen .content {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
+    margin: 0;
     flex-grow: 1;
-    min-height: 0;
+    text-align: center;
 }
-
 
 /* ====================================
     Media Queries for Responsiveness
     ==================================== */
+
+/* For Desktops (added a new breakpoint or modified existing for wider popup) */
+@media (min-width: 769px) {
+    .popup-container {
+        max-width: 650px; /* Increased max-width for desktop */
+        max-height: 90vh; /* Added some vertical padding for desktop */
+    }
+    .popup-screen {
+        overflow-y: auto; /* Enable scrolling for desktop screens */
+        overflow-x: hidden; /* Prevent horizontal scrolling */
+    }
+}
+
 
 /* For Tablets and iPads (Portrait and Landscape) */
 @media (max-width: 768px) {
@@ -2193,59 +2176,55 @@ header, main {
     }
 
     .popup-screen {
-        padding: 25px; /* Slightly reduced padding */
-        justify-content: flex-start; /* Ensure content starts from top for better visibility */
-        overflow: hidden; /* No scrolling */
+        padding: 25px;
+        justify-content: flex-start; /* Changed to flex-start for tablets to allow more space at top */
+        overflow-y: auto; /* Changed to auto to allow scrolling */
+        overflow-x: hidden; /* Prevent horizontal scrolling */
     }
 
     .popup-content {
-        justify-content: flex-start; /* Ensure content starts from top */
+        justify-content: flex-start; /* Changed to flex-start for tablets */
     }
 
     .popup-content h2 {
-        font-size: 26px; /* Slightly smaller font */
-        margin-bottom: 20px; /* Reduced margin */
+        font-size: 28px;
+        margin-bottom: 20px;
     }
 
-    .spotify-logo-placeholder {
-        width: 48px; /* Slightly smaller */
-        height: 48px;
-        margin-bottom: 20px; /* Reduced margin */
-    }
-    .spotify-logo-placeholder::before {
-        width: 24px;
-        height: 24px;
+    .log2 img {
+        width: 80px;
+        margin-bottom: 20px;
     }
 
     .auth-button, .main-button {
-        padding: 12px 18px;
-        font-size: 16px; /* Increased font size */
-        min-height: 44px;
-        margin-bottom: 10px; /* Reduced margin */
+        padding: 14px 18px;
+        font-size: 17px;
+        min-height: 50px;
+        margin-bottom: 10px;
     }
     .main-button {
-        margin-top: 15px; /* Reduced margin */
+        margin-top: 15px;
     }
     .transparent-button {
-        margin-top: 10px; /* Reduced margin */
+        margin-top: 10px;
     }
 
     .separator {
-        margin: 20px 0; /* Reduced margin */
+        margin: 20px 0;
     }
 
     .input-group {
-        margin-bottom: 15px; /* Reduced margin */
+        margin-bottom: 15px;
     }
 
     .input-group label {
-        font-size: 14px; /* Increased font size */
+        font-size: 16px;
         margin-bottom: 5px;
     }
 
     .input-group input {
-        padding: 10px 12px;
-        font-size: 16px; /* Increased font size */
+        padding: 12px 12px;
+        font-size: 17px;
     }
 
     .initial-choice-screen {
@@ -2253,350 +2232,242 @@ header, main {
     }
 
     .album-art-placeholder {
-        width: 150px; /* Slightly smaller */
+        width: 150px;
         height: 150px;
     }
 
     .initial-choice-text h2 {
-        font-size: 22px; /* Slightly smaller */
-        margin-bottom: 10px; /* Reduced margin */
+        font-size: 24px;
+        margin-bottom: 10px;
     }
 
     .small-text {
-        font-size: 14px; /* Increased font size */
-        margin-top: 10px; /* Reduced margin */
+        font-size: 15px;
+        margin-top: 10px;
     }
 
-    /* Close button on tablets */
     .close-button {
-        display: block;
-        top: 15px;
-        right: 15px;
-        font-size: 24px;
+        font-size: 26px;
+        top: 25px; /* Increased top for tablets */
+        right: 25px; /* Increased right for tablets */
     }
-    /* Prev button on tablets */
     .prev-button {
-        position: absolute; /* Ensure it's absolutely positioned */
-        top: 15px; /* Aligns with close button */
-        left: 15px; /* Positioning on the left */
-        font-size: 24px; /* Similar size to close button */
-        display: block; /* Ensure it's always visible */
-        background: none; /* Make transparent */
-        border: none; /* Remove border */
+        font-size: 26px;
+        top: 25px; /* Increased top for tablets */
+        left: 25px; /* Increased left for tablets */
     }
-    /* Adjust header-with-back for tablets */
     .header-with-back {
         margin-bottom: 20px;
     }
     .header-with-back .prev-button {
-        position: static;
         margin-right: 10px;
     }
     .header-with-back h2 {
-        font-size: 26px; /* Match popup-content h2 */
+        font-size: 28px;
     }
 }
 
 /* For Mobile Devices (Phones) */
 @media (max-width: 480px) {
     .popup-overlay {
-        padding: 0; /* Removed vertical padding to maximize popup height */
+        background-color: rgba(0, 0, 0, 1); /* Solid black background for full screen */
     }
 
     .popup-container {
-        width: 95%;
-        border-radius: 6px;
-        max-height: 100vh; /* Allow it to take full viewport height on small screens */
+        width: 100%;
+        height: 100%; /* Take entire screen height */
+        max-width: none; /* Remove max-width restriction */
+        max-height: none; /* Remove max-height restriction */
+        border-radius: 0; /* No border-radius for full screen */
+        background-color: #000; /* Dark black background */
+        padding-top: 60px; /* Increased padding to the top of the container for buttons */
     }
 
     .popup-screen {
-        padding: 8px; /* Further reduced padding */
-        justify-content: flex-start; /* Ensure content starts from top */
-        overflow: hidden; /* No scrolling */
+        padding: 15px; /* Adjusted padding to give more content space while fitting */
+        height: 100%; /* Ensure screen takes full height */
+        justify-content: flex-start; /* Changed to flex-start to allow content to flow from top */
+        overflow-y: auto; /* Changed to auto to allow scrolling */
+        overflow-x: hidden; /* Prevent horizontal scrolling */
     }
 
     .close-button {
-        font-size: 20px;
-        top: 8px; /* Adjusted top position */
-        right: 8px; /* Adjusted right position */
-        display: block; /* Ensure visible on phones */
+        font-size: 28px;
+        top: 25px; /* Adjusted position to be more visible */
+        right: 15px; /* Adjusted position */
+        color: #fff;
     }
-    /* Prev button on phones */
+
     .prev-button {
-        position: absolute; /* Ensure it's absolutely positioned */
-        font-size: 25px;
-        top: 0px; /* Adjusted top position */
-        left: 8px; /* Adjusted left position */
-        display: block; /* Ensure it's always visible */
-        background: none; /* Make transparent */
-        border: none; 
-        color:white/* Remove border */
+        font-size: 28px;
+        top: 25px; /* Adjusted position to be more visible */
+        left: 15px; /* Adjusted position */
+        color: #fff;
     }
 
     .popup-content h2 {
-        font-size: 20px; /* Further reduced font size */
-        margin-bottom: 8px; /* Further reduced margin */
+        font-size: 28px; /* Increased font size for mobile */
+        margin-bottom: 12px; /* Adjusted margin */
+        color: #fff;
     }
 
-    .spotify-logo-placeholder {
-        width: 35px; /* Further reduced size */
-        height: 35px;
-        margin-bottom: 8px; /* Further reduced margin */
-    }
-    .spotify-logo-placeholder::before {
-        width: 16px; /* Further reduced inner circle */
-        height: 16px;
+    .log2 img {
+        width: 70px;
+        margin-bottom: 12px; /* Adjusted margin */
     }
 
     .auth-button, .main-button {
-        padding: 7px 10px; /* Further reduced padding */
-        font-size: 13px; /* Further reduced font size */
-        min-height: 36px; /* Reduced min-height */
-        margin-bottom: 5px; /* Further reduced margin */
+        padding: 12px 15px; /* Adjusted padding */
+        font-size: 17px; /* Adjusted font size */
+        min-height: 48px; /* Adjusted min-height */
+        margin-bottom: 6px; /* Adjusted margin */
     }
     .main-button {
-        margin-top: 7px; /* Further reduced margin */
+        margin-top: 8px; /* Adjusted margin */
     }
     .transparent-button {
-        margin-top: 5px; /* Further reduced margin */
+        margin-top: 6px; /* Adjusted margin */
     }
 
     .separator {
-        margin: 8px 0; /* Further reduced margin */
+        margin: 12px 0; /* Adjusted margin */
+        font-size: 15px; /* Adjusted font size */
     }
 
     .input-group {
-        margin-bottom: 7px; /* Further reduced margin */
+        margin-bottom: 10px; /* Adjusted margin */
     }
 
     .input-group label {
-        font-size: 11px; /* Increased font size */
-        margin-bottom: 2px;
+        font-size: 15px; /* Adjusted font size */
+        margin-bottom: 4px; /* Adjusted margin */
     }
 
     .input-group input {
-        padding: 6px 7px;
-        font-size: 13px; /* Increased font size */
+        padding: 9px 10px; /* Adjusted padding */
+        font-size: 15px; /* Adjusted font size */
     }
 
     .initial-choice-screen {
-        padding: 8px; /* Further reduced padding */
+        padding: 15px;
     }
 
     .album-art-placeholder {
-        width: 90px; /* Further reduced size */
-        height: 90px;
+        width: 150px;
+        height: 150px;
     }
 
     .initial-choice-text h2 {
-        font-size: 16px; /* Further reduced font size */
-        margin-bottom: 5px; /* Further reduced margin */
+        font-size: 24px;
+        margin-bottom: 10px;
     }
 
     .small-text {
-        font-size: 11px; /* Increased font size */
-        margin-top: 5px; /* Further reduced margin */
+        font-size: 13px; /* Adjusted font size */
+        margin-top: 8px;
     }
 
-    /* Adjust header-with-back for phones */
     .header-with-back {
-        margin-bottom: 10px;
+        margin-bottom: 15px;
     }
     .header-with-back .prev-button {
-        position: static;
-        margin-right: 5px;
-        font-size: 20px; /* Smaller font for phone */
+        margin-right: 10px;
+        font-size: 24px;
     }
     .header-with-back h2 {
-        font-size: 20px; /* Match popup-content h2 */
+        font-size: 28px;
     }
 }
 
 /* For even smaller mobile devices (e.g., iPhone SE) */
 @media (max-width: 375px) {
+    .popup-container {
+        padding-top: 55px; /* Adjusted padding for smaller screens */
+    }
     .popup-screen {
-        padding: 5px; /* Even more reduced padding */
+        padding: 10px; /* Further reduced padding */
     }
 
     .popup-content h2 {
-        font-size: 15px; /* Even more reduced font size */
-        margin-bottom: 6px;
+        font-size: 24px; /* Adjusted font size */
+        margin-bottom: 10px;
     }
 
-    .spotify-logo-placeholder {
-        width: 28px; /* Smallest logo size */
-        height: 28px;
-        margin-bottom: 6px;
-    }
-    .spotify-logo-placeholder::before {
-        width: 12px;
-        height: 12px;
+    .log2 img {
+        width: 60px;
+        margin-bottom: 10px;
     }
 
     .auth-button, .main-button {
-        font-size: 11px;
-        padding: 6px 8px;
-        min-height: 32px; /* Smallest button height */
-        margin-bottom: 4px;
+        font-size: 15px; /* Adjusted font size */
+        padding: 10px 10px;
+        min-height: 42px; /* Adjusted min-height */
+        margin-bottom: 5px;
     }
     .main-button {
-        margin-top: 5px;
+        margin-top: 6px;
     }
     .transparent-button {
-        margin-top: 4px;
+        margin-top: 5px;
     }
 
     .separator {
-        margin: 6px 0;
+        margin: 10px 0;
+        font-size: 13px;
     }
 
     .input-group {
-        margin-bottom: 6px;
+        margin-bottom: 8px;
     }
 
     .input-group label {
-        font-size: 9px;
-        margin-bottom: 1px;
+        font-size: 13px;
+        margin-bottom: 3px;
     }
 
     .input-group input {
-        padding: 5px 6px;
-        font-size: 11px;
+        padding: 8px 8px;
+        font-size: 14px;
     }
 
     .initial-choice-screen {
-        padding: 5px;
+        padding: 10px;
     }
 
     .album-art-placeholder {
-        width: 80px; /* Smallest album art size */
-        height: 80px;
+        width: 120px;
+        height: 120px;
     }
 
     .initial-choice-text h2 {
-        font-size: 13px;
-        margin-bottom: 4px;
-    }
-
-    .small-text {
-        font-size: 9px;
-        margin-top: 4px;
-    }
-    /* Adjust header-with-back for smallest phones */
-    .header-with-back {
+        font-size: 20px;
         margin-bottom: 8px;
     }
-    .header-with-back .prev-button {
-        font-size: 18px;
-    }
-    .header-with-back h2 {
-        font-size: 15px;
-    }
-}
-
-/* ====================================
-    Desktop Specific Overrides (Larger Popup, Close Button Visible and Adjusted, No Internal Scroll)
-    =================================== */
-@media (min-width: 769px) { /* Applies to screens wider than typical tablets */
-    .popup-container {
-        max-width: 730px; 
-        max-height: 95vh; /* Increased max-height to give more room */
-        height: auto; /* Let height be determined by content */
-        overflow: hidden; /* Keep overflow hidden as requested */
-    }
-
-    .popup-screen {
-        padding: 10px 60px; /* Further reduced top/bottom padding */
-        justify-content: flex-start; /* Aligns content to the top */
-        flex-grow: 1; 
-        overflow: hidden; /* No scrolling */
-    }
-
-    /* Ensure the close button is visible on desktop and positioned correctly */
-    .close-button {
-        display: block; 
-        top: 15px; /* Adjusted top position */
-        right: 15px; /* Adjusted right position */
-        font-size: 24px; /* Adjusted font size */
-    }
-    .prev-button {
-        position: absolute; /* Ensure it's absolutely positioned */
-        top: 15px; /* Adjusted to match close button */
-        left: 15px; /* Adjusted to match close button */
-        font-size: 24px; /* Adjusted to match close button */
-        background: none; /* Make transparent */
-        border: none;
-        color: white; /* Remove border */
-    }
-
-    .popup-content {
-        justify-content: flex-start; /* Aligns content to the top */
-        flex-grow: 1; 
-        min-height: 0; /* Allow content to shrink */
-    }
-
-    .popup-content h2 {
-        font-size: 28px; /* Increased font size */
-        margin-bottom: 10px; /* Further reduced margin-bottom */
-    }
-
-    .spotify-logo-placeholder {
-        width: 45px; /* Smaller logo */
-        height: 45px;
-        margin-bottom: 10px; /* Further reduced margin-bottom */
-        flex-shrink: 0; 
-    }
-    .spotify-logo-placeholder::before {
-        width: 22px; /* Smaller inner circle */
-        height: 22px;
-    }
-
-    .auth-button {
-        padding: 10px 15px; /* Reduced padding */
-        font-size: 16px; /* Increased font size */
-        min-height: 44px; /* Slightly smaller min-height */
-        margin-bottom: 5px; /* Further reduced margin-bottom */
-    }
-
-    .main-button {
-        padding: 10px 15px; /* Reduced padding */
-        font-size: 17px; /* Increased font size */
-        min-height: 44px; /* Slightly smaller min-height */
-        margin-top: 5px; /* Reduced margin-top */
-    }
-
-    .separator {
-        margin: 10px 0; /* Further reduced margin */
-    }
-
-    .input-group {
-        margin-bottom: 8px; /* Further reduced margin-bottom */
-    }
-
-    .input-group label {
-        font-size: 14px; /* Increased font size */
-    }
-
-    .input-group input {
-        padding: 8px 12px; /* Reduced padding */
-        font-size: 16px; /* Increased font size */
-    }
 
     .small-text {
-        font-size: 13px; /* Increased font size */
-        margin-top: 5px; /* Reduced margin-top */
-        padding-bottom: 0;
+        font-size: 11px;
+        margin-top: 6px;
     }
-    /* Adjust header-with-back for desktop */
+
+    /* Adjusted positioning for prev and close buttons for smaller mobile screens */
+    .close-button {
+        font-size: 24px;
+        top: 42px;
+        right: 15px; /* Pushed further to the right */
+    }
+    .prev-button {
+        font-size: 24px;
+        top: -9px;
+        left: 15px; /* Pushed further to the left */
+    }
     .header-with-back {
-        margin-bottom: 15px;
+        margin-bottom: 10px;
     }
     .header-with-back .prev-button {
-        position: static;
-        margin-right: 15px;
+        font-size: 22px;
     }
     .header-with-back h2 {
-        font-size: 28px; /* Match popup-content h2 */
+        font-size: 24px;
     }
 }
 
@@ -2620,6 +2491,7 @@ header, main {
     justify-content: space-between;
     min-width: 250px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    font-size: 1.1em; /* Increased font size */
 }
 
 .custom-message-box.active {
@@ -2631,16 +2503,16 @@ header, main {
     background: none;
     border: none;
     color: white;
-    font-size: 1.5em;
+    font-size: 1.8em; /* Increased font size */
     cursor: pointer;
     margin-left: 15px;
     padding: 0 5px;
 }
 
 /* Tailwind-like classes for message box (add these to your utility.css or style.css) */
-.bg-green-600 { background-color: #22c55e; } /* Example green for success */
-.bg-red-600 { background-color: #ef4444; }   /* Example red for error */
-.bg-blue-600 { background-color: #3b82f6; }  /* Example blue for info */
+.bg-green-600 { background-color: #22c55e; }
+.bg-red-600 { background-color: #ef4444; }
+.bg-blue-600 { background-color: #3b82f6; }
 .invisible { visibility: hidden; }
 .opacity-0 { opacity: 0; }
 .opacity-100 { opacity: 1; }
@@ -2648,74 +2520,71 @@ header, main {
 /* For the user avatar and dropdown */
 .user-avatar-container {
     position: relative;
-    display: flex; /* Changed from inline-block to flex */
+    display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    margin-left: 10px; /* Adjust as needed */
-    z-index: 20; /* Ensure it's above other elements */
-    width: 40px; /* Size of the avatar circle */
-    height: 40px;
-    border-radius: 50%; /* Make it a circle */
-    background-color: #1ED760; /* Spotify green, or a dark color */
-    color: black; /* Text color for the initial */
+    margin-left: 10px;
+    z-index: 20;
+    width: 45px; /* Slightly larger avatar */
+    height: 45px;
+    border-radius: 50%;
+    background-color: #1ED760;
+    color: black;
     font-weight: bold;
-    font-size: 1.2em;
+    font-size: 1.3em; /* Increased font size */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
-    border: 3px solid black; /* Added thick, round border */
+    border: 3px solid black;
 }
 
 .user-avatar-container:hover {
-    background-color: #1AA34A; /* Slightly darker green on hover */
+    background-color: #1AA34A;
     transform: scale(1.05);
 }
 
-
-
 /* NEW: User Avatar Tooltip for hover */
 .user-avatar-tooltip {
-    position: fixed; /* Use fixed to position relative to viewport */
-    background-color: #282828; /* Dark background */
-    color: #fff; /* White text */
-    padding: 8px 12px;
+    position: fixed;
+    background-color: #282828;
+    color: #fff;
+    padding: 10px 15px; /* Increased padding */
     border-radius: 6px;
-    font-size: 0.9em;
-    white-space: nowrap; /* Prevent text wrapping */
-    z-index: 100; /* Above other content, but below popup */
-    transform: translateX(-50%) translateY(-100%); /* Center horizontally, move above element */
+    font-size: 1em; /* Increased font size */
+    white-space: nowrap;
+    z-index: 100;
+    transform: translateX(-50%) translateY(-100%);
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out, transform 0.2s ease-in-out;
-    pointer-events: none; /* Allow clicks to pass through */
+    pointer-events: none;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    font-weight: bold; /* Made bold */
 }
 
 .user-avatar-tooltip.show {
     opacity: 1;
     visibility: visible;
-    transform: translateX(-50%) translateY(-120%); /* Adjusted to be slightly higher */
+    transform: translateX(-50%) translateY(-120%);
 }
-
 
 .user-dropdown {
     position: absolute;
-    top: 100%; /* Position below the avatar */
+    top: 100%;
     right: 0;
-    background-color: #282828; /* Dark background */
+    background-color: #282828;
     border-radius: 8px;
-    /* Enhanced box-shadow for a more attractive look */
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05); /* Added subtle border effect */
-    padding: 10px;
-    min-width: 180px; /* Slightly wider for better content display */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    padding: 12px; /* Increased padding */
+    min-width: 200px; /* Slightly wider */
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px; /* Increased gap */
     opacity: 0;
     visibility: hidden;
-    transform: translateY(10px); /* Start slightly below */
+    transform: translateY(10px);
     transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out, visibility 0.2s ease-in-out;
-    z-index: 1000; /* Ensure it's above other content */
+    z-index: 1000;
 }
 
 .user-dropdown.show {
@@ -2725,39 +2594,37 @@ header, main {
 }
 
 .dropdown-username {
-    color: #b3b3b3; /* Lighter grey for text */
-    font-size: 0.9em;
+    color: #fff; /* Changed to white */
+    font-size: 1.1em; /* Increased font size */
     padding: 5px 0;
-    border-bottom: 1px solid #404040; /* Separator */
+    border-bottom: 1px solid #404040;
     margin-bottom: 5px;
     text-align: center;
-    font-weight: bold; /* Make username stand out */
+    font-weight: bold;
 }
 
 .dropdown-logout-btn {
-    background-color: #404040; /* Darker button */
+    background-color: #404040;
     color: white;
     border: none;
-    padding: 8px 12px;
+    padding: 10px 15px; /* Increased padding */
     border-radius: 5px;
     cursor: pointer;
-    font-size: 0.9em;
+    font-size: 1.1em; /* Increased font size */
     font-weight: bold;
     transition: background-color 0.2s ease, color 0.2s ease;
-    text-align: center; /* Center text in logout button */
+    text-align: center;
 }
 
 .dropdown-logout-btn:hover {
-    background-color: #535353; /* Lighter on hover */
-    color: #1DB954; /* Spotify green on hover */
+    background-color: #535353;
+    color: #1DB954;
 }
 
 /* For the login/signup buttons in the top bar */
 .top-bar .buttons .signupbtn,
 .top-bar .buttons .loginbtn {
-    /* Ensure these are styled as per your original design,
-        and their display property will be controlled by JS */
-    display: block; /* Default, will be overridden by JS */
+    display: block;
 }
 
 /* General utility classes for hiding elements */
@@ -2765,57 +2632,53 @@ header, main {
     display: none !important;
 }
 
-/* User Avatar and Dropdown Styles */
+
+/* User Avatar and Dropdown Styles (reiterated for clarity, ensure no conflicts) */
 .user-avatar-container {
-    position: relative; /* Needed for absolute positioning of the dropdown */
-    display: flex; /* Use flex to center the initial */
+    position: relative;
+    display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px; /* Size of the avatar circle */
-    height: 40px;
-    border-radius: 50%; /* Make it a circle */
-    background-color: #1ED760; /* Spotify green for avatar background */
-    color: black; /* Black text color for the initial */
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background-color: #1ED760;
+    color: black;
     font-weight: bold;
-    font-size: 1.2em;
+    font-size: 1.3em;
     cursor: pointer;
     margin-left: 10px;
     transition: background-color 0.3s ease;
-    border: 3px solid black; /* Thick, round border */
+    border: 3px solid black;
 }
 
 .user-avatar-container:hover {
-    background-color: #1AA34A; /* Slightly darker green on hover */
+    background-color: #1AA34A;
     transform: scale(1.05);
 }
 
-.user-avatar {
-    /* No specific styles here as it's just text content */
-}
+
 
 /* Dropdown Menu Styles */
 .user-dropdown {
     position: absolute;
-    top: 100%; /* Position below the avatar */
-    right: 0; /* Align to the right of the avatar */
-    background-color: #282828; /* Dark background for the dropdown */
+    top: 100%;
+    right: 0;
+    background-color: #282828;
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    padding: 10px;
-    min-width: 150px;
+    padding: 12px;
+    min-width: 200px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    z-index: 1000; /* Ensure it's above other content */
-
-    /* Animation properties for smooth appearance */
+    gap: 10px;
+    z-index: 1000;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-10px); /* Start slightly above */
+    transform: translateY(-10px);
     transition: opacity 0.2s ease-out, transform 0.2s ease-out, visibility 0.2s;
 }
 
-/* State when the dropdown is shown */
 .user-dropdown.show {
     opacity: 1;
     visibility: visible;
@@ -2823,11 +2686,11 @@ header, main {
 }
 
 .dropdown-username {
-    color: #b3b3b3; /* Lighter grey for username */
-    font-size: 0.9em;
+    color: #fff;
+    font-size: 1.1em;
     padding: 5px 0;
     text-align: center;
-    border-bottom: 1px solid #3a3a3a; /* Separator */
+    border-bottom: 1px solid #3a3a3a;
     margin-bottom: 5px;
 }
 
@@ -2835,20 +2698,19 @@ header, main {
     background-color: transparent;
     color: white;
     border: none;
-    padding: 8px 12px;
+    padding: 10px 15px;
     text-align: left;
     width: 100%;
     cursor: pointer;
-    font-size: 1em;
+    font-size: 1.1em;
     border-radius: 4px;
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .dropdown-logout-btn:hover {
-    background-color: #3a3a3a; /* Darker on hover */
-    color: #1ED760; /* Spotify green on hover */
+    background-color: #3a3a3a;
+    color: #1ED760;
 }
-
 /* Ensure header has space for the avatar */
 .top-bar .header {
     display: flex;

@@ -523,205 +523,218 @@
     </div>
 
     <div id="popup-overlay" class="popup-overlay invisible opacity-0">
-        <div id="popup-container" class="popup-container">
-    
-           
+    <div id="popup-container" class="popup-container">
 
-            <button class="close-button" onclick="closePopup()">&#x2715;</button>
+        <button class="close-button" onclick="closePopup()">&#x2715;</button>
 
-            <!-- Google Sign-In Initialization Div -->
-            <div id="g_id_onload"
-                data-client_id="292614491287-ogqrqnbvfe154houfqgt66iqo8ee662n.apps.googleusercontent.com"
-                data-callback="handleGoogleSignIn" data-auto_prompt="false">
-            </div>
+        <!-- Google Sign-In Initialization Div -->
+        <div id="g_id_onload"
+            data-client_id="292614491287-ogqrqnbvfe154houfqgt66iqo8ee662n.apps.googleusercontent.com"
+            data-callback="handleGoogleSignIn" data-auto_prompt="false">
+        </div>
 
-            <div id="initial-choice-screen" class="popup-screen active">
-                <div class="popup-content initial-choice-content">
-                    <div class="album-art-placeholder">
-                        <img src="https://raw.githubusercontent.com/jhasonu7/music-album/3585410edf2502fc38ef75f4c3988eaa14a5102e/Screenshot%202025-07-08%20105523.png" alt="Album Art"
-                            class="album-art-image">
-                    </div>
-                    <div class="initial-choice-text">
-                        <h2>Start listening with a free Swarify account</h2>
-                        <button class="main-button green-button" id="initial-signup-btn">Sign up for free</button>
-                        <button class="main-button transparent-button">Download app</button>
-                        <p class="small-text">Already have an account? <a href="#" id="initial-login-link">Log
+        <div id="initial-choice-screen" class="popup-screen active">
+            <div class="popup-content initial-choice-content">
+                <div class="album-art-placeholder">
+                    <img src="https://raw.githubusercontent.com/jhasonu7/music-album/3585410edf2502fc38ef75f4c3988eaa14a5102e/Screenshot%202025-07-08%20105523.png" alt="Album Art"
+                        class="album-art-image">
+                </div>
+                <div class="initial-choice-text">
+                    <h2>Start listening with a free Swarify account</h2>
+                    <button class="main-button green-button" id="initial-signup-btn">Sign up for free</button>
+                    <button class="main-button transparent-button">Download app</button>
+                    <p class="small-text">Already have an account? <a href="#" id="initial-login-link">Log
                                 in</a></p>
-                    </div>
                 </div>
             </div>
+        </div>
 
-            <div id="login-screen" class="popup-screen">
-                <button class="prev-button" id="login-back-btn">&#8592;</button>
-                <div class="popup-content">
-                     <div class="log2">
-        
-                        <img width="110" src="logo2.svg" alt="">
-                     </div>
-
-                    <h2>Log in to Swarify</h2>
-
-                    <!-- Google Sign-In Button for Login Screen -->
-                    <div class="g_id_signin auth-button google-button" data-type="standard" data-size="large"
-                        data-theme="filled_blue"
-                        data-text="signin_with"
-                        data-shape="rectangular"
-                        data-logo_alignment="left"
-                        data-width="100%">
-                    </div>
-
-                   
-                    <button class="auth-button phone-button" id="login-phone-otp-btn">
-                        Continue with phone number (OTP)
-                    </button>
-                    <button class="auth-button phone-button" id="login-phone-password-btn">
-                        Login with phone number (Password)
-                    </button>
-
-
-                    <div class="separator"><span>or</span></div>
-
-                    <div class="input-group">
-                        <label for="login-email-username">Email or username</label>
-                        <input type="text" id="login-email-username" placeholder="Email or username">
-                    </div>
-                    <div class="input-group">
-                        <label for="login-password">Password</label>
-                        <input type="password" id="login-password" placeholder="Password">
-                    </div>
-                    <button class="main-button green-button" id="login-continue-button">Continue</button>
-
-                    <p class="small-text">Don't have an account? <a href="#" id="login-signup-link">Sign up for
-                            Swarify</a></p>
+        <div id="login-screen" class="popup-screen">
+            <button class="prev-button" id="login-back-btn">&#8592;</button>
+            <div class="popup-content">
+                <div class="log2">
+                    <img width="110" src="logo2.svg" alt="">
                 </div>
-            </div>
 
-            <div id="signup-screen" class="popup-screen">
-                <button class="prev-button" id="signup-back-btn">&#8592;</button>
-                <div class="popup-content">
-                   <div class="log2">
-        
-                        <img width="110" src="logo2.svg" alt="">
-                     </div>
-                    <h2>Sign up to start listening</h2>
+                <h2>Log in to Swarify</h2>
 
-                    <div class="input-group">
-                        <label for="signup-email">Email address</label>
-                        <input type="email" id="signup-email" placeholder="name@domain.com">
-                        <p class="small-text"><a href="#" id="signup-use-phone-link">Use phone number instead.</a></p>
-                    </div>
-                    <div class="input-group">
-                        <label for="signup-password">Create a password</label>
-                        <input type="password" id="signup-password" placeholder="Password">
-                    </div>
-
-                    <button class="main-button green-button" id="signup-next-button">Next</button>
-
-                    <div class="separator"><span>or</span></div>
-
-                    <!-- Google Sign-In Button for Signup Screen -->
-                    <div class="g_id_signin auth-button google-button" data-type="standard" data-size="large"
-                        data-theme="filled_blue"
-                        data-text="signup_with"
-                        data-shape="rectangular"
-                        data-logo_alignment="left"
-                        data-width="100%">
-                    </div>
-
-                    <p class="small-text">Already have an account? <a href="#" id="signup-login-link">Log in</a>
-                    </p>
+                <!-- Google Sign-In Button for Login Screen -->
+                <div class="g_id_signin auth-button google-button" data-type="standard" data-size="large"
+                    data-theme="filled_blue"
+                    data-text="signin_with"
+                    data-shape="rectangular"
+                    data-logo_alignment="left"
+                    data-width="100%">
                 </div>
-            </div>
+                
+                <button class="auth-button phone-button" id="login-phone-otp-btn">
+                    Continue with phone number (OTP)
+                </button>
+                <button class="auth-button phone-button" id="login-phone-password-btn">
+                    Login with phone number (Password)
+                </button>
 
-            <div id="phone-signup-screen" class="popup-screen">
-                <button class="prev-button" id="phone-signup-back-btn">&#8592;</button>
-                <div class="popup-content">
-                  <div class="log2">
-        
-                        <img width="110" src="logo2.svg" alt="">
-                     </div>
-                    <h2>Sign up with phone number</h2>
-                    <div class="input-group">
-                        <label for="phone-number-signup">Phone number</label>
-                        <input type="tel" id="phone-number-signup" placeholder="+1 (555) 555-5555">
-                    </div>
-                    <div class="input-group">
-                        <label for="phone-signup-password">Create a password</label>
-                        <input type="password" id="phone-signup-password" placeholder="Password">
-                    </div>
-                    <button class="main-button green-button" id="phone-signup-next-button">Next</button>
-                    <p class="small-text"><a href="#" id="phone-signup-use-email-link">Use email instead.</a></p>
-                    <p class="small-text">Already have an account? <a href="#" id="phone-signup-login-link">Log in</a>
-                    </p>
+
+                <div class="separator"><span>or</span></div>
+
+                <div class="input-group">
+                    <label for="login-email-username">Email or username</label>
+                    <input type="text" id="login-email-username" placeholder="Email or username">
                 </div>
-            </div>
-
-            <div id="phone-login-screen" class="popup-screen">
-                <button class="prev-button" id="phone-login-back-btn">&#8592;</button>
-                <div class="popup-content">
-                    <div class="log2">
-        
-                        <img width="110" src="logo2.svg" alt="">
-                     </div>
-                    <h2>Log in with phone number</h2>
-                    <div class="input-group">
-                        <label for="phone-number-login">Phone number</label>
-                        <input type="tel" id="phone-number-login" placeholder="+1 (555) 555-5555">
-                    </div>
-                    <div class="input-group">
-                        <label for="phone-login-password">Password</label>
-                        <input type="password" id="phone-login-password" placeholder="Password">
-                    </div>
-                    <button class="main-button green-button" id="phone-login-continue-button">Continue</button>
-                    <p class="small-text">Don't have an account? <a href="#" id="phone-login-signup-link">Sign up for
-                            Swarify</a></p>
+                <div class="input-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" placeholder="Password">
+                    <p class="small-text text-right mt-2"><a href="#" id="forgot-password-link">Forgot your password?</a></p>
                 </div>
-            </div>
+                <button class="main-button green-button" id="login-continue-button">Continue</button>
 
-            <div id="phone-otp-input-screen" class="popup-screen">
-                <button class="prev-button" id="phone-otp-back-btn">&#8592;</button>
-                <div class="popup-content">
-                   <div class="log2">
-        
-                        <img width="110" src="logo2.svg" alt="">
-                     </div>
-                    <h2>Login with Phone (OTP)</h2>
-                    <div class="input-group">
-                        <label for="otp-phone-number-input">Phone number</label>
-                        <input type="tel" id="otp-phone-number-input" placeholder="+1 (555) 555-5555">
-                    </div>
-                    <button class="main-button green-button" id="send-otp-button">Send OTP</button>
-                    <p class="small-text">Already have an account? <a href="#" onclick="showLoginScreen()">Log in with
-                            password</a></p>
+                <p class="small-text">Don't have an account? <a href="#" id="login-signup-link">Sign up for
+                                Swarify</a></p>
+            </div>
+        </div>
+
+        <div id="signup-screen" class="popup-screen">
+            <button class="prev-button" id="signup-back-btn">&#8592;</button>
+            <div class="popup-content">
+                <div class="log2">
+                    <img width="110" src="logo2.svg" alt="">
                 </div>
-            </div>
+                <h2>Sign up to start listening</h2>
 
-            <div id="otp-verification-screen" class="popup-screen">
-                <button class="prev-button" id="otp-verification-back-btn">&#8592;</button>
-                <div class="popup-content">
-                   <div class="log2">
-        
-                        <img width="110" src="logo2.svg" alt="">
-                     </div>
-                    <h2>Verify OTP</h2>
-                    <div class="input-group">
-                        <label for="otp-code-input">Enter OTP</label>
-                        <input type="text" id="otp-code-input" placeholder="XXXXXX">
-                    </div>
-                    <p id="otp-timer-display" class="small-text">OTP valid for: 02:00</p>
-                    <button class="main-button green-button" id="verify-otp-button">Verify OTP</button>
-                    <button class="secondary-button" id="resend-otp-button" style="display: none;">Resend OTP</button>
-                    <p class="small-text">Didn't receive OTP? Check your backend console.</p>
+                <div class="input-group">
+                    <label for="signup-email">Email address</label>
+                    <input type="email" id="signup-email" placeholder="name@domain.com">
+                    <p class="small-text"><a href="#" id="signup-use-phone-link">Use phone number instead.</a></p>
                 </div>
-            </div>
+                <div class="input-group">
+                    <label for="signup-password">Create a password</label>
+                    <input type="password" id="signup-password" placeholder="Password">
+                </div>
 
-            <div id="email-otp-input-screen" class="popup-screen">
-                <div class="header-buttons">
-                    <button class="back-button" id="email-otp-back-btn">&#8592; Back</button>
-                    <button class="close-button" onclick="closePopup()">&#10006;</button>
+                <button class="main-button green-button" id="signup-next-button">Next</button>
+
+                <div class="separator"><span>or</span></div>
+
+                <!-- Google Sign-In Button for Signup Screen -->
+                <div class="g_id_signin auth-button google-button" data-type="standard" data-size="large"
+                    data-theme="filled_blue"
+                    data-text="signup_with"
+                    data-shape="rectangular"
+                    data-logo_alignment="left"
+                    data-width="100%">
+                </div>
+
+                <p class="small-text">Already have an account? <a href="#" id="signup-login-link">Log in</a>
+                </p>
+            </div>
+        </div>
+
+        <div id="phone-signup-screen" class="popup-screen">
+            <button class="prev-button" id="phone-signup-back-btn">&#8592;</button>
+            <div class="popup-content">
+                <div class="log2">
+                    <img width="110" src="logo2.svg" alt="">
+                </div>
+                <h2>Sign up with phone number</h2>
+                <div class="input-group">
+                    <label for="phone-number-signup">Phone number</label>
+                    <input type="tel" id="phone-number-signup" placeholder="+1 (555) 555-5555">
+                </div>
+                <div class="input-group">
+                    <label for="phone-signup-password">Create a password</label>
+                    <input type="password" id="phone-signup-password" placeholder="Password">
+                </div>
+                <button class="main-button green-button" id="phone-signup-next-button">Next</button>
+                <p class="small-text"><a href="#" id="phone-signup-use-email-link">Use email instead.</a></p>
+                <p class="small-text">Already have an account? <a href="#" id="phone-signup-login-link">Log in</a>
+                </p>
+            </div>
+        </div>
+
+        <div id="phone-login-screen" class="popup-screen">
+            <button class="prev-button" id="phone-login-back-btn">&#8592;</button>
+            <div class="popup-content">
+                <div class="log2">
+                    <img width="110" src="logo2.svg" alt="">
+                </div>
+                <h2>Log in with phone number</h2>
+                <div class="input-group">
+                    <label for="phone-number-login">Phone number</label>
+                    <input type="tel" id="phone-number-login" placeholder="+1 (555) 555-5555">
+                </div>
+                <div class="input-group">
+                    <label for="phone-login-password">Password</label>
+                    <input type="password" id="phone-login-password" placeholder="Password">
+                    <p class="small-text text-right mt-2"><a href="#" id="phone-forgot-password-link">Forgot your password?</a></p>
+                </div>
+                <button class="main-button green-button" id="phone-login-continue-button">Continue</button>
+                <p class="small-text">Don't have an account? <a href="#" id="phone-login-signup-link">Sign up for
+                                Swarify</a></p>
+            </div>
+        </div>
+
+        <div id="phone-otp-input-screen" class="popup-screen">
+            <button class="prev-button" id="phone-otp-back-btn">&#8592;</button>
+            <div class="popup-content">
+                <div class="log2">
+                    <img width="110" src="logo2.svg" alt="">
+                </div>
+                <h2>Login with Phone (OTP)</h2>
+                <div class="input-group">
+                    <label for="otp-phone-number-input">Phone number</label>
+                    <input type="tel" id="otp-phone-number-input" placeholder="+1 (555) 555-5555">
+                </div>
+                <button class="main-button green-button" id="send-otp-button">Send OTP</button>
+                <p class="small-text">Already have an account? <a href="#" onclick="showLoginScreen()">Log in with
+                                password</a></p>
+            </div>
+        </div>
+
+        <!-- NEW: Forgot Password Input Screen -->
+        <div id="forgot-password-input-screen" class="popup-screen">
+            <button class="prev-button" id="forgot-password-back-btn">&#8592;</button>
+            <div class="popup-content">
+                <div class="log2">
+                    <img width="110" src="logo2.svg" alt="">
+                </div>
+                <h2>Reset Your Password</h2>
+                <p class="small-text">Enter the email address or phone number associated with your account to receive a verification code.</p>
+                <div class="input-group">
+                    <label for="forgot-password-identifier-input">Email or Phone Number</label>
+                    <input type="text" id="forgot-password-identifier-input" placeholder="Email or Phone Number">
+                </div>
+                <button class="main-button green-button" id="send-password-reset-otp-button">Send Verification Code</button>
+                <p class="small-text">Remember your password? <a href="#" id="forgot-password-login-link">Log in</a></p>
+            </div>
+        </div>
+
+        <div id="otp-verification-screen" class="popup-screen">
+            <button class="prev-button" id="otp-verification-back-btn">&#8592;</button>
+            <div class="popup-content">
+                <div class="log2">
+                    <img width="110" src="logo2.svg" alt="">
+                </div>
+                <h2 id="otp-verification-title">Verify OTP</h2>
+                <p id="otp-verification-message" class="small-text">An OTP has been sent to your device. Please enter it below.</p>
+                <div class="input-group">
+                    <label for="otp-code-input">Enter OTP</label>
+                    <input type="text" id="otp-code-input" placeholder="XXXXXX">
+                </div>
+                <p id="otp-timer-display" class="small-text">OTP valid for: 02:00</p>
+                <button class="main-button green-button" id="verify-otp-button">Verify OTP</button>
+                <button class="secondary-button" id="resend-otp-button" style="display: none;">Resend OTP</button>
+                <p class="small-text">Didn't receive OTP? Check your backend console.</p>
+            </div>
+        </div>
+
+        <div id="email-otp-input-screen" class="popup-screen">
+            <button class="prev-button" id="email-otp-back-btn">&#8592;</button>
+            <div class="popup-content">
+                 <div class="log2">
+                    <img width="110" src="logo2.svg" alt="">
                 </div>
                 <h2>Verify Your Email</h2>
-                <p>An OTP has been sent to <strong id="email-otp-display-email"></strong>. Please enter it below.</p>
+                <p class="small-text">An OTP has been sent to <strong id="email-otp-display-email"></strong>. Please enter it below.</p>
                 <div class="input-group">
                     <input type="text" id="email-otp-code-input" placeholder="Enter 6-digit OTP" maxlength="6"
                         pattern="\d{6}" inputmode="numeric">
@@ -735,33 +748,64 @@
                 <div class="separator"></div>
                 <p class="small-text">Did not receive the email? Check your spam folder.</p>
             </div>
+        </div>
 
-            <div id="create-password-screen" class="popup-screen">
-                <div class="header-with-back">
-                    <button class="back-button" id="create-password-back-btn"></button>
-                    <h2>Create a password</h2>
+        <div id="create-password-screen" class="popup-screen">
+            <button class="prev-button" id="create-password-back-btn">&#8592;</button>
+            <div class="popup-content">
+                <div class="log2">
+                    <img width="110" src="logo2.svg" alt="">
                 </div>
-                <div class="content">
-                    <p>Set a password for future logins with your email.</p>
-                    <div class="input-group">
-                        <label for="new-password">Password</label>
-                        <input type="password" id="new-password" placeholder="Create a password" required>
-                    </div>
-                    <div class="input-group">
-                        <label for="confirm-password">Confirm Password</label>
-                        <input type="password" id="confirm-password" placeholder="Confirm your password" required>
-                    </div>
-                    <button id="set-new-password-button" class="main-button green-button">Set Password</button>
+                <h2 id="create-password-title">Create a password</h2>
+                <p id="create-password-message" class="small-text">Set a password for future logins with your email.</p>
+                <div class="input-group">
+                    <label for="new-password">Password</label>
+                    <input type="password" id="new-password" placeholder="Create a password" required>
                 </div>
+                <div class="input-group">
+                    <label for="confirm-password">Confirm Password</label>
+                    <input type="password" id="confirm-password" placeholder="Confirm your password" required>
+                </div>
+                <button id="set-new-password-button" class="main-button green-button">Set Password</button>
             </div>
         </div>
+
+        <!-- NEW: Complete Profile Screen -->
+        <div id="complete-profile-screen" class="popup-screen">
+            <button class="prev-button" id="complete-profile-back-btn">&#8592;</button>
+            <div class="popup-content">
+                <div class="log2">
+                    <img width="110" src="logo2.svg" alt="">
+                </div>
+                <h2>Complete Your Profile</h2>
+                <p class="small-text">Just a few more details to get started!</p>
+                <div class="input-group">
+                    <label for="profile-name-input">Your Name</label>
+                    <input type="text" id="profile-name-input" placeholder="Enter your full name">
+                </div>
+                <div class="input-group">
+                    <label for="profile-dob-input">Date of Birth</label>
+                    <input type="date" id="profile-dob-input">
+                </div>
+                <button class="main-button green-button" id="complete-profile-submit-button">Continue</button>
+            </div>
+        </div>
+
     </div>
+</div>
 
-  
+<!-- This button is for testing user count, can be removed or placed elsewhere -->
+<button id="test-user-count-btn" class="hidden" style="position: fixed; bottom: 80px; left: 20px; background-color: #555; color: white; padding: 10px; border-radius: 5px; z-index: 999;">Test User Count (Admin)</button>
 
-    <!-- This button is for testing user count, can be removed or placed elsewhere -->
-    <button id="test-user-count-btn" class="hidden" style="position: fixed; bottom: 80px; left: 20px; background-color: #555; color: white; padding: 10px; border-radius: 5px; z-index: 999;">Test User Count (Admin)</button>
-
+<!-- User Avatar Container and Dropdown (Add this to your main HTML, outside the popup) -->
+<!-- This should ideally be in your main header/navigation area -->
+<div id="user-avatar-container" class="user-avatar-container hidden">
+    <div id="user-avatar" class="user-avatar">G</div> <!-- Initial 'G' for Guest or first letter of name -->
+    <div id="user-dropdown" class="user-dropdown">
+        <span id="dropdown-username" class="dropdown-username">Guest</span>
+        <button id="dropdown-logout-btn" class="dropdown-logout-btn">Logout</button>
+    </div>
+</div>
     
 
 

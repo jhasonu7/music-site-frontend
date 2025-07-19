@@ -1283,7 +1283,8 @@ body.popup-active .player-bar {
 
     .search-box {
         position: relative;
-        left:-13px;
+        left:-74px;
+        margin-right: -93px;
         width: calc(100% - 100px);
         min-height: 32px;
         margin-right: -30px;
@@ -1986,7 +1987,8 @@ header, main {
 .input-group input[type="text"],
 .input-group input[type="email"],
 .input-group input[type="tel"],
-.input-group input[type="password"] { /* Added password to this selector */
+.input-group input[type="password"],
+.input-group input[type="date"] { /* Added date to this selector */
     width: 100%;
     padding: 12px 15px;
     border: 1px solid #535353;
@@ -2007,7 +2009,8 @@ header, main {
 .input-group input[type="text"]:focus,
 .input-group input[type="email"]:focus,
 .input-group input[type="tel"]:focus,
-.input-group input[type="password"]:focus { /* Added password to this selector */
+.input-group input[type="password"]:focus,
+.input-group input[type="date"]:focus { /* Added date to this selector */
     outline: none;
     border-color: #1DB954;
 }
@@ -2034,14 +2037,11 @@ header, main {
 }
 
 .green-button {
-    background-color: linear-gradient(to right, #cf5151, #1d8d8f);
+    background-image: linear-gradient(to right, #cf5151, #1d8d8f);
     color: #bab6b6;
-    /* Attractive feature: Subtle gradient */
-    background-image: linear-gradient(to right, #cf5151, #1d8d8f); 
 }
 
 .green-button:hover {
-    background-color: linear-gradient(to right, #cf5151, #1d8d8f);
     background-image: linear-gradient(to right, #cf5151, #1d8d8f); /* Attractive feature: Gradient shift */
 }
 
@@ -2072,11 +2072,13 @@ header, main {
 
 .small-text a {
     color: #bab6b6;
-    text-decoration: underline;
+    text-decoration: none; /* Changed to none for a cleaner look */
+    transition: color 0.3s ease; /* Smooth transition for hover effect */
 }
 
 .small-text a:hover {
-    color: #1DB954;
+    color: #1DB954; /* Spotify green on hover */
+    text-decoration: underline; /* Add underline on hover for clarity */
 }
 
 
@@ -2124,6 +2126,59 @@ header, main {
     text-align: center;
     flex-shrink: 0;
 }
+
+/* Prev Button */
+.prev-button {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: none;
+    border: none;
+    color: #b3b3b3;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    z-index: 10;
+}
+
+.prev-button:hover {
+    color: #fff;
+}
+
+/* Specific styling for the header with back button (used in create-password-screen) */
+.header-with-back {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 30px; /* Space below the header */
+    position: relative; /* For absolute positioning of back button */
+    flex-shrink: 0;
+}
+
+.header-with-back .prev-button {
+    position: static; /* Override absolute positioning for flex flow */
+    margin-right: 15px; /* Space between button and title */
+    color: #bab6b6; /* Ensure color consistency */
+}
+
+.header-with-back h2 {
+    margin: 0; /* Remove default h2 margin */
+    flex-grow: 1; /* Allow title to take remaining space */
+    text-align: center; /* Center the title */
+}
+
+/* For the content div within create-password-screen */
+.create-password-screen .content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    flex-grow: 1;
+    min-height: 0;
+}
+
 
 /* ====================================
     Media Queries for Responsiveness
@@ -2229,6 +2284,17 @@ header, main {
         background: none; /* Make transparent */
         border: none; /* Remove border */
     }
+    /* Adjust header-with-back for tablets */
+    .header-with-back {
+        margin-bottom: 20px;
+    }
+    .header-with-back .prev-button {
+        position: static;
+        margin-right: 10px;
+    }
+    .header-with-back h2 {
+        font-size: 26px; /* Match popup-content h2 */
+    }
 }
 
 /* For Mobile Devices (Phones) */
@@ -2332,7 +2398,18 @@ header, main {
         margin-top: 5px; /* Further reduced margin */
     }
 
-    
+    /* Adjust header-with-back for phones */
+    .header-with-back {
+        margin-bottom: 10px;
+    }
+    .header-with-back .prev-button {
+        position: static;
+        margin-right: 5px;
+        font-size: 20px; /* Smaller font for phone */
+    }
+    .header-with-back h2 {
+        font-size: 20px; /* Match popup-content h2 */
+    }
 }
 
 /* For even smaller mobile devices (e.g., iPhone SE) */
@@ -2404,6 +2481,16 @@ header, main {
     .small-text {
         font-size: 9px;
         margin-top: 4px;
+    }
+    /* Adjust header-with-back for smallest phones */
+    .header-with-back {
+        margin-bottom: 8px;
+    }
+    .header-with-back .prev-button {
+        font-size: 18px;
+    }
+    .header-with-back h2 {
+        font-size: 15px;
     }
 }
 
@@ -2500,6 +2587,17 @@ header, main {
         margin-top: 5px; /* Reduced margin-top */
         padding-bottom: 0;
     }
+    /* Adjust header-with-back for desktop */
+    .header-with-back {
+        margin-bottom: 15px;
+    }
+    .header-with-back .prev-button {
+        position: static;
+        margin-right: 15px;
+    }
+    .header-with-back h2 {
+        font-size: 28px; /* Match popup-content h2 */
+    }
 }
 
 
@@ -2556,27 +2654,49 @@ header, main {
     cursor: pointer;
     margin-left: 10px; /* Adjust as needed */
     z-index: 20; /* Ensure it's above other elements */
-}
-
-.user-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
+    width: 40px; /* Size of the avatar circle */
+    height: 40px;
+    border-radius: 50%; /* Make it a circle */
     background-color: #1ED760; /* Spotify green, or a dark color */
-    color: rgb(11, 1, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    color: black; /* Text color for the initial */
     font-weight: bold;
-    font-size: 1.1em;
-    text-transform: uppercase;
+    font-size: 1.2em;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    transition: transform 0.2s ease-in-out;
+    transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+    border: 3px solid black; /* Added thick, round border */
 }
 
-.user-avatar:hover {
+.user-avatar-container:hover {
+    background-color: #1AA34A; /* Slightly darker green on hover */
     transform: scale(1.05);
 }
+
+
+
+/* NEW: User Avatar Tooltip for hover */
+.user-avatar-tooltip {
+    position: fixed; /* Use fixed to position relative to viewport */
+    background-color: #282828; /* Dark background */
+    color: #fff; /* White text */
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    white-space: nowrap; /* Prevent text wrapping */
+    z-index: 100; /* Above other content, but below popup */
+    transform: translateX(-50%) translateY(-100%); /* Center horizontally, move above element */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out, transform 0.2s ease-in-out;
+    pointer-events: none; /* Allow clicks to pass through */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.user-avatar-tooltip.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(-120%); /* Adjusted to be slightly higher */
+}
+
 
 .user-dropdown {
     position: absolute;
@@ -2584,9 +2704,10 @@ header, main {
     right: 0;
     background-color: #282828; /* Dark background */
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    /* Enhanced box-shadow for a more attractive look */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05); /* Added subtle border effect */
     padding: 10px;
-    min-width: 150px;
+    min-width: 180px; /* Slightly wider for better content display */
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -2594,6 +2715,7 @@ header, main {
     visibility: hidden;
     transform: translateY(10px); /* Start slightly below */
     transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out, visibility 0.2s ease-in-out;
+    z-index: 1000; /* Ensure it's above other content */
 }
 
 .user-dropdown.show {
@@ -2609,6 +2731,7 @@ header, main {
     border-bottom: 1px solid #404040; /* Separator */
     margin-bottom: 5px;
     text-align: center;
+    font-weight: bold; /* Make username stand out */
 }
 
 .dropdown-logout-btn {
@@ -2620,18 +2743,20 @@ header, main {
     cursor: pointer;
     font-size: 0.9em;
     font-weight: bold;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    text-align: center; /* Center text in logout button */
 }
 
 .dropdown-logout-btn:hover {
     background-color: #535353; /* Lighter on hover */
+    color: #1DB954; /* Spotify green on hover */
 }
 
 /* For the login/signup buttons in the top bar */
 .top-bar .buttons .signupbtn,
 .top-bar .buttons .loginbtn {
     /* Ensure these are styled as per your original design,
-       and their display property will be controlled by JS */
+        and their display property will be controlled by JS */
     display: block; /* Default, will be overridden by JS */
 }
 
@@ -2649,22 +2774,23 @@ header, main {
     width: 40px; /* Size of the avatar circle */
     height: 40px;
     border-radius: 50%; /* Make it a circle */
-    background-color: #282828; /* Dark background for the avatar */
-    color: white; /* Text color for the initial */
+    background-color: #1ED760; /* Spotify green for avatar background */
+    color: black; /* Black text color for the initial */
     font-weight: bold;
     font-size: 1.2em;
     cursor: pointer;
     margin-left: 10px;
     transition: background-color 0.3s ease;
+    border: 3px solid black; /* Thick, round border */
 }
 
 .user-avatar-container:hover {
-    background-color: #4a4a4a; /* Slightly lighter on hover */
+    background-color: #1AA34A; /* Slightly darker green on hover */
+    transform: scale(1.05);
 }
 
-/* Initially hidden state for the container (when not logged in) */
-.user-avatar-container.hidden {
-    display: none;
+.user-avatar {
+    /* No specific styles here as it's just text content */
 }
 
 /* Dropdown Menu Styles */
@@ -2749,7 +2875,7 @@ header, main {
 }
 
 /* You can put this CSS in a <style> tag in your HTML's <head>
-   or in a separate .css file linked to your HTML. */
+    or in a separate .css file linked to your HTML. */
 
 .swarify-footer {
     position: relative;
@@ -2809,12 +2935,49 @@ header, main {
 @media (min-width: 768px) { /* Similar to Tailwind's md breakpoint */
     .swarify-footer-links {
         gap: 24px; /* Increase space between links on larger screens, similar to md:space-x-6 */
-        /* For older browsers not supporting gap: */
-        /* margin: 0 -12px; */
+      }
     }
-    /* For older browsers (if using margin for gap) */
-    /* .swarify-footer-links li {
-        padding: 0 12px;
-    } */
+
+.search-box {
+    position: relative;
+    flex-grow: 1;
+    max-width: 550px;
+    margin-right: -93px;
+    left:-93px;
+    top: -3px;
+}
+@media (max-width: 480px) {
+    .search-box {
+    position: relative;
+    flex-grow: 1;
+    max-width: 550px;
+    margin-right: -90px;
+    left: -73px;
+}
 }
 
+.voice-search-icon {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex; /* Use flex to center icon within the button */
+    align-items: center;
+    justify-content: center;
+    height: 100%; /* Make buttons fill the height of the search-box */
+    padding: 0 10px; /* Horizontal padding for the button area */
+    color: #B3B3B3; /* Lighter grey for icons */
+    transition: color 0.3s ease, transform 0.2s ease;
+    flex-shrink: 0; /* CRITICAL: Prevents icons from shrinking or disappearing */
+}
+.search-icon:hover, .voice-search-icon:hover {
+    color: #1ED760; /* Spotify green on hover */
+    transform: scale(1.05); /* Slight enlargement on hover */
+}
+.top-bar .header {
+    display: flex
+;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 3px 20px;
+}

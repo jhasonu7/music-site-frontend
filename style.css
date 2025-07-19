@@ -1759,12 +1759,12 @@ header, main {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     width: 90%;
     max-width: 480px; /* Default max-width for smaller desktops/tablets */
-    position: relative;
+    position: relative; /* Essential for absolute positioning of screens */
     box-sizing: border-box;
-    min-height: 200px; 
+    min-height: 200px;
+    height: auto; /* Let content dictate height, within max-height */
     max-height: 100vh; /* Default max-height */
-    height: auto;
-    overflow: hidden; /* Prevent internal scrolling of the container itself */
+    overflow: hidden; /* Crucial to hide sliding content outside */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1772,7 +1772,7 @@ header, main {
 
 /* Screen management */
 .popup-screen {
-    position: absolute;
+    position: absolute; /* All screens are absolutely positioned within the container */
     top: 0;
     left: 0;
     width: 100%;
@@ -1782,19 +1782,24 @@ header, main {
     flex-direction: column;
     justify-content: flex-start; /* Default, overridden for mobile */
     align-items: center;
-    transition: opacity 0.3s ease;
+    /* Enhanced transition for smooth slide and fade */
+    transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
     opacity: 0;
-    pointer-events: none;
+    pointer-events: none; /* Inactive screens are not interactive */
     box-sizing: border-box;
-    overflow-y: auto; /* Changed from hidden to auto to allow scrolling */
+    overflow-y: auto; /* Allow scrolling for content that overflows */
     overflow-x: hidden; /* Prevent horizontal scrolling */
+    transform: translateX(100%); /* Inactive screens start off-screen to the right */
+    z-index: 0; /* Default z-index for inactive screens */
 }
 
 .popup-screen.active {
     opacity: 1;
     pointer-events: auto;
-    position: static;
-    flex-grow: 1;
+    transform: translateX(0); /* Active screen slides into view */
+    z-index: 1; /* Bring active screen to the front */
+    flex-grow: 1; /* Allows content to expand within the screen */
+    /* Removed position: static; to ensure consistent absolute positioning for transitions */
 }
 
 /* Close Button */
@@ -1825,7 +1830,7 @@ header, main {
     align-items: center;
     justify-content: flex-start;
     flex-grow: 1;
-    min-height: 0; 
+    min-height: 0;
 }
 
 .popup-content h2 {
@@ -2081,7 +2086,7 @@ header, main {
 
 /* Initial Choice Screen Specifics */
 .initial-choice-screen {
-    background-color: #282828; /* Will be overridden to #000 for mobile */
+    background-color: #000; /* Will be overridden to #000 for mobile */
     padding: 40px;
     justify-content: center;
     align-items: center;
@@ -2154,11 +2159,12 @@ header, main {
     Media Queries for Responsiveness
     ==================================== */
 
-/* For Desktops (added a new breakpoint or modified existing for wider popup) */
+/* For Desktops */
 @media (min-width: 769px) {
     .popup-container {
-        max-width: 650px; /* Increased max-width for desktop */
-        max-height: 90vh; /* Added some vertical padding for desktop */
+        width: 50vw; /* Increased max-width for desktop */
+     /* Let content dictate height */
+        height: 75vh; /* Ensure it doesn't exceed 90% of viewport height */
     }
     .popup-screen {
         overflow-y: auto; /* Enable scrolling for desktop screens */
@@ -2172,7 +2178,8 @@ header, main {
     .popup-container {
         width: 90%;
         max-width: 480px;
-        max-height: 90vh; 
+        height: auto; /* Let content dictate height */
+        max-height: 90vh; /* Ensure it doesn't exceed 90% of viewport height */
     }
 
     .popup-screen {
@@ -2248,12 +2255,12 @@ header, main {
 
     .close-button {
         font-size: 26px;
-        top: 25px; /* Increased top for tablets */
+        top: 58px; /* Increased top for tablets */
         right: 25px; /* Increased right for tablets */
     }
     .prev-button {
-        font-size: 26px;
-        top: 25px; /* Increased top for tablets */
+        font-size: 40px;
+        top: 47px; /* Increased top for tablets */
         left: 25px; /* Increased left for tablets */
     }
     .header-with-back {
@@ -2275,7 +2282,7 @@ header, main {
 
     .popup-container {
         width: 100%;
-        height: 100%; /* Take entire screen height */
+        height: 100vh; /* Take entire screen height */
         max-width: none; /* Remove max-width restriction */
         max-height: none; /* Remove max-height restriction */
         border-radius: 0; /* No border-radius for full screen */
@@ -2293,14 +2300,14 @@ header, main {
 
     .close-button {
         font-size: 28px;
-        top: 25px; /* Adjusted position to be more visible */
+        top: 58px; /* Adjusted position to be more visible */
         right: 15px; /* Adjusted position */
         color: #fff;
     }
 
     .prev-button {
-        font-size: 28px;
-        top: 25px; /* Adjusted position to be more visible */
+        font-size: 40px;
+        top: 44px; /* Adjusted position to be more visible */
         left: 15px; /* Adjusted position */
         color: #fff;
     }
@@ -2452,12 +2459,12 @@ header, main {
     /* Adjusted positioning for prev and close buttons for smaller mobile screens */
     .close-button {
         font-size: 24px;
-        top: 42px;
+        top: 58px;
         right: 15px; /* Pushed further to the right */
     }
     .prev-button {
         font-size: 24px;
-        top: -9px;
+        top: 44px;
         left: 15px; /* Pushed further to the left */
     }
     .header-with-back {
@@ -2626,6 +2633,7 @@ header, main {
 .top-bar .buttons .loginbtn {
     display: block;
 }
+
 
 /* General utility classes for hiding elements */
 .hidden {

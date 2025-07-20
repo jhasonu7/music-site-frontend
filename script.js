@@ -1,7 +1,7 @@
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual ngrok static domain if you are using ngrok for your backend.
 // If your backend is hosted directly (e.g., on Render, Heroku), use that URL.
-const BACKEND_BASE_URL = 'https://ddc699cbe0c5.ngrok-free.app'; // Example: 'https://your-ngrok-subdomain.ngrok-free.app' or 'https://your-backend-api.com'
+const BACKEND_BASE_URL = 'https://28ea34f87fef.ngrok-free.app'; // Example: 'https://your-ngrok-subdomain.ngrok-free.app' or 'https://your-backend-api.com'
 
 // IMPORTANT: Replace this with your actual Netlify frontend domain for CORS setup on the backend.
 // This is crucial for your backend's CORS configuration (e.g., in Flask-CORS or Express CORS options)
@@ -3219,6 +3219,14 @@ function showMessageBox(message, type = 'info', duration = 3000) {
     }, duration);
 }
 
+// Helper function to remove debug OTP from messages
+function cleanMessage(message) {
+    if (typeof message === 'string') {
+        return message.replace(/\s*\(DEBUG OTP: \d+\)/, '');
+    }
+    return message;
+}
+
 
 // --- Global variables for timers ---
 let emailOtpTimerInterval;
@@ -3363,7 +3371,7 @@ function updateLoginUI() {
  * @param {string} password - User's chosen password.
  * @param {string|null} phoneNumber - User's phone number. Null if registering with email.
  * @param {HTMLElement} button - The button element to disable during the request.
- */
+*/
 async function registerUser(email, password, phoneNumber = null, button) {
     button.disabled = true;
     const originalButtonText = button.textContent;
@@ -3384,20 +3392,16 @@ async function registerUser(email, password, phoneNumber = null, button) {
         if (response.ok) {
             if (data.requiresEmailVerification && email) {
                 localStorage.setItem('pendingEmailVerification', email);
-                // Store the temporary token for subsequent steps
+                // Store the temporary token for subsequent steps (needed for verify-email-otp call)
                 if (data.token) {
                     localStorage.setItem('userToken', data.token);
                 }
-                showMessageBox(data.message, 'success');
-                if (data.debugOtp) {
-                    console.warn(`DEVELOPMENT EMAIL OTP: ${data.debugOtp}`);
-                    showMessageBox(`Email OTP is ${data.debugOtp}`, 'info');
-                }
+                showMessageBox(cleanMessage(data.message), 'success'); // Clean message here
                 currentOtpContext = 'signup';
                 showEmailOtpInputScreen();
                 startEmailOtpTimer(120);
             } else if (data.profileCompletionRequired) {
-                // Store identifier and the token provided by backend
+                // Store identifier and the token provided by backend (needed for complete-profile call)
                 identifierForProfileCompletion = data.identifier;
                 if (data.token) {
                     localStorage.setItem('userToken', data.token);
@@ -3460,11 +3464,7 @@ async function loginUser(identifier, password, button) {
                 if (data.token) { // Ensure token is stored for email verification step
                     localStorage.setItem('userToken', data.token);
                 }
-                showMessageBox(data.message, 'info');
-                if (data.debugOtp) {
-                    console.warn(`DEVELOPMENT EMAIL OTP: ${data.debugOtp}`);
-                    showMessageBox(`Email OTP is ${data.debugOtp}`, 'info');
-                }
+                showMessageBox(cleanMessage(data.message), 'info'); // Clean message here
                 currentOtpContext = 'login';
                 showEmailOtpInputScreen();
                 startEmailOtpTimer(120);
@@ -3570,11 +3570,7 @@ window.handleGoogleSignIn = async (response) => {
                 if (data.token) { // Ensure token is stored for email verification step
                     localStorage.setItem('userToken', data.token);
                 }
-                showMessageBox(data.message, 'info');
-                if (data.debugOtp) {
-                    console.warn(`DEVELOPMENT GOOGLE EMAIL OTP: ${data.debugOtp}`);
-                    showMessageBox(`Google Email OTP is ${data.debugOtp}`, 'info');
-                }
+                showMessageBox(cleanMessage(data.message), 'info'); // Clean message here
                 currentOtpContext = 'googleSignup';
                 showEmailOtpInputScreen();
                 startEmailOtpTimer(120);
@@ -3636,7 +3632,7 @@ async function verifyEmailOtp(email, otpCode, button) {
                 if (data.token) { // Ensure token is stored for profile completion step
                     localStorage.setItem('userToken', data.token);
                 }
-                showMessageBox(data.message, 'success');
+                showMessageBox(cleanMessage(data.message), 'success'); // Clean message here
                 showCompleteProfileScreen();
             } else if (data.setPasswordRequired) {
                 localStorage.setItem('userEmailForPasswordSet', email);
@@ -3739,6 +3735,7 @@ async function sendPhoneOtp(phoneNumber, button) {
 
         if (response.ok) {
             showMessageBox(data.message, 'success');
+            // Retained debug OTP message for phone
             if (data.debugOtp) {
                 console.warn(`DEVELOPMENT OTP: ${data.debugOtp}`);
                 showMessageBox(`Phone OTP is ${data.debugOtp}`, 'info');
@@ -3839,7 +3836,7 @@ async function sendPasswordResetOtp(identifier, button) {
             showMessageBox(data.message || 'Verification code sent!', 'success');
             localStorage.setItem('passwordResetIdentifier', identifier);
             currentOtpContext = 'passwordReset';
-            
+
             const otpVerificationTitle = document.getElementById('otp-verification-title');
             const otpVerificationMessage = document.getElementById('otp-verification-message');
             if (otpVerificationTitle) otpVerificationTitle.textContent = 'Verify Password Reset Code';
@@ -3847,9 +3844,17 @@ async function sendPasswordResetOtp(identifier, button) {
 
             showScreen('otp-verification-screen');
             startPhoneOtpTimer(120);
+
+            // Retained debug OTP message for password reset, conditional on identifier type
             if (data.debugOtp) {
                 console.warn(`DEVELOPMENT PASSWORD RESET OTP: ${data.debugOtp}`);
-                showMessageBox(`Password Reset OTP: ${data.debugOtp}`, 'info');
+                // Check if the identifier looks like a phone number (simple check: starts with + or contains only digits and specific characters)
+                // This regex is a basic example; you might need a more robust one depending on your phone number format.
+                const isPhoneNumber = /^\+?\d[\d\s-()]*\d$/.test(identifier); 
+                
+                if (isPhoneNumber) {
+                    showMessageBox(`Password Reset OTP: ${data.debugOtp}`, 'info');
+                }
             }
         } else {
             showMessageBox('Failed to send verification code: ' + (data.message || 'An unknown error occurred.'), 'error');
@@ -4665,8 +4670,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     });
                     const data = await response.json();
                     if (response.ok) {
-                        showMessageBox(data.message, 'success');
-                        if (data.debugOtp) { console.warn(`DEVELOPMENT GOOGLE EMAIL OTP (Resent): ${data.debugOtp}`); }
+                        showMessageBox(cleanMessage(data.message), 'success'); // Clean message here
                         startEmailOtpTimer(120);
                         resendEmailOtpButton.classList.add('hidden');
                     } else {
@@ -4764,4 +4768,3 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 });
-

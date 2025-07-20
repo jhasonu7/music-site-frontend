@@ -1993,7 +1993,7 @@ header, main {
     padding: 15px 15px; /* Increased padding */
     border: 1px solid #535353;
     border-radius: 4px;
-    background-color: #3e3e3e;
+    background-color: #0d0c0c;
     color: #fff; /* Changed to white */
     font-size: 18px; /* Increased font size */
     box-sizing: border-box;
@@ -2162,7 +2162,7 @@ header, main {
 /* For Desktops */
 @media (min-width: 769px) {
     .popup-container {
-        width: 50vw; /* Increased max-width for desktop */
+        width: 62vw; /* Increased max-width for desktop */
      /* Let content dictate height */
         height: 75vh; /* Ensure it doesn't exceed 90% of viewport height */
     }
@@ -2178,8 +2178,9 @@ header, main {
     .popup-container {
         width: 90%;
         max-width: 480px;
-        height: auto; /* Let content dictate height */
-        max-height: 90vh; /* Ensure it doesn't exceed 90% of viewport height */
+        background-color: #0b0b0b;
+       /* Let content dictate height */
+    height: 91vh; /* Ensure it doesn't exceed 90% of viewport height */
     }
 
     .popup-screen {
@@ -2282,7 +2283,7 @@ header, main {
 
     .popup-container {
         width: 100%;
-        height: 100vh; /* Take entire screen height */
+        height: 76vh; /* Take entire screen height */
         max-width: none; /* Remove max-width restriction */
         max-height: none; /* Remove max-height restriction */
         border-radius: 0; /* No border-radius for full screen */
@@ -2384,8 +2385,28 @@ header, main {
     .header-with-back h2 {
         font-size: 28px;
     }
+    .prev-button {
+        font-size: 41px;
+        top: -5px;
+        left: 15px; 
+        font-weight: bold;/* Pushed further to the left */
+    }
+    .close-button {
+        font-size: 24px;
+        top: 2px;
+        right: 15px; /* Pushed further to the right */
+    }
+    .voice-search-icon {
+        position: relative;
+        left:-5px;
+    }
 }
-
+@media (max-width: 345px) {
+    .voice-search-icon {
+        position: relative;
+        left:-37px;
+    }
+}
 /* For even smaller mobile devices (e.g., iPhone SE) */
 @media (max-width: 375px) {
     .popup-container {
@@ -2459,13 +2480,14 @@ header, main {
     /* Adjusted positioning for prev and close buttons for smaller mobile screens */
     .close-button {
         font-size: 24px;
-        top: 58px;
+        top: 2px;
         right: 15px; /* Pushed further to the right */
     }
     .prev-button {
-        font-size: 24px;
-        top: 44px;
-        left: 15px; /* Pushed further to the left */
+        font-size: 41px;
+        top: -5px;
+        left: 15px; 
+        font-weight: bold;/* Pushed further to the left */
     }
     .header-with-back {
         margin-bottom: 10px;
@@ -2475,6 +2497,10 @@ header, main {
     }
     .header-with-back h2 {
         font-size: 24px;
+    }
+    .voice-search-icon {
+        position: relative;
+        left:-15px;
     }
 }
 

@@ -18,7 +18,40 @@
     padding: 0;
     box-sizing: border-box; /* Crucial for consistent sizing */
     font-family: 'Roboto', sans-serif;
+    /* This is the key change to remove the blue outline on focus */
+    outline: none;
 }
+
+/* Specific focus styles for inputs can be re-added if desired, e.g.: */
+input:focus {
+    border-color: #1DB954; /* Example: green border on focus for inputs */
+}
+
+/* NEW: Remove outline and tap highlight for interactive elements */
+button:focus,
+button:active,
+a:focus,
+a:active,
+input:focus,
+input:active,
+.auth-button:focus,
+.auth-button:active,
+.main-button:focus,
+.main-button:active,
+.transparent-button:focus,
+.transparent-button:active,
+.close-button:focus,
+.close-button:active,
+.prev-button:focus,
+.prev-button:active {
+    outline: none !important; /* Ensure outline is removed */
+}
+
+/* NEW: Remove tap highlight color for WebKit browsers (iOS/Android Chrome) */
+body {
+    -webkit-tap-highlight-color: transparent;
+}
+
 
 body {
     background-color: black;
@@ -215,7 +248,7 @@ body.popup-active .player-bar {
     position: relative;
     width: 100%; /* Image takes 100% of card's content width */
     aspect-ratio: 1 / 1; /* Forces the image itself to be a perfect square */
-    object-fit: cover; /* Ensures image fills space, cropping if necessary */
+    object-fit: cover;
     border-radius: 8px;
     display: block;
     flex-shrink: 0; /* Prevents image from shrinking (important for sizing consistency) */
@@ -948,13 +981,6 @@ body.popup-active .player-bar {
     transition: all 0.2s ease; /* Consistent transition */
 }
 
-.signupbtn {
-    background: transparent;
-    color: #9c9494;
-    font-weight: bold;
-    position: relative; /* For pseudo-element underline */
-}
-
 .signupbtn::after { /* Stylish underline on hover */
     content: '';
     position: absolute;
@@ -1307,7 +1333,7 @@ body.popup-active .player-bar {
     /* Player bar for mobile */
     .player-bar {
         height: var(--player-bar-height-mobile);
-    
+
         left: 0; /* Full width on mobile */
         width: 100%; /* Full width on mobile */
         padding: 0 10px; /* Reduced padding for mobile */
@@ -1426,14 +1452,8 @@ body.popup-active .player-bar {
         padding: 6px 12px;
     }
 
-    .album-tracklist {
-        padding: 10px 15px;
-    }
-
-    .album-tracklist th,
-    .album-tracklist td {
-        font-size: 12px;
-        padding: 6px 8px;
+    .album-tracks table {
+        font-size: 14px;
     }
 
     /* Card adjustments for mobile - increased size slightly */
@@ -1716,7 +1736,7 @@ body {
     min-height: 100vh;
     box-sizing: border-box;
     /* Crucial: Prevents body scrolling when popup is active */
-    overflow: hidden; 
+    overflow: hidden;
 }
 
 header, main {
@@ -2388,7 +2408,7 @@ header, main {
     .prev-button {
         font-size: 41px;
         top: -5px;
-        left: 15px; 
+        left: 15px;
         font-weight: bold;/* Pushed further to the left */
     }
     .close-button {
@@ -2486,7 +2506,7 @@ header, main {
     .prev-button {
         font-size: 41px;
         top: -5px;
-        left: 15px; 
+        left: 15px;
         font-weight: bold;/* Pushed further to the left */
     }
     .header-with-back {
@@ -2877,3 +2897,4 @@ header, main {
     width: 100%;
     padding: 3px 20px;
 }
+

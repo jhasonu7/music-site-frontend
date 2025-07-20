@@ -6,7 +6,7 @@ const BACKEND_BASE_URL = 'https://28ea34f87fef.ngrok-free.app'; // Example: 'htt
 // IMPORTANT: Replace this with your actual Netlify frontend domain for CORS setup on the backend.
 // This is crucial for your backend's CORS configuration (e.g., in Flask-CORS or Express CORS options)
 // It tells your backend which frontend domains are allowed to access its resources.
-const NETLIFY_FRONTEND_DOMAIN = 'https://swarify-play.netlify.app'; // e.g., https://my-music-site.netlify.app
+const NETLIFY_FRONTEND_DOMAIN = 'https:swarify.com'; // e.g., https://my-music-site.netlify.app
 
 // --- DOM Elements (assuming these exist in your HTML) ---
 const trendingSongsContainer = document.querySelector('.trending-songs-container'); // Adjust selector as needed

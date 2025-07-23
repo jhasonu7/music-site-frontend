@@ -65,3 +65,10 @@
 ::-webkit-scrollbar-thumb:hover {
   background-color: #777;
 }
+.bg-grey{
+    height: 97%;
+}
+
+.home{
+    height: 23vh;
+}

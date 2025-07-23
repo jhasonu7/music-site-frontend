@@ -335,6 +335,12 @@ function stopAllPlaybackUI() {
 // Plays a specific track, handling different media types (YouTube, Spotify, SoundCloud, native audio).
 // It updates the player bar UI and manages the progress bar.
 async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added initialSeekTime parameter
+    // Show the main play bar when a song starts playing
+    if (mainPlayBar) {
+        mainPlayBar.style.display = 'flex';
+        console.log("playTrack: mainPlayBar set to display: flex.");
+    }
+
     if (!track) {
         console.error("Attempted to play null or undefined track.");
         return;
@@ -1950,7 +1956,8 @@ function toggleMainPlaybarView(isAlbumOverlayOpen) {
     }
 
     // Ensure mainPlayBar is always visible
-    mainPlayBar.style.setProperty('display', 'flex', 'important');
+    // This line is now handled by playTrack to only show when a song is playing
+    // mainPlayBar.style.setProperty('display', 'flex', 'important');
 
     // Apply specific styles for desktop size screens
     if (window.innerWidth >= 768) { // Assuming 768px is your desktop breakpoint
@@ -2894,8 +2901,8 @@ function closeAlbumOverlay() {
         // --- CRITICAL CHANGE: Manage mainPlayBar visibility based on playingAlbum type ---
         // The mainPlayBar should now always be visible, its layout is handled by toggleMainPlaybarView.
         // Controls are enabled/disabled based on whether the playing track is controllable.
-        mainPlayBar.style.setProperty('display', 'flex', 'important'); // Ensure it's always visible
-        console.log("mainPlayBar set to display: flex !important.");
+        // mainPlayBar.style.setProperty('display', 'flex', 'important'); // Ensure it's always visible - removed, now only shown by playTrack
+        console.log("mainPlayBar display not explicitly set here, controlled by playTrack.");
 
         const isEmbeddedAlbumPlayingInBackground = playingAlbum && (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc);
 
@@ -3446,7 +3453,11 @@ function setupHorizontalScroll(containerId) {
 // --- Initial Setup on DOM Content Loaded ---
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("DOM Content Loaded: Script execution started.");
-    // REMOVED: playerBar.style.display = 'none'; // Hide player bar initially - now visible by default
+    // Hide player bar initially
+    if (mainPlayBar) {
+        mainPlayBar.style.display = 'none';
+        console.log("DOMContentLoaded: mainPlayBar initially hidden.");
+    }
 
     // Add padding to the player-left container for better spacing of the album cover/mini-player
     if (playerLeft) {

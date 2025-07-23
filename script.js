@@ -465,10 +465,14 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
                             currentTrackIndex = Math.floor(Math.random() * currentAlbum.tracks.length);
                             playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
                         } else {
-                            // Only stop playback if there's no next track and not repeating/shuffling
-                            if (!(currentAlbum && currentAlbum.tracks && currentTrackIndex < currentAlbum.tracks.length - 1)) {
-                                // This block will be reached if it's the last song and not repeating/shuffling
-                                // So, we will let the player stay in its "ended" state without explicitly calling stopAllPlaybackUI here.
+                            // Automatically play next song or stop if last
+                            if (currentAlbum && currentAlbum.tracks && currentTrackIndex < currentAlbum.tracks.length - 1) {
+                                currentTrackIndex++;
+                                playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
+                                console.log("Automatically playing next Spotify track.");
+                            } else {
+                                stopAllPlaybackUI();
+                                console.log("Last Spotify track ended, no repeat/shuffle. Stopping all playback.");
                             }
                         }
                     }
@@ -564,9 +568,14 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
                                     currentTrackIndex = Math.floor(Math.random() * currentAlbum.tracks.length);
                                     playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
                                 } else {
-                                    // Only stop playback if there's no next track and not repeating/shuffling
-                                    if (!(currentAlbum && currentAlbum.tracks && currentTrackIndex < currentAlbum.tracks.length - 1)) {
-                                        console.log("YouTube track ended, no auto-advance/repeat/shuffle. Player remains in ended state.");
+                                    // Automatically play next song or stop if last
+                                    if (currentAlbum && currentAlbum.tracks && currentTrackIndex < currentAlbum.tracks.length - 1) {
+                                        currentTrackIndex++;
+                                        playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
+                                        console.log("Automatically playing next YouTube track.");
+                                    } else {
+                                        stopAllPlaybackUI();
+                                        console.log("Last YouTube track ended, no repeat/shuffle. Stopping all playback.");
                                     }
                                 }
                             }
@@ -660,9 +669,15 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
                 currentTrackIndex = Math.floor(Math.random() * currentAlbum.tracks.length);
                 playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
             } else {
-                // If no next track and not repeating/shuffling, just let it end.
-                console.log("Native audio track ended, no auto-advance/repeat/shuffle. Playback will continue until current track ends.");
-                return; // Exit if no next track and not repeating/shuffling
+                // Automatically play next song or stop if last
+                if (currentAlbum && currentAlbum.tracks && currentTrackIndex < currentAlbum.tracks.length - 1) {
+                    currentTrackIndex++;
+                    playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
+                    console.log("Automatically playing next native audio track.");
+                } else {
+                    stopAllPlaybackUI();
+                    console.log("Last native audio track ended, no repeat/shuffle. Stopping all playback.");
+                }
             }
             updateMainAlbumPlaybarUI(); // Sync main album playbar
         };
@@ -1398,7 +1413,7 @@ function attachEventListenersToHtmlCards() {
     console.log("Attaching event listeners to existing HTML cards.");
 
     // Event listener for clicking anywhere on the album card (to open album details)
-    const albumCards = document.querySelectorAll('.spotifyPlaylists .card, .AlbumPlaylists .card'); // Select all cards in both sections
+    const albumCards = document.querySelectorAll('.spotifyPlaylists .card, .AlbumPlaylists .card, .popular-artists .card'); // Select all cards in all sections
     albumCards.forEach(card => {
         // Log the data attributes and text content of each card being attached
         console.log(`Attaching listener to card: ID='${card.dataset.albumId}', Title='${card.querySelector('.card-title')?.textContent.trim()}', Artist='${card.querySelector('.card-artists')?.textContent.trim()}'`);
@@ -1510,7 +1525,7 @@ function handlePlayButtonClick(event) {
 // --- Fetch Albums from Backend ---
 async function fetchAlbums() {
     console.log("fetchAlbums: Starting album data fetch...");
-    showMessageBox('Loading albums data...', 'info');
+    // showMessageBox('Loading albums data...', 'info'); // Removed as per user request
     try {
         console.log(`fetchAlbums: Attempting to fetch from: ${BACKEND_BASE_URL}/api/albums`);
         const response = await fetch(`${BACKEND_BASE_URL}/api/albums`, {
@@ -2974,7 +2989,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     console.log("Spotify Web Playback SDK is ready.");
     if (!spotifyAccessToken) {
         console.warn("Spotify Access Token not available. Cannot initialize Spotify Player.");
-        showMessageBox('Spotify access token missing. Please log in with Spotify.', 'error');
+       
         updateLoginUI(false); // Ensure UI reflects logged out state
         return;
     }
@@ -2992,7 +3007,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     }) => {
         spotifyDeviceId = device_id;
         console.log('Ready with Device ID', spotifyDeviceId);
-        showMessageBox(`Spotify player ready! Device ID: ${deviceId.substring(0, 8)}...`, 'success');
+        
         // Transfer playback to our player
         transferPlaybackToDevice(spotifyDeviceId);
     });
@@ -3040,10 +3055,14 @@ window.onSpotifyWebPlaybackSDKReady = () => {
                     playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
                 }
             } else {
-                // Only stop playback if there's no next track and not repeating/shuffling
-                if (!(currentAlbum && currentAlbum.tracks && currentTrackIndex < currentAlbum.tracks.length - 1)) {
-                    // This block will be reached if it's the last song and not repeating/shuffling
-                    // So, we will let the player stay in its "ended" state without explicitly calling stopAllPlaybackUI here.
+                // Automatically play next song or stop if last
+                if (currentAlbum && currentAlbum.tracks && currentTrackIndex < currentAlbum.tracks.length - 1) {
+                    currentTrackIndex++;
+                    playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
+                    console.log("Automatically playing next Spotify track.");
+                } else {
+                    stopAllPlaybackUI();
+                    console.log("Last Spotify track ended, no repeat/shuffle. Stopping all playback.");
                 }
             }
         }
@@ -3057,7 +3076,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
         message
     }) => {
         console.error('Failed to initialize Spotify player:', message);
-        showMessageBox(`Spotify player init error: ${message}`, 'error');
+      
     });
 
     spotifyPlayer.addListener('authentication_error', ({
@@ -3066,7 +3085,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
         console.error('Authentication error with Spotify:', message);
         spotifyAccessToken = null;
         localStorage.removeItem('spotifyAccessToken');
-        showMessageBox('Spotify authentication failed. Please log in again.', 'error');
+  
         updateLoginUI(false); // Ensure UI reflects logged out state
     });
 
@@ -3074,14 +3093,14 @@ window.onSpotifyWebPlaybackSDKReady = () => {
         message
     }) => {
         console.error('Account error with Spotify:', message);
-        showMessageBox('Spotify account error. Please check your Spotify Premium status.', 'error');
+   
     });
 
     spotifyPlayer.addListener('playback_error', ({
         message
     }) => {
         console.error('Playback error with Spotify:', message);
-        showMessageBox('Spotify playback error. Please try again or check your Spotify app.', 'error');
+      
     });
 
     spotifyPlayer.connect();
@@ -3109,13 +3128,13 @@ async function transferPlaybackToDevice(deviceId) {
         if (!response.ok) {
             const errorData = await response.json();
             console.error('Failed to transfer playback:', errorData);
-            showMessageBox('Could not transfer playback to web player. You might need to select it manually in Spotify.', 'error');
+
         } else {
             console.log('Playback transfer initiated successfully.');
         }
     } catch (error) {
         console.error('Error transferring playback:', error);
-        showMessageBox('Error transferring playback.', 'error');
+       
     }
 }
 
@@ -3177,7 +3196,7 @@ async function handleSpotifyCallback() {
             }
         } else {
             console.warn("handleSpotifyCallback: No access token found in hash.");
-            showMessageBox('Spotify login failed. No access token received.', 'error');
+          
         }
     } else {
         console.log("handleSpotifyCallback: No Spotify authentication callback detected in URL.");
@@ -3342,6 +3361,88 @@ if (dropdownLogoutBtn) {
     });
 }
 
+/**
+ * Updates the visibility of horizontal scroll buttons for a given container.
+ * @param {string} containerId - The ID of the scrollable container.
+ */
+function updateScrollButtonVisibility(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.warn(`Scroll container with ID '${containerId}' not found.`);
+        return;
+    }
+    const scrollLeftBtn = document.querySelector(`.carousel-nav-btn.prev-btn[data-target="${containerId}"]`);
+    const scrollRightBtn = document.querySelector(`.carousel-nav-btn.next-btn[data-target="${containerId}"]`);
+
+    if (!scrollLeftBtn || !scrollRightBtn) {
+        console.warn(`Scroll buttons for container ID '${containerId}' not found.`);
+        return;
+    }
+
+    const scrollTolerance = 5; // Small tolerance for floating point errors
+
+    // Check if there's content to scroll horizontally
+    const hasHorizontalScroll = container.scrollWidth > container.clientWidth + scrollTolerance;
+
+    if (!hasHorizontalScroll) {
+        // If no scrollbar is needed, hide both buttons
+        scrollLeftBtn.classList.add('hidden');
+        scrollRightBtn.classList.add('hidden');
+        return;
+    }
+
+    // Show/hide left button
+    if (container.scrollLeft <= scrollTolerance) {
+        scrollLeftBtn.classList.add('hidden');
+    } else {
+        scrollLeftBtn.classList.remove('hidden');
+    }
+
+    // Show/hide right button
+    // Check if scrolled all the way to the right
+    if (container.scrollLeft + container.clientWidth >= container.scrollWidth - scrollTolerance) {
+        scrollRightBtn.classList.add('hidden');
+    } else {
+        scrollRightBtn.classList.remove('hidden');
+    }
+}
+
+/**
+ * Sets up horizontal scrolling for a given container with associated buttons.
+ * @param {string} containerId - The ID of the scrollable container.
+ */
+function setupHorizontalScroll(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const scrollLeftBtn = document.querySelector(`.carousel-nav-btn.prev-btn[data-target="${containerId}"]`);
+    const scrollRightBtn = document.querySelector(`.carousel-nav-btn.next-btn[data-target="${containerId}"]`);
+
+    if (scrollLeftBtn) {
+        scrollLeftBtn.addEventListener('click', () => {
+            container.scrollBy({
+                left: -container.clientWidth / 1.5, // Scroll 2/3 of the visible width
+                behavior: 'smooth'
+            });
+        });
+    }
+
+    if (scrollRightBtn) {
+        scrollRightBtn.addEventListener('click', () => {
+            container.scrollBy({
+                left: container.clientWidth / 1.5, // Scroll 2/3 of the visible width
+                behavior: 'smooth'
+            });
+        });
+    }
+
+    // Update button visibility on scroll and resize
+    container.addEventListener('scroll', () => updateScrollButtonVisibility(containerId));
+    // Initial update
+    updateScrollButtonVisibility(containerId);
+}
+
+
 // --- Initial Setup on DOM Content Loaded ---
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("DOM Content Loaded: Script execution started.");
@@ -3367,7 +3468,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log("DOMContentLoaded: currentAlbumArt styling applied.");
     }
 
-    showMessageBox('Initializing app...', 'info', 5000); // Initial loading message
+    // showMessageBox('Initializing app...', 'info', 5000); // Initial loading message - REMOVED AS PER USER REQUEST
     try {
         // Attempt to handle Spotify callback on page load
         await handleSpotifyCallback();
@@ -3405,6 +3506,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (typeof fetchAlbums === 'function') {
             await fetchAlbums(); // This call includes attachEventListenersToHtmlCards()
             console.log("DOMContentLoaded: fetchAlbums completed and listeners attached.");
+
+            // Setup horizontal scroll for all three card sections
+            setupHorizontalScroll('trending-songs-cards');
+            setupHorizontalScroll('popular-albums-cards');
+            setupHorizontalScroll('popular-artists-cards');
+            console.log("DOMContentLoaded: Horizontal scroll setup for all card sections.");
+
         } else {
             console.warn("fetchAlbums function not found. Card event listeners might not be attached.");
         }
@@ -3446,18 +3554,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log("DOMContentLoaded: mainPlayBar click listener attached."); // Changed from playerBar
         }
 
-        // NEW: Add resize event listener to manage playbar view on window resize
+        // NEW: Add resize event listener to manage playbar view and scroll button visibility on window resize
         window.addEventListener('resize', () => {
             const isAlbumOverlayCurrentlyOpen = albumOverlay && albumOverlay.classList.contains('show');
             toggleMainPlaybarView(isAlbumOverlayCurrentlyOpen);
+            // Update scroll button visibility for all relevant sections on resize
+            updateScrollButtonVisibility('trending-songs-cards');
+            updateScrollButtonVisibility('popular-albums-cards');
+            updateScrollButtonVisibility('popular-artists-cards');
         });
-        console.log("DOMContentLoaded: window resize listener attached for playbar view.");
+        console.log("DOMContentLoaded: window resize listener attached for playbar view and scroll buttons.");
 
         // Initial call to set the correct playbar view on load
         toggleMainPlaybarView(false); // Assume overlay is closed on initial load
         console.log("DOMContentLoaded: Initial toggleMainPlaybarView called.");
 
-        showMessageBox('App is ready!', 'success'); // Final ready message
+       
     }
     catch (error) {
         console.error("DOMContentLoaded: An error occurred during initial setup:", error);

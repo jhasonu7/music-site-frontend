@@ -785,7 +785,7 @@ async function updateAlbumPlayButtonIcon() {
         const currentTrack = currentAlbum.tracks[currentTrackIndex];
 
         // Check native audio
-        if (audio.src === currentTrack.src && !audio.paused) {
+        if (audio.src && audio.src === currentTrack.src && !audio.paused) {
             isPlayingCurrentAlbumTrack = true;
         }
         // Check YouTube player
@@ -1422,8 +1422,8 @@ function attachEventListenersToHtmlCards() {
 
 /**
  * Handler for general album card clicks (opens details).
- * This function attempts to find the album by its title and artist from the HTML.
- * Playback is NOT stopped by this function.
+ * This function now uses the data-album-id for a more robust lookup.
+ * Playback is NOT initiated by this function.
  * @param {Event} event
  */
 function handleCardClick(event) {
@@ -1433,31 +1433,25 @@ function handleCardClick(event) {
     }
 
     const card = event.currentTarget; // The .card element itself
-    const cardTitleElement = card.querySelector('.card-title');
-    const cardArtistElement = card.querySelector('.card-artists');
-    const cardTitle = cardTitleElement ? cardTitleElement.textContent.trim() : '';
-    const cardArtist = cardArtistElement ? cardArtistElement.textContent.trim() : '';
+    const albumId = card.dataset.albumId; // Get album ID from the card's dataset
 
-    console.log(`handleCardClick: Clicked card has Title='${cardTitle}', Artist='${cardArtist}'`);
+    console.log(`handleCardClick: Clicked card has ID='${albumId}'`);
 
-    if (!cardTitle || !cardArtist) {
-        console.warn("Card clicked, but could not extract title or artist from HTML. Cannot open album details.");
-        showMessageBox('Album details not found (missing title/artist in card HTML).', 'error');
+    if (!albumId) {
+        console.warn("Card clicked, but could not retrieve data-album-id. Cannot open album details.");
+        // No message box here as per user request
         return;
     }
 
-    // Find the corresponding album data from the fetched allAlbumsData using title and artist
-    const albumToOpen = allAlbumsData.find(album =>
-        (album.title && album.title.toLowerCase() === cardTitle.toLowerCase()) &&
-        (album.artist && album.artist.toLowerCase() === cardArtist.toLowerCase())
-    );
+    // Find the corresponding album data from the fetched allAlbumsData using the album ID
+    const albumToOpen = allAlbumsData.find(album => album.id === albumId);
 
     if (albumToOpen) {
-        console.log(`handleCardClick: Found album in allAlbumsData: ${albumToOpen.title} by ${albumToOpen.artist}`);
+        console.log(`handleCardClick: Found album in allAlbumsData: ${albumToOpen.title} (ID: ${albumToOpen.id})`);
         openAlbumDetails(albumToOpen);
     } else {
-        console.warn(`handleCardClick: Album data not found in backend for HTML card: "${cardTitle}" by "${cardArtist}". Data might not be loaded or ID incorrect. allAlbumsData length: ${allAlbumsData.length}`);
-        showMessageBox('Album details not found for this card. Data might not be loaded or ID incorrect.', 'error');
+        console.warn(`handleCardClick: Album with ID ${albumId} not found in loaded data. Data might not be loaded or ID incorrect. allAlbumsData length: ${allAlbumsData.length}`);
+        // No message box here as per user request
     }
 }
 
@@ -1493,15 +1487,18 @@ function handlePlayButtonClick(event) {
             console.log("Embedded album play button clicked. Calling stopControllablePlayersOnly before opening overlay.");
             stopControllablePlayersOnly(); // Stop any existing controllable playback
             playingAlbum = albumToPlay; // NEW: Set playingAlbum here
-        } else {
-            console.log("Non-embedded album play button clicked. Not stopping playback yet, waiting for track click.");
-            // For non-embedded albums, playingAlbum is only set when a track is clicked.
-        }
-        openAlbumDetails(albumToPlay); // Open the album details overlay
-        if (albumToPlay.rawHtmlEmbed || albumToPlay.fullSoundcloudEmbed || albumToPlay.audiomackEmbed || albumToPlay.iframeSrc) {
+            openAlbumDetails(albumToPlay); // Open the album details overlay
             console.log("Embedded album play button clicked, letting firstClickEmbedHandler manage play.");
         } else {
-            console.log("Non-embedded album play button clicked. Autoplay prevented. Click a track to start playing!", 'info');
+            // For non-embedded albums (tracklists), open the album details and automatically play the first track
+            openAlbumDetails(albumToPlay); // Open the album details overlay
+            if (albumToPlay.tracks && albumToPlay.tracks.length > 0) {
+                console.log("Non-embedded album play button clicked. Playing first track automatically.");
+                playTrack(albumToPlay.tracks[0], 0); // Play the first track (index 0)
+            } else {
+                console.log("Non-embedded album play button clicked, but no tracks found to play automatically.");
+                showMessageBox('No tracks available to play for this album.', 'info');
+            }
         }
     } else {
         console.warn(`handlePlayButtonClick: Album with ID ${albumId} not found when trying to play. allAlbumsData length: ${allAlbumsData.length}`);
@@ -3602,6 +3599,7 @@ function updateLoginUI(isLoggedIn) {
         }
     }
 }
+
 
 
 

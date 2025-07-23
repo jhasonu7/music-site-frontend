@@ -1,12 +1,12 @@
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual ngrok static domain if you are using ngrok for your backend.
 // If your backend is hosted directly (e.g., on Render, Heroku), use that URL.
-const BACKEND_BASE_URL = 'https://b9d8684d3c88.ngrok-free.app'; // Example: 'https://your-ngrok-subdomain.ngrok-free.app' or 'https://your-backend-api.com'
+const BACKEND_BASE_URL = 'http://127.0.0.1:5000'; // Example: 'https://your-ngrok-subdomain.ngrok-free.app' or 'https://your-backend-api.com'
 
 // IMPORTANT: Replace this with your actual Netlify frontend domain for CORS setup on the backend.
 // This is crucial for your backend's CORS configuration (e.g., in Flask-CORS or Express CORS options)
 // It tells your backend which frontend domains are allowed to access its resources.
-const NETLIFY_FRONTEND_DOMAIN = 'https://swarify.com'; // e.g., https://my-music-site.netlify.app
+const NETLIFY_FRONTEND_DOMAIN = 'https://swarify-play.netlify.app'; // e.g., https://my-music-site.netlify.app
 
 // --- DOM Elements (assuming these exist in your HTML) ---
 const trendingSongsContainer = document.querySelector('.trending-songs-container'); // Adjust selector as needed
@@ -25,13 +25,12 @@ let ytPlayer = null; // Global variable to hold the YouTube player instance
 let spotifyPlayer = null; // Global variable to hold the Spotify player instance
 let spotifyAccessToken = null; // Spotify access token
 let spotifyDeviceId = null; // Spotify device ID for playback
-let progressBarInterval = null; // To clear the interval for progress bar updates
+let progressBarInterval = null; // To clear the interval for main player bar progress updates
+let albumOverlayProgressBarInterval = null; // NEW: To clear the interval for main album playbar progress updates
 let searchMessageTimeout = null; // To clear the timeout for search messages
 let searchMessageContainer = null; // Global variable to hold the dynamically created search message container
 let lastKnownPlaybackPosition = 0; // Stores the last known playback position for resuming (for controllable players)
 
-let embeddedVideoOverlayContainer = null; // Global variable for the video overlay
-let backgroundEmbeddedAlbum = null; // Stores the album data for the embedded content playing in the background
 let playingAlbum = null; // NEW: Stores the album object that is currently playing audio (could be embedded or controllable)
 let currentUserName = 'Guest'; // NEW: Global variable to store the logged-in user's name
 
@@ -53,24 +52,33 @@ const albumDetailsMeta = document.getElementById('albumDetails-meta'); // Album 
 const albumDetailsTracksBody = document.getElementById('albumDetails-tracks'); // Tracklist table body in overlay
 const albumPlayButton = document.getElementById('album-play'); // Play button inside album overlay
 
-const playerBar = document.querySelector('.player-bar'); // Get the player-bar element
-const playerImg = document.getElementById('player-img'); // Album cover in player bar
-const trackTitleDisplay = document.getElementById('track-title'); // Track title in player bar
-const trackArtistDisplay = document.getElementById('track-artist'); // Track artist in player bar
-const playPauseBtn = document.getElementById('play-pause'); // Play/Pause button in player bar
-const progressBar = document.getElementById('progress-bar'); // Progress bar in player bar
-const currentTimeDisplay = document.getElementById('current-time'); // Current time in player bar
-const durationDisplay = document.getElementById('duration'); // Duration in player bar
-const volumeBar = document.getElementById('volume-bar'); // Volume bar in player bar
-const nextTrackBtn = document.getElementById('next-track'); // Next track button in player bar
-const prevTrackBtn = document.getElementById('prev-track'); // Previous track button in player bar
-const repeatBtn = document.getElementById('repeat-btn'); // Repeat button in player bar
-const shuffleBtn = document.getElementById('shuffle-btn'); // Shuffle button in player bar
+// --- NEW Main Play Bar Elements (from the provided HTML structure) ---
+const mainPlayBar = document.getElementById('main-play-bar'); // The entire fixed play bar container
+const currentAlbumArt = document.getElementById('current-album-art'); // Album cover in main play bar
+const currentSongTitle = document.getElementById('current-song-title'); // Song title in main play bar
+const currentArtistName = document.getElementById('current-artist-name'); // Artist name in main play bar
+const playPauseBtn = document.getElementById('play-pause-btn'); // Play/Pause button in main play bar
+const playIcon = document.getElementById('play-icon'); // Play icon SVG
+const pauseIcon = document.getElementById('pause-icon'); // Pause icon SVG
+const progressBar = document.getElementById('progress-bar'); // Progress bar in main play bar
+const currentTimeSpan = document.getElementById('current-time'); // Current time display in main play bar
+const totalTimeSpan = document.getElementById('total-time'); // Total duration display in main play bar (CHANGED FROM 'duration')
+const volumeBar = document.getElementById('volume-bar'); // Volume bar in main play bar
+const nextTrackBtn = document.getElementById('next-track-btn'); // Next track button in main play bar
+const prevTrackBtn = document.getElementById('prev-track-btn'); // Previous track button in main play bar
+const rewindBtn = document.getElementById('rewind-btn'); // Rewind button in main play bar
+const fastForwardBtn = document.getElementById('fast-forward-btn'); // Fast-forward button in main play bar
+const repeatBtn = document.getElementById('repeat-btn'); // Repeat button in main play bar
+const shuffleBtn = document.getElementById('shuffle-btn'); // Shuffle button in main play bar
+
+// Re-referencing existing elements for clarity and consistency with the new HTML structure
+// These were already defined above, but re-listed here to match the new HTML's logical grouping
+const playerLeft = document.querySelector('.flex.items-center.w-full.md\\:w-auto.flex-grow'); // The container for album art and song info
+const playerControls = document.querySelector('.flex.items-center.justify-center.space-x-4.w-full.md\\:w-auto.flex-shrink-0'); // The container for play/pause, next, prev buttons
+
 const searchInput = document.getElementById('search-input'); // Search input field
 const searchIcon = document.querySelector('.search-icon'); // Search icon button
-const playerLeft = document.querySelector('.player-left'); // Get the player-left container (for dynamic embeds)
 const spotifyLoginBtn = document.getElementById('spotify-login-btn'); // Spotify Login Button (if it exists)
-const playerControls = document.querySelector('.player-center .controls'); // Assuming a container for player controls
 
 // Hamburger menu and sidebar elements
 const hamburger = document.querySelector('.hamburger'); // New reference for hamburger
@@ -181,7 +189,7 @@ function parseDurationToSeconds(durationInput) {
  */
 function togglePlayerControls(enable) {
     // Check if playerControls exists before trying to access its style
-    if (playerControls) {
+    if (playerControls) { // This now refers to the main controls container
         playerControls.style.pointerEvents = enable ? 'auto' : 'none';
         playerControls.style.opacity = enable ? '1' : '0.5';
     }
@@ -193,82 +201,8 @@ function togglePlayerControls(enable) {
     if (volumeBar) volumeBar.disabled = !enable;
     if (repeatBtn) repeatBtn.disabled = !enable;
     if (shuffleBtn) shuffleBtn.disabled = !enable;
-}
-
-/**
- * Manages the display of a video overlay over player controls when an embedded album is playing.
- * Also applies/removes a yellow border to the player bar.
- * @param {boolean} show - True to show the video overlay and apply border, false to hide it and remove border.
- */
-function toggleEmbeddedPlayerVideoOverlay(show) {
-    if (!playerBar) {
-        console.error("playerBar element not found for video overlay.");
-        return;
-    }
-
-    if (!embeddedVideoOverlayContainer) {
-        embeddedVideoOverlayContainer = document.createElement('div');
-        embeddedVideoOverlayContainer.id = 'embedded-video-overlay';
-        embeddedVideoOverlayContainer.style.cssText = `
-            position: absolute;
-            top: 0;
-            left: 96px; /* player-left width (80px img + 8px padding * 2) */
-            right: 0;
-            bottom: 0;
-            width: calc(100% - 96px); /* Adjust width to cover center and right */
-            height: 100%;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 5; /* Above player controls but below other critical elements */
-            background-color: #000; /* Fallback background */
-            border-radius: 8px; /* Match player bar style */
-        `;
-        playerBar.appendChild(embeddedVideoOverlayContainer);
-
-        const videoElement = document.createElement('video');
-        videoElement.id = 'embedded-background-video';
-        videoElement.src = 'https://files.catbox.moe/7ixtbj.mp4';
-        videoElement.autoplay = true;
-        videoElement.loop = true;
-        videoElement.muted = true; // Muted for autoplay
-        videoElement.playsInline = true; // Important for mobile autoplay
-        videoElement.style.cssText = `
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* Cover the container without distortion */
-            border-radius: 8px;
-            /* No border on videoElement itself, border is on playerBar */
-        `;
-        embeddedVideoOverlayContainer.appendChild(videoElement);
-        console.log("Embedded video overlay created.");
-    }
-
-    if (show) {
-        embeddedVideoOverlayContainer.style.display = 'flex';
-        // Ensure the video is playing if it was paused
-        const video = embeddedVideoOverlayContainer.querySelector('video');
-        if (video && video.paused) {
-            video.play().catch(e => console.warn("Video autoplay failed (might be unmuted):", e));
-        }
-        console.log("Embedded video overlay shown.");
-        // Disable player controls when video overlay is active
-        togglePlayerControls(false);
-        // Add yellow border to the playerBar
-        playerBar.style.boxSizing = 'border-box'; // Ensure border doesn't add to layout size
-    } else {
-        embeddedVideoOverlayContainer.style.display = 'none';
-        const video = embeddedVideoOverlayContainer.querySelector('video');
-        if (video) {
-            video.pause(); // Pause video when hidden
-        }
-        console.log("Embedded video overlay hidden.");
-        // Re-enable player controls when video overlay is hidden
-        togglePlayerControls(true);
-        // Remove yellow border from the playerBar
-        playerBar.style.border = 'none'; // Remove border from playerBar
-    }
+    if (rewindBtn) rewindBtn.disabled = !enable;
+    if (fastForwardBtn) fastForwardBtn.disabled = !enable;
 }
 
 /**
@@ -296,16 +230,12 @@ function stopControllablePlayersOnly() {
             spotifyPlayer.getCurrentState().then(state => {
                 if (state && !state.paused) {
                     spotifyPlayer.pause();
-                    console.log("Spotify player paused.");
                 }
             }).catch(e => console.warn("Could not get Spotify player state to pause:", e));
         } catch (e) {
             console.warn("Error pausing Spotify player:", e);
         }
     }
-    // Do NOT reset player bar UI or controls here.
-    // This function is for stopping audio, not resetting UI state.
-    // The UI reset is handled by stopAllPlaybackUI or when a new track is played.
 }
 
 
@@ -351,39 +281,53 @@ function stopAllPlaybackUI() {
     }
     // Also ensure the container is hidden if it was showing an embed
     albumFullEmbedContainer.style.display = 'none';
-    // Clear the backgroundEmbeddedAlbum reference as its playback has been stopped
-    backgroundEmbeddedAlbum = null;
-    console.log("backgroundEmbeddedAlbum set to null after stopAllPlaybackUI.");
     // NEW: Clear playingAlbum when all playback is stopped
     playingAlbum = null;
-    console.log("playingAlbum set to null after stopAllPlaybackUI.");
+    console.log("stopAllPlaybackUI: playingAlbum set to null.");
 
 
     // Clear any existing iframe/youtube player div/raw HTML embed from the player-left container (mini-player)
-    const existingPlayerContainer = playerLeft.querySelector('#dynamic-player-container');
-    if (existingPlayerContainer) {
-        existingPlayerContainer.remove();
-    }
-    const existingYoutubePlayerDiv = playerLeft.querySelector('#youtube-player-container');
-    if (existingYoutubePlayerDiv) {
-        existingYoutubePlayerDiv.remove();
+    // The playerLeft now contains the album art and song info, so we need to target the dynamic player container within it.
+    const dynamicPlayerContainer = playerLeft.querySelector('#youtube-player-container'); // This is where the YouTube player div is created
+    if (dynamicPlayerContainer) {
+        dynamicPlayerContainer.remove();
     }
 
     // Ensure player image is visible
-    if (playerImg) playerImg.style.display = 'block';
+    if (currentAlbumArt) currentAlbumArt.style.display = 'block';
 
-    // Reset progress bar and time displays
+    // Reset progress bar and time displays for the main play bar
     if (progressBarInterval) {
         clearInterval(progressBarInterval);
         progressBarInterval = null;
     }
+    // NEW: Clear main album playbar progress bar interval
+    if (albumOverlayProgressBarInterval) {
+        clearInterval(albumOverlayProgressBarInterval);
+        albumOverlayProgressBarInterval = null;
+    }
+
     if (progressBar) progressBar.value = 0;
-    if (currentTimeDisplay) currentTimeDisplay.textContent = '0:00';
-    if (durationDisplay) durationDisplay.textContent = '0:00';
-    if (playPauseBtn) playPauseBtn.innerHTML = '&#9658;'; // Set to play icon (triangle)
+    if (currentTimeSpan) currentTimeSpan.textContent = '0:00';
+    if (totalTimeSpan) totalTimeSpan.textContent = '0:00';
+    if (playPauseBtn) {
+        playIcon.classList.remove('hidden');
+        pauseIcon.classList.add('hidden');
+    }
+
+    // NEW: Reset main album playbar UI (if it were a separate element)
+    // Since we're transforming the main playbar, these might refer to the same elements
+    // or elements within the main playbar that get their visibility toggled.
+    // Assuming the main playbar itself is updated.
+    if (progressBar) progressBar.value = 0; // Main play bar progress
+    if (currentTimeSpan) currentTimeSpan.textContent = '0:00'; // Main play bar current time
+    if (totalTimeSpan) totalTimeSpan.textContent = '0:00'; // Main play bar duration
+    if (playPauseBtn) { // Main play bar play/pause button
+        playIcon.classList.remove('hidden');
+        pauseIcon.classList.add('hidden');
+    }
 
     togglePlayerControls(true); // Re-enable controls when stopping all playback
-    toggleEmbeddedPlayerVideoOverlay(false); // <--- Hide video overlay when stopping all playback
     console.log("Player controls re-enabled.");
 }
 
@@ -403,19 +347,18 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
     // Playback is stopped ONLY when a new controllable track is explicitly played.
     // This ensures only one controllable audio source is active.
     // Also stop if we are switching from an embedded to a controllable track.
+    // IMPORTANT: For non-controllable embedded tracks, we do NOT stop previous playback here.
+    // The `firstClickEmbedHandler` for full embeds is responsible for stopping controllable players.
     if (track.src || isControllableEmbeddedTrack) {
-        stopAllPlaybackUI();
+        stopAllPlaybackUI(); // Stop all previous playback if a new controllable track is starting
         console.log("stopAllPlaybackUI called before playing new controllable track.");
-        playingAlbum = currentAlbum; // NEW: Set playingAlbum for controllable tracks
-        console.log("playingAlbum set to currentAlbum for controllable track:", playingAlbum);
+        playingAlbum = currentAlbum; // Set playingAlbum for controllable tracks
+        console.log("playTrack: playingAlbum set to:", playingAlbum ? playingAlbum.title : "null", "currentTrackIndex:", indexInAlbum);
     } else {
-        // For non-controllable embedded tracks (e.g., raw HTML embeds),
-        // we do NOT stop previous playback here. The user interaction layer
-        // (firstClickEmbedHandler for full embeds) is responsible for stopping
-        // controllable players.
-        console.log("Not calling stopAllPlaybackUI for non-controllable embedded track. User interaction layer handles stopping for full embeds.");
-        playingAlbum = currentAlbum; // NEW: Set playingAlbum for non-controllable embedded tracks
-        console.log("playingAlbum set to currentAlbum for non-controllable embedded track:", playingAlbum);
+        // For non-controllable embedded tracks, we only set playingAlbum.
+        // The `firstClickEmbedHandler` will handle stopping controllable players when the embed is clicked.
+        playingAlbum = currentAlbum; // Set playingAlbum for non-controllable embedded tracks
+        console.log("playTrack: playingAlbum set to:", playingAlbum ? playingAlbum.title : "null", "currentTrackIndex:", indexInAlbum);
     }
 
 
@@ -425,26 +368,27 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
     }
 
     // Update player bar UI (common for all types)
-    if (playerImg) playerImg.src = track.img || 'https://placehold.co/80x80/000000/FFFFFF?text=Track'; // Fallback image
-    if (trackTitleDisplay) trackTitleDisplay.textContent = track.title || 'Unknown Title';
-    if (trackArtistDisplay) trackArtistDisplay.textContent = track.artist || 'Unknown Artist';
+    if (currentAlbumArt) currentAlbumArt.src = track.img || 'https://placehold.co/64x64/000000/FFFFFF?text=Track'; // Fallback image
+    if (currentSongTitle) currentSongTitle.textContent = track.title || 'Unknown Title';
+    if (currentArtistName) currentArtistName.textContent = track.artist || 'Unknown Artist';
 
     // --- Play Raw HTML Embed (e.g., Spotify iframe for playlists) or Audiomack/SoundCloud (non-controllable) ---
     // For these, we only update the mini-player visually, and the full embed is handled by openAlbumDetails.
     if (isNonControllableEmbeddedTrack) {
         console.log("Playing via Non-Controllable Embed (Player Bar):", track.title);
         // Ensure player image is visible and any dynamic mini-player iframe is removed
-        if (playerImg) playerImg.style.display = 'block';
-        const existingPlayerContainer = playerLeft.querySelector('#dynamic-player-container');
-        if (existingPlayerContainer) existingPlayerContainer.remove();
-        const existingYoutubePlayerDiv = playerLeft.querySelector('#youtube-player-container');
-        if (existingYoutubePlayerDiv) existingYoutubePlayerDiv.remove();
+        if (currentAlbumArt) currentAlbumArt.style.display = 'block';
+        const dynamicPlayerContainer = playerLeft.querySelector('#youtube-player-container');
+        if (dynamicPlayerContainer) dynamicPlayerContainer.remove();
 
-        // Update player bar UI for visual info only
-        if (playPauseBtn) playPauseBtn.innerHTML = '&#10074;&#10074;'; // Pause icon
+        // Update play/pause button to indicate non-controllable state (e.g., a "pause" icon that doesn't function)
+        if (playPauseBtn) {
+            playIcon.classList.add('hidden');
+            pauseIcon.classList.remove('hidden'); // Show pause icon, but it won't be interactive
+        }
         if (progressBar) progressBar.value = 0; // Cannot get real progress
-        if (currentTimeDisplay) currentTimeDisplay.textContent = '0:00';
-        if (durationDisplay) durationDisplay.textContent = 'N/A';
+        if (currentTimeSpan) currentTimeSpan.textContent = '0:00';
+        if (totalTimeSpan) totalTimeSpan.textContent = 'N/A';
 
         togglePlayerControls(false); // Disable main controls for embedded content as they cannot control the iframe
     }
@@ -452,15 +396,9 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
     else if (track.spotifyUri && spotifyPlayer && spotifyAccessToken && spotifyDeviceId) {
         console.log("Playing via Spotify Web Playback SDK:", track.spotifyUri);
         // Ensure player image is hidden and a dynamic mini-player container is created for the SDK player
-        if (playerImg) playerImg.style.display = 'none';
-        const existingPlayerContainer = playerLeft.querySelector('#dynamic-player-container');
-        if (existingPlayerContainer) existingPlayerContainer.remove();
-        const existingYoutubePlayerDiv = playerLeft.querySelector('#youtube-player-container');
-        if (existingYoutubePlayerDiv) existingYoutubePlayerDiv.remove();
-
-        // Spotify SDK doesn't need a visible iframe in the mini-player, it's controlled internally.
-        // We just hide the album art and let the track info show.
-        // No dynamic player container needed here for SDK.
+        if (currentAlbumArt) currentAlbumArt.style.display = 'none';
+        const dynamicPlayerContainer = playerLeft.querySelector('#youtube-player-container');
+        if (dynamicPlayerContainer) dynamicPlayerContainer.remove();
 
         try {
             const playOptions = {
@@ -486,16 +424,23 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
                 if (response.status === 401) { // Token expired or invalid
                     spotifyAccessToken = null; // Clear token
                 }
-                if (playPauseBtn) playPauseBtn.innerHTML = '&#9658;';
+                if (playPauseBtn) {
+                    playIcon.classList.remove('hidden');
+                    pauseIcon.classList.add('hidden');
+                }
                 togglePlayerControls(true); // Re-enable if playback fails
                 return;
             }
             console.log('Spotify track started successfully.');
-            if (playPauseBtn) playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'; // Green pause icon
+            if (playPauseBtn) {
+                playIcon.classList.add('hidden');
+                pauseIcon.classList.remove('hidden');
+            }
             togglePlayerControls(true); // Enable controls for SDK playback
 
             // Start updating progress bar for Spotify
             if (progressBarInterval) clearInterval(progressBarInterval);
+            if (albumOverlayProgressBarInterval) clearInterval(albumOverlayProgressBarInterval); // Clear main album playbar progress bar interval
             progressBarInterval = setInterval(async () => {
                 if (spotifyPlayer) {
                     const state = await spotifyPlayer.getCurrentState();
@@ -504,8 +449,8 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
                         lastKnownPlaybackPosition = currentTime; // Update global position
                         const duration = state.duration / 1000; // ms to seconds
                         if (duration > 0) {
-                            if (currentTimeDisplay) currentTimeDisplay.textContent = formatTime(currentTime);
-                            if (durationDisplay) durationDisplay.textContent = formatTime(duration);
+                            if (currentTimeSpan) currentTimeSpan.textContent = formatTime(currentTime);
+                            if (totalTimeSpan) totalTimeSpan.textContent = formatTime(duration);
                             if (progressBar) {
                                 progressBar.max = duration;
                                 progressBar.value = currentTime;
@@ -533,7 +478,10 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
         } catch (error) {
             console.error("Error playing Spotify track:", error);
             showMessageBox("Error playing Spotify track. Please ensure Spotify is open and you are logged in.", 'error');
-            if (playPauseBtn) playPauseBtn.innerHTML = '&#9658;';
+            if (playPauseBtn) {
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+            }
             togglePlayerControls(true); // Re-enable if playback fails
         }
 
@@ -544,13 +492,13 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
         const videoId = videoIdMatch ? videoIdMatch[1] : null;
         if (videoId && typeof YT !== 'undefined' && YT.Player) {
             // Hide the player image
-            if (playerImg) playerImg.style.display = 'none';
+            if (currentAlbumArt) currentAlbumArt.style.display = 'none';
 
             // Create a div placeholder for the YouTube player
             const playerDiv = document.createElement('div');
             playerDiv.id = 'youtube-player-container'; // Fixed ID for easier selection/removal
-            playerDiv.style.width = '80px'; // Match player-img width
-            playerDiv.style.height = '80px'; // Match player-img height
+            playerDiv.style.width = '64px'; // Match album art width
+            playerDiv.style.height = '64px'; // Match album art height
             playerDiv.style.borderRadius = '8px'; // Added border-radius
             playerLeft.prepend(playerDiv); // Prepend to appear before track info
 
@@ -569,21 +517,25 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
                     'onReady': (event) => {
                         event.target.seekTo(initialSeekTime, true); // Use initialSeekTime
                         event.target.playVideo();
-                        if (playPauseBtn) playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'; // Green pause icon
+                        if (playPauseBtn) {
+                            playIcon.classList.add('hidden');
+                            pauseIcon.classList.remove('hidden');
+                        }
                         // Set initial volume for YouTube player
                         if (volumeBar) event.target.setVolume(volumeBar.value * 100);
                         togglePlayerControls(true); // Enable controls for YouTube playback
 
                         // Start updating progress bar
                         if (progressBarInterval) clearInterval(progressBarInterval);
+                        if (albumOverlayProgressBarInterval) clearInterval(albumOverlayProgressBarInterval); // Clear main album playbar progress bar interval
                         progressBarInterval = setInterval(() => {
                             if (ytPlayer && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
                                 const currentTime = ytPlayer.getCurrentTime();
                                 lastKnownPlaybackPosition = currentTime;
                                 const duration = ytPlayer.getDuration();
                                 if (duration > 0) {
-                                    if (currentTimeDisplay) currentTimeDisplay.textContent = formatTime(currentTime);
-                                    if (durationDisplay) durationDisplay.textContent = formatTime(duration);
+                                    if (currentTimeSpan) currentTimeSpan.textContent = formatTime(currentTime);
+                                    if (totalTimeSpan) totalTimeSpan.textContent = formatTime(duration);
                                     if (progressBar) {
                                         progressBar.max = duration;
                                         progressBar.value = currentTime;
@@ -594,9 +546,15 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
                     },
                     'onStateChange': (event) => {
                         if (event.data === YT.PlayerState.PLAYING) {
-                            if (playPauseBtn) playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
+                            if (playPauseBtn) {
+                                playIcon.classList.add('hidden');
+                                pauseIcon.classList.remove('hidden');
+                            }
                         } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
-                            if (playPauseBtn) playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><path d="M8 5v14l11-7z"/></svg>';
+                            if (playPauseBtn) {
+                                playIcon.classList.remove('hidden');
+                                pauseIcon.classList.add('hidden');
+                            }
                             if (event.data === YT.PlayerState.ENDED) {
                                 // Handle track ending for YouTube player
                                 if (isRepeat) {
@@ -614,19 +572,27 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
                             }
                         }
                         updateTrackHighlightingInOverlay(); // Update highlighting on state change
+                        updateMainAlbumPlaybarUI(); // Sync main album playbar on state change
                     },
                     'onError': (event) => {
                         console.error("YouTube Player Error:", event.data);
                         showMessageBox("Error playing YouTube video. It might be unavailable or restricted.", 'error');
-                        if (playPauseBtn) playPauseBtn.innerHTML = '&#9658;';
+                        if (playPauseBtn) {
+                            playIcon.classList.remove('hidden');
+                            pauseIcon.classList.add('hidden');
+                        }
                         togglePlayerControls(true); // Re-enable if playback fails
+                        updateMainAlbumPlaybarUI(); // Sync main album playbar on error
                     }
                 }
             });
         } else {
             console.warn("YouTube video ID not found or YouTube API not loaded.", track.iframeSrc);
             showMessageBox("Could not load YouTube player. Please try again later.", 'error');
-            if (playPauseBtn) playPauseBtn.innerHTML = '&#9658;';
+            if (playPauseBtn) {
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+            }
             togglePlayerControls(true); // Re-enable controls if playback fails
         }
     } else {
@@ -634,13 +600,18 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
         audio.src = track.src;
         audio.currentTime = initialSeekTime;
         audio.play();
-        if (playPauseBtn) playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'; // Green Pause icon
+        if (playPauseBtn) {
+            playIcon.classList.add('hidden');
+            pauseIcon.classList.remove('hidden');
+        }
         togglePlayerControls(true); // Enable controls for native audio
 
         audio.onloadedmetadata = () => {
-            if (durationDisplay) durationDisplay.textContent = formatTime(audio.duration);
+            if (totalTimeSpan) totalTimeSpan.textContent = formatTime(audio.duration);
             if (progressBar) progressBar.max = audio.duration;
             if (progressBar) progressBar.value = audio.currentTime;
+            // NEW: Update main album playbar
+            updateMainAlbumPlaybarUI(); // Explicitly call here to update immediately on metadata load
 
             // NEW LOGIC: Update the duration in the currentAlbum object and the overlay
             if (currentAlbum && currentAlbum.tracks && currentAlbum.tracks[currentTrackIndex]) {
@@ -664,13 +635,16 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
 
         // Start updating progress bar for native audio
         if (progressBarInterval) clearInterval(progressBarInterval); // Clear any old interval
+        if (albumOverlayProgressBarInterval) clearInterval(albumOverlayProgressBarInterval); // Clear main album playbar progress bar interval
+
         progressBarInterval = setInterval(() => {
             if (!audio.paused && !audio.ended) {
-                if (currentTimeDisplay) currentTimeDisplay.textContent = formatTime(audio.currentTime);
+                if (currentTimeSpan) currentTimeSpan.textContent = formatTime(audio.currentTime);
                 if (progressBar) progressBar.value = audio.currentTime;
                 lastKnownPlaybackPosition = audio.currentTime;
             }
         }, 1000);
+
         audio.onended = () => {
             // This event listener is primarily for native audio. YouTube/Spotify APIs handle their own 'ended' state.
             if (!currentAlbum || !currentAlbum.tracks || currentAlbum.tracks.length === 0) return;
@@ -678,7 +652,6 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
             // If the current track is an embed, we cannot auto-advance/repeat via this event.
             if (currentAlbum.tracks[currentTrackIndex]?.rawHtmlEmbed || currentAlbum.tracks[currentTrackIndex]?.soundcloudEmbed || currentAlbum.tracks[currentTrackIndex]?.audiomackEmbed || currentAlbum.tracks[currentTrackIndex]?.fullSoundcloudEmbed) {
                 console.warn("Auto-advance/repeat is not supported for raw HTML, SoundCloud, or Audiomack embedded content.");
-                // We don't call stopAllPlaybackUI here, as the embedded player might still be playing in the background.
                 return;
             }
             if (isRepeat) {
@@ -687,21 +660,19 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
                 currentTrackIndex = Math.floor(Math.random() * currentAlbum.tracks.length);
                 playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
             } else {
-                currentTrackIndex++;
-                // Only play next track if it exists
-                if (currentAlbum.tracks[currentTrackIndex]) {
-                    playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
-                } else {
-                    // If no next track and not repeating/shuffling, just let it end.
-                    console.log("Native audio track ended, no auto-advance/repeat/shuffle. Player remains in ended state.");
-                }
+                // If no next track and not repeating/shuffling, just let it end.
+                console.log("Native audio track ended, no auto-advance/repeat/shuffle. Playback will continue until current track ends.");
+                return; // Exit if no next track and not repeating/shuffling
             }
+            updateMainAlbumPlaybarUI(); // Sync main album playbar
         };
     }
     // Call the new highlighting function after playback starts/changes
     updateTrackHighlightingInOverlay();
     // Update the main album play button icon
     updateAlbumPlayButtonIcon();
+    // NEW: Update the main album playbar UI
+    updateMainAlbumPlaybarUI();
 }
 
 /**
@@ -728,7 +699,7 @@ async function updateTrackHighlightingInOverlay() {
             iconCell.classList.remove('playing-icon-container', 'paused-icon-container');
         }
 
-        const isCurrentTrack = (currentAlbum && i === currentTrackIndex);
+        const isCurrentTrack = (playingAlbum && playingAlbum.id === currentAlbum.id && i === currentTrackIndex);
 
         if (isCurrentTrack && trackInRow) {
             let isPlaying = false;
@@ -761,6 +732,13 @@ async function updateTrackHighlightingInOverlay() {
                     console.warn("Error checking Spotify state for track icon update:", e);
                 }
             }
+            // For non-controllable embedded tracks, if they are the currently playing album, assume playing
+            else if (trackInRow.rawHtmlEmbed || trackInRow.soundcloudEmbed || trackInRow.audiomackEmbed || trackInRow.fullSoundcloudEmbed) {
+                if (playingAlbum && playingAlbum.id === currentAlbum.id) {
+                    isPlaying = true; // Assume playing if it's the active embedded album
+                }
+            }
+
 
             if (isPlaying) {
                 row.classList.add('playing');
@@ -774,7 +752,7 @@ async function updateTrackHighlightingInOverlay() {
                     if (audio.src === trackInRow.src) {
                         iconCell.innerHTML = ''; // Hide the number/icon for playing native audio
                     } else {
-                        // For other playing types (YouTube, Spotify), keep the green pause icon
+                        // For other playing types (YouTube, Spotify, and non-controllable embeds), keep the green pause icon
                         iconCell.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
                     }
                 }
@@ -849,44 +827,328 @@ async function updateAlbumPlayButtonIcon() {
     }
 }
 
+/**
+ * NEW: Updates the UI of the main playbar's detailed album view.
+ * This function is called when the album overlay is open and playback state changes,
+ * and also when the window is resized to determine which playbar view to show.
+ */
+async function updateMainAlbumPlaybarUI() {
+    console.log("updateMainAlbumPlaybarUI called.");
+
+    if (!playingAlbum) {
+        console.log("updateMainAlbumPlaybarUI: No playing album. Clearing playbar UI.");
+        // Clear playbar UI elements if nothing is playing
+        if (currentAlbumArt) currentAlbumArt.src = 'https://placehold.co/64x64/4a4a4a/ffffff?text=Album'; // Default placeholder
+        if (currentSongTitle) currentSongTitle.textContent = 'No Track Playing';
+        if (currentArtistName) currentArtistName.textContent = '';
+        if (progressBar) {
+            progressBar.value = 0;
+            progressBar.max = 0;
+            progressBar.disabled = true;
+        }
+        if (currentTimeSpan) currentTimeSpan.textContent = '0:00';
+        if (totalTimeSpan) totalTimeSpan.textContent = '0:00';
+        if (playPauseBtn) {
+            playIcon.classList.remove('hidden');
+            pauseIcon.classList.add('hidden');
+        }
+        togglePlayerControls(true); // Re-enable controls, as nothing is playing (or it's a non-embed state)
+
+        if (albumOverlayProgressBarInterval) {
+            clearInterval(albumOverlayProgressBarInterval);
+            albumOverlayProgressBarInterval = null;
+        }
+        return;
+    }
+
+    const isEmbeddedAlbum = playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc;
+
+    let displayTitle = 'Unknown Title';
+    let displayArtist = 'Unknown Artist';
+    let displayCoverArt = 'https://placehold.co/64x64/4a4a4a/ffffff?text=Album';
+    let currentTrack = null; // Will be null for pure embedded albums, or the actual track for tracklist albums
+
+    if (isEmbeddedAlbum) {
+        // For embedded albums, use the album's own metadata
+        displayTitle = playingAlbum.title || 'Embedded Content';
+        displayArtist = playingAlbum.artist || 'Various Artists';
+        displayCoverArt = playingAlbum.coverArt || 'https://placehold.co/64x64/4a4a4a/ffffff?text=Embed';
+        console.log(`updateMainAlbumPlaybarUI: Detected embedded album. Using album data: ${displayTitle} by ${displayArtist}`);
+
+        // For embedded content, progress bar and controls are generally disabled
+        if (progressBar) {
+            progressBar.value = 0;
+            progressBar.max = 0;
+            progressBar.disabled = true;
+        }
+        if (currentTimeSpan) currentTimeSpan.textContent = '0:00';
+        if (totalTimeSpan) totalTimeSpan.textContent = 'N/A'; // Cannot get duration for arbitrary embeds
+        togglePlayerControls(false); // Disable controls
+        if (albumOverlayProgressBarInterval) {
+            clearInterval(albumOverlayProgressBarInterval);
+            albumOverlayProgressBarInterval = null;
+        }
+
+    } else {
+        // For non-embedded albums (tracklists), use the current track's metadata
+        if (playingAlbum.tracks && playingAlbum.tracks.length > 0 && currentTrackIndex !== undefined && currentTrackIndex >= 0 && currentTrackIndex < playingAlbum.tracks.length) {
+            currentTrack = playingAlbum.tracks[currentTrackIndex];
+            if (currentTrack) {
+                displayTitle = currentTrack.title || 'Unknown Title';
+                displayArtist = currentTrack.artist || 'Unknown Artist';
+                displayCoverArt = currentTrack.img || playingAlbum.coverArt || 'https://placehold.co/64x64/4a4a4a/ffffff?text=Track';
+                console.log(`updateMainAlbumPlaybarUI: Detected tracklist album. Using track data: ${displayTitle} by ${displayArtist}`);
+
+                let isPlaying = false;
+                let duration = 0;
+                let currentTime = 0;
+
+                // Determine current playback state and time from the active player
+                if (audio.src === currentTrack.src) {
+                    isPlaying = !audio.paused && !audio.ended;
+                    duration = audio.duration;
+                    currentTime = audio.currentTime;
+                } else if (ytPlayer && currentTrack.iframeSrc && currentTrack.iframeSrc.includes('https://www.youtube.com/embed/')) {
+                    const videoIdMatch = currentTrack.iframeSrc.match(/\/embed\/([a-zA-Z0-9_-]+)/);
+                    const videoId = videoIdMatch ? videoIdMatch[1] : null;
+                    if (videoId && ytPlayer.getVideoData() && ytPlayer.getVideoData().video_id === videoId) {
+                        isPlaying = ytPlayer.getPlayerState() === YT.PlayerState.PLAYING;
+                        const ytDuration = ytPlayer.getDuration();
+                        if (!isNaN(ytDuration) && ytDuration > 0) {
+                            duration = ytDuration;
+                        }
+                        currentTime = ytPlayer.getCurrentTime();
+                    }
+                } else if (spotifyPlayer && currentTrack.spotifyUri) {
+                    try {
+                        const state = await spotifyPlayer.getCurrentState();
+                        if (state && state.track_window.current_track.uri === currentTrack.spotifyUri) {
+                            isPlaying = !state.paused;
+                            const spotifyDuration = state.duration / 1000;
+                            if (!isNaN(spotifyDuration) && spotifyDuration > 0) {
+                                duration = spotifyDuration;
+                            }
+                            currentTime = state.position / 1000;
+                        }
+                    } catch (e) {
+                        console.warn("Error getting Spotify state for main album playbar update:", e);
+                        isPlaying = false; // Assume not playing if error
+                    }
+                }
+
+                // Fallback to stored duration if live duration is not available or invalid
+                if (isNaN(duration) || duration <= 0) {
+                    duration = currentTrack.duration || 0;
+                }
+
+                if (progressBar) {
+                    progressBar.max = duration;
+                    progressBar.value = currentTime;
+                    progressBar.disabled = false; // Enable for controllable tracks
+                }
+                if (currentTimeSpan) currentTimeSpan.textContent = formatTime(currentTime);
+                if (totalTimeSpan) totalTimeSpan.textContent = formatTime(duration);
+                togglePlayerControls(true); // Enable controls for controllable tracks
+
+                // Clear and restart the progress bar interval
+                if (albumOverlayProgressBarInterval) clearInterval(albumOverlayProgressBarInterval);
+                const isControllable = currentTrack.src || currentTrack.spotifyUri || (currentTrack.iframeSrc && currentTrack.iframeSrc.includes('youtube.com'));
+                if (isControllable) {
+                    albumOverlayProgressBarInterval = setInterval(async () => {
+                        let currentProgress = 0;
+                        let currentDuration = 0;
+                        let playerIsPlaying = false;
+
+                        if (audio.src === currentTrack.src) {
+                            currentProgress = audio.currentTime;
+                            currentDuration = audio.duration;
+                            playerIsPlaying = !audio.paused && !audio.ended;
+                        } else if (ytPlayer && currentTrack.iframeSrc && currentTrack.iframeSrc.includes('youtube.com')) {
+                            currentProgress = ytPlayer.getCurrentTime();
+                            currentDuration = ytPlayer.getDuration();
+                            playerIsPlaying = ytPlayer.getPlayerState() === YT.PlayerState.PLAYING;
+                        } else if (spotifyPlayer && currentTrack.spotifyUri) {
+                            try {
+                                const state = await spotifyPlayer.getCurrentState();
+                                if (state && state.track_window.current_track.uri === currentTrack.spotifyUri) {
+                                    currentProgress = state.position / 1000;
+                                    currentDuration = state.duration / 1000;
+                                    playerIsPlaying = !state.paused;
+                                }
+                            } catch (e) { /* ignore */ }
+                        }
+
+                        if (currentTimeSpan) currentTimeSpan.textContent = formatTime(currentProgress);
+                        if (progressBar) {
+                            progressBar.max = currentDuration;
+                            progressBar.value = currentProgress;
+                        }
+
+                        if (playPauseBtn) {
+                            if (playerIsPlaying) {
+                                playIcon.classList.add('hidden');
+                                pauseIcon.classList.remove('hidden');
+                            } else {
+                                playIcon.classList.remove('hidden');
+                                pauseIcon.classList.add('hidden');
+                            }
+                        }
+
+                        if (!playerIsPlaying && currentProgress >= currentDuration && currentDuration > 0) {
+                            clearInterval(albumOverlayProgressBarInterval);
+                            albumOverlayProgressBarInterval = null;
+                            if (currentTimeSpan) currentTimeSpan.textContent = '0:00';
+                            if (progressBar) progressBar.value = 0;
+                            if (playPauseBtn) {
+                                playIcon.classList.remove('hidden');
+                                pauseIcon.classList.add('hidden');
+                            }
+                        }
+                    }, 1000);
+                }
+            } else {
+                console.log("updateMainAlbumPlaybarUI: currentTrack is null/undefined for tracklist album.");
+                // Fallback to album info if track is not found for some reason
+                displayTitle = playingAlbum.title || 'Unknown Title';
+                displayArtist = playingAlbum.artist || 'Unknown Artist';
+                displayCoverArt = playingAlbum.coverArt || 'https://placehold.co/64x64/4a4a4a/ffffff?text=Album';
+                if (progressBar) { progressBar.value = 0; progressBar.max = 0; progressBar.disabled = true; }
+                if (currentTimeSpan) currentTimeSpan.textContent = '0:00';
+                if (totalTimeSpan) totalTimeSpan.textContent = '0:00';
+                togglePlayerControls(true); // Enable controls, as no specific track is active
+                if (albumOverlayProgressBarInterval) clearInterval(albumOverlayProgressBarInterval);
+                albumOverlayProgressBarInterval = null;
+            }
+        } else {
+            console.log("updateMainAlbumPlaybarUI: No tracks or invalid currentTrackIndex for tracklist album.");
+            // Fallback to album info if tracks array is empty or index invalid
+            displayTitle = playingAlbum.title || 'Unknown Title';
+            displayArtist = playingAlbum.artist || 'Unknown Artist';
+            displayCoverArt = playingAlbum.coverArt || 'https://placehold.co/64x64/4a4a4a/ffffff?text=Album';
+            if (progressBar) { progressBar.value = 0; progressBar.max = 0; progressBar.disabled = true; }
+            if (currentTimeSpan) currentTimeSpan.textContent = '0:00';
+            if (totalTimeSpan) totalTimeSpan.textContent = '0:00';
+            togglePlayerControls(true);
+            if (albumOverlayProgressBarInterval) clearInterval(albumOverlayProgressBarInterval);
+            albumOverlayProgressBarInterval = null;
+        }
+    }
+
+    // Apply the determined display info to the UI
+    if (currentAlbumArt) currentAlbumArt.src = displayCoverArt;
+    if (currentSongTitle) {
+        currentSongTitle.textContent = displayTitle;
+        // Ensure text overflow handling for song title
+        currentSongTitle.style.overflow = 'hidden';
+        currentSongTitle.style.whiteSpace = 'nowrap';
+        currentSongTitle.style.textOverflow = 'ellipsis';
+    }
+    if (currentArtistName) {
+        currentArtistName.textContent = displayArtist;
+        // Ensure text overflow handling for artist name
+        currentArtistName.style.overflow = 'hidden';
+        currentArtistName.style.whiteSpace = 'nowrap';
+        currentArtistName.style.textOverflow = 'ellipsis';
+    }
+
+    // Update play/pause icon in the main play bar (always reflect current player state if controllable)
+    if (playPauseBtn) {
+        let isPlaying = false;
+        // Check if there's an active controllable player and if it's playing
+        if (currentTrack && currentTrack.src && !audio.paused && audio.src === currentTrack.src) {
+            isPlaying = true;
+        } else if (currentTrack && ytPlayer && currentTrack.iframeSrc && currentTrack.iframeSrc.includes('youtube.com') && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
+            isPlaying = true;
+        } else if (currentTrack && spotifyPlayer && currentTrack.spotifyUri) {
+            try {
+                const state = await spotifyPlayer.getCurrentState();
+                if (state && !state.paused && state.track_window.current_track.uri === currentTrack.spotifyUri) {
+                    isPlaying = true;
+                }
+            } catch (e) { /* ignore */ }
+        } else if (isEmbeddedAlbum && playingAlbum) { // For pure embedded albums, assume playing if it's the active album
+            // For non-controllable embeds, we can only assume it's "playing" if it's the source of playingAlbum
+            // and the user has initiated playback by clicking the overlay.
+            // The play/pause button won't actually control it, but the icon can reflect a "playing" state.
+            // This is a heuristic, as we do not have direct state from the iframe.
+            isPlaying = true; // Assume playing if it's the active embedded album
+        }
+
+
+        if (isPlaying) {
+            playIcon.classList.add('hidden');
+            pauseIcon.classList.remove('hidden');
+        } else {
+            playIcon.classList.remove('hidden');
+            pauseIcon.classList.add('hidden');
+        }
+    }
+}
+
+/**
+ * NEW: Handles play/pause click on the main playbar's detailed album view.
+ * This function is now essentially the same as the main playPauseBtn handler,
+ * as the main playbar is the one transforming.
+ */
+async function handleMainAlbumPlaybarPlayPause() {
+    console.log("Main Album Playbar Play/Pause clicked (now handled by main playPauseBtn logic).");
+    playPauseBtn.click(); // Simulate a click on the main play/pause button
+}
+
+/**
+ * NEW: Handles progress bar seek on the main playbar's detailed album view.
+ * This function is now essentially the same as the main progressBar input handler.
+ */
+async function handleMainAlbumPlaybarProgressSeek(e) {
+    console.log("Main Album Playbar Progress Seek (now handled by main progressBar logic).");
+    progressBar.dispatchEvent(new Event('input', { bubbles: true })); // Simulate an input event on the main progress bar
+}
+
 
 // --- Player Controls (Play/Pause, Next, Previous, Volume, Progress) ---
 
 if (playPauseBtn) {
-    playPauseBtn.addEventListener('click', async () => {
-        if (ytPlayer && currentAlbum && currentAlbum.tracks[currentTrackIndex]?.iframeSrc) {
+    playPauseBtn.addEventListener('click', async (event) => { // Added event parameter
+        event.stopPropagation(); // Prevent click from bubbling to mainPlayBar
+        if (ytPlayer && playingAlbum && playingAlbum.tracks[currentTrackIndex]?.iframeSrc) {
             // Control YouTube player play/pause
             const playerState = ytPlayer.getPlayerState();
             if (playerState === YT.PlayerState.PLAYING) {
                 ytPlayer.pauseVideo();
-                playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><path d="M8 5v14l11-7z"/></svg>'; // Green Play icon
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
             } else {
                 ytPlayer.playVideo();
-                playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'; // Green Pause icon
+                playIcon.classList.add('hidden');
+                pauseIcon.classList.remove('hidden');
             }
-        } else if (spotifyPlayer && currentAlbum && currentAlbum.tracks[currentTrackIndex]?.spotifyUri) {
+        } else if (spotifyPlayer && playingAlbum && playingAlbum.tracks[currentTrackIndex]?.spotifyUri) {
             // Control Spotify player play/pause
             const state = await spotifyPlayer.getCurrentState();
             if (state) {
                 await spotifyPlayer.togglePlay();
                 if (state.paused) { // If it was paused, it will now play
-                    playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'; // Green Pause icon
+                    playIcon.classList.remove('hidden');
+                    pauseIcon.classList.add('hidden');
                 } else { // If it was playing, it will now pause
-                    playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><path d="M8 5v14l11-7z"/></svg>'; // Green Play icon
+                    playIcon.classList.add('hidden');
+                    pauseIcon.classList.remove('hidden');
                 }
             } else {
                 // If no state (e.g., Spotify not playing anything), try to play the current track
-                playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
+                playTrack(playingAlbum.tracks[currentTrackIndex], currentTrackIndex);
             }
-        } else if (audio.src) { // Check if native audio has a source loaded
+        } else if (audio.src && playingAlbum && playingAlbum.tracks[currentTrackIndex]?.src) { // Check if native audio has a source loaded and it matches playingAlbum
             if (audio.paused || audio.ended) {
                 audio.play();
-                playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'; // Green Pause icon
+                playIcon.classList.add('hidden');
+                pauseIcon.classList.remove('hidden');
             } else {
                 audio.pause();
-                playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><path d="M8 5v14l11-7z"/></svg>'; // Green Play icon
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
             }
-        } else if (currentAlbum && (currentAlbum.tracks[currentTrackIndex]?.rawHtmlEmbed || currentAlbum.tracks[currentTrackIndex]?.soundcloudEmbed || currentAlbum.tracks[currentTrackIndex]?.audiomackEmbed || currentAlbum.tracks[currentTrackIndex]?.fullSoundcloudEmbed)) {
+        } else if (playingAlbum && (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc)) {
             // This click will not control the embedded iframe.
             console.log("Play/Pause button clicked for embedded content (Spotify/SoundCloud/Audiomack), but direct control is not possible.");
             // Example: Add a temporary class for a visual "press" effect
@@ -901,18 +1163,20 @@ if (playPauseBtn) {
         // Update the main album play button icon after player state change
         updateAlbumPlayButtonIcon();
         updateTrackHighlightingInOverlay(); // Update track highlighting in overlay
+        updateMainAlbumPlaybarUI(); // Sync main album playbar
     });
 }
 
 /**
  * Function to go to the next track in the current album.
  */
-function nextTrack() {
+function nextTrack(event) { // Added event parameter
+    if (event) event.stopPropagation(); // Prevent click from bubbling to mainPlayBar
     console.log("nextTrack called.");
-    if (!currentAlbum || !currentAlbum.tracks || currentAlbum.tracks.length === 0) {
+    if (!playingAlbum || !playingAlbum.tracks || playingAlbum.tracks.length === 0) {
         // If it's an album that is itself a rawHtmlEmbed (like a playlist),
         // we can't 'next track' within it from our controls.
-        if (currentAlbum && (currentAlbum.rawHtmlEmbed || currentAlbum.rawHtmlEmbed || currentAlbum.fullSoundcloudEmbed || currentAlbum.audiomackEmbed || currentAlbum.soundcloudEmbed)) {
+        if (playingAlbum && (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.soundcloudEmbed || playingAlbum.iframeSrc)) {
             console.log("Next track button clicked for embedded content (Spotify/SoundCloud/Audiomack), but direct control is not possible.");
             // Add visual effect for click
             nextTrackBtn.classList.add('clicked-effect');
@@ -924,8 +1188,8 @@ function nextTrack() {
     }
 
     if (isShuffle) {
-        currentTrackIndex = Math.floor(Math.random() * currentAlbum.tracks.length);
-    } else if (currentTrackIndex < currentAlbum.tracks.length - 1) { // Changed condition for next track
+        currentTrackIndex = Math.floor(Math.random() * playingAlbum.tracks.length);
+    } else if (currentTrackIndex < playingAlbum.tracks.length - 1) { // Changed condition for next track
         currentTrackIndex++;
     } else if (isRepeat) { // If repeat is on and at last song, go to first
         currentTrackIndex = 0;
@@ -935,16 +1199,18 @@ function nextTrack() {
         console.log("No next track and not repeating/shuffling. Playback will continue until current track ends.");
         return; // Exit if no next track and not repeating/shuffling
     }
-    playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
+    playTrack(playingAlbum.tracks[currentTrackIndex], currentTrackIndex);
+    updateMainAlbumPlaybarUI(); // Sync main album playbar
 }
 
 /**
  * Function to go to the previous track in the current album.
  */
-function prevTrack() {
+function prevTrack(event) { // Added event parameter
+    if (event) event.stopPropagation(); // Prevent click from bubbling to mainPlayBar
     console.log("prevTrack called.");
-    if (!currentAlbum || !currentAlbum.tracks || currentAlbum.tracks.length === 0) {
-        if (currentAlbum && (currentAlbum.rawHtmlEmbed || currentAlbum.fullSoundcloudEmbed || currentAlbum.tracks[currentTrackIndex]?.audiomackEmbed || currentAlbum.soundcloudEmbed)) {
+    if (!playingAlbum || !playingAlbum.tracks || playingAlbum.tracks.length === 0) {
+        if (playingAlbum && (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.soundcloudEmbed || playingAlbum.iframeSrc)) {
             console.log("Previous track button clicked for embedded content (Spotify/SoundCloud/Audiomack), but direct control is not possible.");
             prevTrackBtn.classList.add('clicked-effect');
             setTimeout(() => {
@@ -955,17 +1221,18 @@ function prevTrack() {
     }
 
     if (isShuffle) {
-        currentTrackIndex = Math.floor(Math.random() * currentAlbum.tracks.length);
+        currentTrackIndex = Math.floor(Math.random() * playingAlbum.tracks.length);
     } else if (currentTrackIndex > 0) {
         currentTrackIndex--;
     } else if (isRepeat) { // If repeat is on and at first song, go to last
-        currentTrackIndex = currentAlbum.tracks.length - 1;
+        currentTrackIndex = playingAlbum.tracks.length - 1;
     } else {
         // If not repeat or shuffle and at beginning, do not stop playback explicitly.
         console.log("No previous track and not repeating/shuffling. Playback will continue until current track ends.");
         return; // Exit if no previous track and not repeating/shuffling
     }
-    playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
+    playTrack(playingAlbum.tracks[currentTrackIndex], currentTrackIndex);
+    updateMainAlbumPlaybarUI(); // Sync main album playbar
 }
 
 if (prevTrackBtn) {
@@ -976,41 +1243,78 @@ if (nextTrackBtn) { // Added missing event listener for next track button
     nextTrackBtn.addEventListener('click', nextTrack);
 }
 
+// Add event listeners for rewind and fast-forward buttons
+if (rewindBtn) {
+    rewindBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        console.log("Rewind button clicked.");
+        // Implement rewind logic here (e.g., seek back 10 seconds)
+        if (audio.src && playingAlbum && playingAlbum.tracks[currentTrackIndex]?.src) {
+            audio.currentTime = Math.max(0, audio.currentTime - 10);
+        } else if (ytPlayer && playingAlbum && playingAlbum.tracks[currentTrackIndex]?.iframeSrc) {
+            ytPlayer.seekTo(Math.max(0, ytPlayer.getCurrentTime() - 10), true);
+        } else if (spotifyPlayer && playingAlbum && playingAlbum.tracks[currentTrackIndex]?.spotifyUri) {
+            spotifyPlayer.seek(Math.max(0, lastKnownPlaybackPosition - 10) * 1000);
+        }
+        updateMainAlbumPlaybarUI();
+    });
+}
+
+if (fastForwardBtn) {
+    fastForwardBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        console.log("Fast-forward button clicked.");
+        // Implement fast-forward logic here (e.g., seek forward 10 seconds)
+        if (audio.src && playingAlbum && playingAlbum.tracks[currentTrackIndex]?.src) {
+            audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
+        } else if (ytPlayer && playingAlbum && playingAlbum.tracks[currentTrackIndex]?.iframeSrc) {
+            ytPlayer.seekTo(Math.min(ytPlayer.getDuration(), ytPlayer.getCurrentTime() + 10), true);
+        } else if (spotifyPlayer && playingAlbum && playingAlbum.tracks[currentTrackIndex]?.spotifyUri) {
+            spotifyPlayer.seek(Math.min(spotifyPlayer.getDuration() / 1000, lastKnownPlaybackPosition + 10) * 1000);
+        }
+        updateMainAlbumPlaybarUI();
+    });
+}
+
+
 if (progressBar) {
     progressBar.addEventListener('input', async (e) => {
-        if (ytPlayer && currentAlbum && currentAlbum.tracks[currentTrackIndex]?.iframeSrc) {
+        e.stopPropagation(); // Prevent click from bubbling to mainPlayBar
+        if (ytPlayer && playingAlbum && playingAlbum.tracks[currentTrackIndex]?.iframeSrc) {
             // Control YouTube player progress
             const seekTime = parseFloat(e.target.value);
             ytPlayer.seekTo(seekTime, true); // true for allowSeekAhead
             lastKnownPlaybackPosition = seekTime;
-        } else if (spotifyPlayer && currentAlbum && currentAlbum.tracks[currentTrackIndex]?.spotifyUri) {
+        } else if (spotifyPlayer && playingAlbum && playingAlbum.tracks[currentTrackIndex]?.spotifyUri) {
             // Control Spotify player progress
             const seekTimeMs = parseFloat(e.target.value) * 1000; // Convert seconds to milliseconds
             await spotifyPlayer.seek(seekTimeMs);
             lastKnownPlaybackPosition = parseFloat(e.target.value);
-        } else if (audio.duration) {
+        } else if (audio.duration && playingAlbum && playingAlbum.tracks[currentTrackIndex]?.src) {
             // Control native audio progress
             audio.currentTime = parseFloat(e.target.value);
             lastKnownPlaybackPosition = audio.currentTime;
-        } else if (currentAlbum && (currentAlbum.tracks[currentTrackIndex]?.rawHtmlEmbed || currentAlbum.tracks[currentTrackIndex]?.soundcloudEmbed || currentAlbum.tracks[currentTrackIndex]?.audiomackEmbed || currentAlbum.tracks[currentTrackIndex]?.fullSoundcloudEmbed)) {
+        } else if (playingAlbum && (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc)) {
             // No direct control for embedded iframes, so we don't allow seeking.
             console.log("Seeking not possible for embedded content (Spotify/SoundCloud/Audiomack).");
         }
+        updateMainAlbumPlaybarUI(); // Sync main album playbar
     });
 }
 
 if (volumeBar) {
     volumeBar.addEventListener('input', (e) => {
+        e.stopPropagation(); // Prevent click from bubbling to mainPlayBar
         const volume = parseFloat(e.target.value);
         if (isNaN(volume)) return;
 
-        if (ytPlayer && currentAlbum && currentAlbum.tracks[currentTrackIndex]?.iframeSrc) {
+        if (ytPlayer && playingAlbum && playingAlbum.tracks[currentTrackIndex]?.iframeSrc) {
             // Control YouTube player volume (0-100)
             ytPlayer.setVolume(volume * 100);
-        } else if (spotifyPlayer && currentAlbum && currentAlbum.tracks[currentTrackIndex]?.spotifyUri) {
+        } else if (spotifyPlayer && playingAlbum && playingAlbum.tracks[currentTrackIndex]?.spotifyUri) {
             // Control Spotify player volume (0-1)
             spotifyPlayer.setVolume(volume);
-        } else if (currentAlbum && (currentAlbum.tracks[currentTrackIndex]?.rawHtmlEmbed || currentAlbum.tracks[currentTrackIndex]?.soundcloudEmbed || currentAlbum.tracks[currentTrackIndex]?.audiomackEmbed || currentAlbum.tracks[currentTrackIndex]?.fullSoundcloudEmbed)) {
+        } else if (playingAlbum && (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc)) {
             // No direct control for embedded iframes.
             console.log("Volume bar adjusted for embedded content (Spotify/SoundCloud/Audiomack), but direct control is not possible.");
         } else {
@@ -1023,9 +1327,10 @@ if (volumeBar) {
     if (volumeBar) volumeBar.value = 0.5;
 }
 
-// Repeat and Shuffle Buttons (assuming they exist in HTML)
+// Repeat and Shuffle Buttons
 if (repeatBtn) {
-    repeatBtn.addEventListener('click', () => {
+    repeatBtn.addEventListener('click', (event) => { // Added event parameter
+        event.stopPropagation(); // Prevent click from bubbling to mainPlayBar
         isRepeat = !isRepeat;
         repeatBtn.classList.toggle('active', isRepeat);
         // Ensure shuffle is off if repeat is on
@@ -1038,7 +1343,8 @@ if (repeatBtn) {
 }
 
 if (shuffleBtn) {
-    shuffleBtn.addEventListener('click', () => {
+    shuffleBtn.addEventListener('click', (event) => { // Added event parameter
+        event.stopPropagation(); // Prevent click from bubbling to mainPlayBar
         isShuffle = !isShuffle;
         shuffleBtn.classList.toggle('active', isShuffle);
         // Ensure repeat is off if shuffle is on
@@ -1186,7 +1492,6 @@ function handlePlayButtonClick(event) {
         if (albumToPlay.rawHtmlEmbed || albumToPlay.fullSoundcloudEmbed || albumToPlay.audiomackEmbed || albumToPlay.iframeSrc) {
             console.log("Embedded album play button clicked. Calling stopControllablePlayersOnly before opening overlay.");
             stopControllablePlayersOnly(); // Stop any existing controllable playback
-            backgroundEmbeddedAlbum = albumToPlay; // NEW: Set backgroundEmbeddedAlbum here
             playingAlbum = albumToPlay; // NEW: Set playingAlbum here
         } else {
             console.log("Non-embedded album play button clicked. Not stopping playback yet, waiting for track click.");
@@ -1482,13 +1787,16 @@ if (searchIcon) {
  * It removes itself to allow direct iframe interaction.
  * Playback of the embedded content is expected to start/be controllable directly within the iframe.
  */
-async function firstClickEmbedHandler() {
+function firstClickEmbedHandler() {
     console.log("First click on embedded album detected. Removing interaction layer.");
     // Stop any currently playing *controllable* media (native, Spotify SDK, YouTube API)
     // This ensures that if a track was playing in the background, it stops.
     stopControllablePlayersOnly(); // <--- NEW CALL
-    playingAlbum = backgroundEmbeddedAlbum; // NEW: Set playingAlbum when embedded album is activated
-    console.log("playingAlbum set to backgroundEmbeddedAlbum after first embed click:", playingAlbum);
+    playingAlbum = currentAlbum; // Set playingAlbum when embedded album is activated
+
+    // Update the main play bar with the embedded album's details immediately on first click
+    // This ensures the play bar reflects the embedded content even before the overlay closes.
+    updateMainAlbumPlaybarUI();
 
     const embedInteractionLayer = document.getElementById('embed-interaction-layer');
     if (embedInteractionLayer) {
@@ -1510,13 +1818,9 @@ async function firstClickEmbedHandler() {
  */
 function updateMiniPlayerForEmbed(albumData) {
     // Clear any existing dynamic player container (mini-iframe) in playerLeft
-    const existingPlayerContainer = playerLeft.querySelector('#dynamic-player-container');
-    if (existingPlayerContainer) {
-        existingPlayerContainer.remove();
-    }
-    const existingYoutubePlayerDiv = playerLeft.querySelector('#youtube-player-container');
-    if (existingYoutubePlayerDiv) {
-        existingYoutubePlayerDiv.remove();
+    const dynamicPlayerContainer = playerLeft.querySelector('#youtube-player-container');
+    if (dynamicPlayerContainer) {
+        dynamicPlayerContainer.remove();
     }
 
     const isNonControllableEmbeddedAlbum = albumData.rawHtmlEmbed || albumData.fullSoundcloudEmbed || albumData.audiomackEmbed || albumData.soundcloudEmbed;
@@ -1524,20 +1828,20 @@ function updateMiniPlayerForEmbed(albumData) {
 
     if (isNonControllableEmbeddedAlbum) {
         // For non-controllable embeds (Audiomack, raw HTML, SoundCloud), show the album image in mini-player
-        if (playerImg) playerImg.style.display = 'block'; // Ensure player image is visible
-        if (playerImg) playerImg.src = albumData.coverArt || 'https://placehold.co/80x80/000000/FFFFFF?text=Album';
+        if (currentAlbumArt) currentAlbumArt.style.display = 'block'; // Ensure player image is visible
+        if (currentAlbumArt) currentAlbumArt.src = albumData.coverArt || 'https://placehold.co/64x64/000000/FFFFFF?text=Album';
         console.log("Mini-player updated for non-controllable embed: showing album image.");
     } else if (isYouTubeEmbed) {
         // For YouTube, re-create the YouTube mini-player div if needed
-        if (playerImg) playerImg.style.display = 'none'; // Hide album image for YouTube embed
+        if (currentAlbumArt) currentAlbumArt.style.display = 'none'; // Hide album image for YouTube embed
         const videoIdMatch = albumData.iframeSrc.match(/\/embed\/([a-zA-Z0-9_-]+)/);
         const videoId = videoIdMatch ? videoIdMatch[1] : null;
 
         if (videoId) {
             const playerDiv = document.createElement('div');
             playerDiv.id = 'youtube-player-container';
-            playerDiv.style.width = '80px';
-            playerDiv.style.height = '80px';
+            playerDiv.style.width = '64px';
+            playerDiv.style.height = '64px';
             playerDiv.style.borderRadius = '8px'; // Added border-radius
             playerLeft.prepend(playerDiv);
             // Re-initialize YouTube player (it will attempt to resume if it was playing)
@@ -1556,45 +1860,236 @@ function updateMiniPlayerForEmbed(albumData) {
                     'onReady': (event) => {
                         // If it was playing, it should resume. Otherwise, it will start from beginning or stay paused.
                         // We don't explicitly seek here, as we are relying on YouTube's internal state.
-                        if (playPauseBtn) playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
+                        if (playPauseBtn) {
+                            playIcon.classList.add('hidden');
+                            pauseIcon.classList.remove('hidden');
+                        }
                         if (volumeBar) event.target.setVolume(volumeBar.value * 100);
                         togglePlayerControls(true); // Enable controls for YouTube playback
                     },
                     'onStateChange': (event) => {
                         if (event.data === YT.PlayerState.PLAYING) {
-                            if (playPauseBtn) playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
+                            if (playPauseBtn) {
+                                playIcon.classList.add('hidden');
+                                pauseIcon.classList.remove('hidden');
+                            }
                         } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
-                            if (playPauseBtn) playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><path d="M8 5v14l11-7z"/></svg>';
+                            if (playPauseBtn) {
+                                playIcon.classList.remove('hidden');
+                                pauseIcon.classList.add('hidden');
+                            }
                         }
+                        updateMainAlbumPlaybarUI(); // Sync main album playbar on state change
                     },
                     'onError': (event) => {
                         console.error("YouTube Player Error in mini-player:", event.data);
                         // Handle error, maybe show album art again
-                        if (playerImg) playerImg.style.display = 'block';
-                        if (playPauseBtn) playPauseBtn.innerHTML = '&#9658;';
+                        if (currentAlbumArt) currentAlbumArt.style.display = 'block';
+                        if (playPauseBtn) {
+                            playIcon.classList.remove('hidden');
+                            pauseIcon.classList.add('hidden');
+                        }
                         togglePlayerControls(true);
+                        updateMainAlbumPlaybarUI(); // Sync main album playbar on error
                     }
                 }
             });
             console.log("Mini-player updated for YouTube embed: re-initialized YouTube player.");
         } else {
-            if (playerImg) playerImg.style.display = 'block'; // Fallback to image if videoId not found
+            if (currentAlbumArt) currentAlbumArt.style.display = 'block'; // Fallback to image if videoId not found
             console.warn("Mini-player updated for YouTube embed: video ID not found, showing album image.");
         }
     } else {
         // For Spotify SDK (which doesn't need a visible iframe in mini-player) or other cases
-        if (playerImg) playerImg.style.display = 'block';
+        if (currentAlbumArt) currentAlbumArt.style.display = 'block';
         console.log("Mini-player updated for controllable embed (Spotify SDK or other): showing album image.");
     }
+    // Always update the text content for the mini-player for embedded albums
+    if (currentSongTitle) currentSongTitle.textContent = albumData.title || 'Embedded Content';
+    if (currentArtistName) currentArtistName.textContent = albumData.artist || 'Various Artists';
+    if (progressBar) {
+        progressBar.value = 0;
+        progressBar.max = 0;
+        progressBar.disabled = true;
+    }
+    if (currentTimeSpan) currentTimeSpan.textContent = '0:00';
+    if (totalTimeSpan) totalTimeSpan.textContent = 'N/A';
+    // Ensure play/pause button reflects a 'playing' state for embeds (even if not controllable)
+    if (playPauseBtn) {
+        playIcon.classList.add('hidden');
+        pauseIcon.classList.remove('hidden');
+    }
+    togglePlayerControls(false); // Disable controls for embedded content
 }
 
 
+/**
+ * NEW: Toggles the visibility and layout of the main playbar details
+ * based on screen width and album overlay state.
+ * This function now ensures the main playbar is *always* visible,
+ * but its internal layout adapts.
+ * @param {boolean} isAlbumOverlayOpen - True if the album overlay is currently open.
+ */
+function toggleMainPlaybarView(isAlbumOverlayOpen) {
+    console.log(`toggleMainPlaybarView called. isAlbumOverlayOpen: ${isAlbumOverlayOpen}, window.innerWidth: ${window.innerWidth}`);
+   if (!mainPlayBar) {
+        console.error("toggleMainPlaybarView: Main play bar element not found.");
+        return;
+    }
+
+    // Ensure mainPlayBar is always visible
+    mainPlayBar.style.setProperty('display', 'flex', 'important');
+
+    // Apply specific styles for desktop size screens
+    if (window.innerWidth >= 768) { // Assuming 768px is your desktop breakpoint
+        mainPlayBar.style.setProperty('left', '25%', 'important'); // Set left to 25%
+        mainPlayBar.style.setProperty('width', '75%', 'important');  // Set width to 75%
+        console.log("toggleMainPlaybarView: mainPlayBar set for desktop (left: 25% !important, width: 75% !important).");
+    } else {
+        // For smaller screens (mobile/tablet), keep it full width
+        mainPlayBar.style.setProperty('left', '0', 'important'); // Reset left for smaller screens
+        mainPlayBar.style.setProperty('width', '100%', 'important'); // Full width for smaller screens
+        console.log("toggleMainPlaybarView: mainPlayBar set for mobile/tablet (left: 0 !important, width: 100% !important).");
+    }
+    console.log("toggleMainPlaybarView: mainPlayBar set to display: flex !important and width: 100% !important.");
+
+    // Select the volume control container within the main playbar
+    const volumeControlContainer = mainPlayBar.querySelector('.flex.items-center.ml-4.hidden.md\\:flex');
+    // Select the time display container within the main playbar
+    const timeDisplayContainer = mainPlayBar.querySelector('.flex.items-center.space-x-2.flex-shrink-0');
+    // Select the main controls group (next, prev, shuffle, repeat, rewind, fast-forward)
+    const playerControlsGroup = mainPlayBar.querySelector('.flex.items-center.justify-center.space-x-4.w-full.md\\:w-auto.flex-shrink-0');
+
+    // Elements to toggle visibility for "mini" vs "full" view
+    // Note: playPauseBtn is handled separately as it's always visible
+    const elementsToToggleVisibility = [
+        progressBar,
+        currentTimeSpan,
+        totalTimeSpan,
+        volumeBar, // Individual volume bar element
+        nextTrackBtn,
+        prevTrackBtn,
+        rewindBtn,
+        fastForwardBtn,
+        repeatBtn,
+        shuffleBtn
+    ];
+
+    // Determine if an embedded album is currently playing in the background
+    const isEmbeddedAlbumPlayingInBackground = playingAlbum && (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc);
+
+    // Apply min-width: 0 to playerLeft to allow it to shrink
+    if (playerLeft) {
+        playerLeft.style.minWidth = '0';
+        console.log("toggleMainPlaybarView: playerLeft min-width set to 0.");
+    }
+
+    // Condition for "full" playbar (only if album overlay is open)
+    // If album overlay is NOT open, it will always be the "mini" view, regardless of screen size.
+    if (isAlbumOverlayOpen) {
+        // Full playbar view: horizontal layout, all controls visible
+        mainPlayBar.classList.remove('flex-col', 'space-y-2', 'items-center', 'justify-center');
+        mainPlayBar.classList.add('flex-row', 'justify-between');
+
+        // Show all elements that were hidden in mini view
+        elementsToToggleVisibility.forEach(el => {
+            if (el) el.style.display = 'block'; // Or 'flex' as appropriate for the element
+        });
+
+        // Ensure containers are visible
+        if (volumeControlContainer) volumeControlContainer.classList.remove('hidden');
+        if (timeDisplayContainer) timeDisplayContainer.classList.remove('hidden');
+        if (playerControlsGroup) playerControlsGroup.classList.remove('hidden');
+
+        // Reset content padding
+        if (albumDetailsContent) {
+            albumDetailsContent.style.paddingBottom = '20px'; // Default padding
+            console.log("toggleMainPlaybarView: albumDetailsContent paddingBottom reset.");
+        }
+
+        // Enable/disable controls based on embed status
+        if (isEmbeddedAlbumPlayingInBackground) {
+            togglePlayerControls(false); // Disable controls for embeds
+            if (progressBar) progressBar.disabled = true;
+            console.log("toggleMainPlaybarView: Controls disabled for embedded album on full view.");
+        } else {
+            togglePlayerControls(true); // Enable controls for controllable tracks
+            if (progressBar) progressBar.disabled = false;
+            console.log("toggleMainPlaybarView: Controls enabled for controllable album on full view.");
+        }
+
+        // Ensure album art is visible and YouTube player div is removed if present
+        if (currentAlbumArt) currentAlbumArt.style.display = 'block';
+        const dynamicPlayerContainer = playerLeft.querySelector('#youtube-player-container');
+        if (dynamicPlayerContainer) dynamicPlayerContainer.remove();
+
+        // Adjust playerLeft and currentSongTitle/currentArtistName for full view
+        if (playerLeft) {
+            playerLeft.style.flexGrow = '1'; // Allow it to grow
+            playerLeft.style.flexShrink = '1';
+            playerLeft.style.overflow = 'visible'; // Allow text to flow
+        }
+        if (currentSongTitle) currentSongTitle.style.whiteSpace = 'nowrap';
+        if (currentArtistName) currentArtistName.style.whiteSpace = 'nowrap';
+        console.log("toggleMainPlaybarView: Main play bar transformed to FULL view.");
+    } else {
+        // Album overlay is CLOSED (mini playbar view, regardless of screen size)
+        // Mini playbar view: horizontal, only essential controls
+        mainPlayBar.classList.remove('flex-col', 'space-y-2', 'items-center', 'justify-center');
+        mainPlayBar.classList.add('flex-row', 'justify-between'); // Still row, but content is minimized
+
+        // Hide non-essential elements
+        elementsToToggleVisibility.forEach(el => {
+            if (el) el.style.display = 'none';
+        });
+
+        // Ensure containers are hidden
+        if (volumeControlContainer) volumeControlContainer.classList.add('hidden');
+        if (timeDisplayContainer) timeDisplayContainer.classList.add('hidden');
+        // Keep the playerControlsGroup visible, but its children (next/prev/shuffle/repeat) will be hidden by the loop above
+        if (playerControlsGroup) playerControlsGroup.classList.remove('hidden');
+        // Ensure only play/pause button is visible in controls group
+        if (playPauseBtn) playPauseBtn.style.display = 'block'; // Ensure play/pause is visible
+
+        // Adjust padding for the album overlay content (if it were open with this playbar)
+        // For mini playbar, this doesn't directly apply to the overlay content.
+        if (albumDetailsContent) {
+            albumDetailsContent.style.paddingBottom = '20px'; // Reset to default when overlay is closed
+        }
+
+        // For embedded albums, controls should be disabled and progress bar static
+        if (isEmbeddedAlbumPlayingInBackground) {
+            togglePlayerControls(false); // Disable controls
+            if (progressBar) progressBar.disabled = true;
+            console.log("toggleMainPlaybarView: Controls disabled for embedded album on mini view.");
+        } else {
+            togglePlayerControls(true); // Enable controls for controllable tracks
+            if (progressBar) progressBar.disabled = false;
+            console.log("toggleMainPlaybarView: Controls enabled for controllable album on mini view.");
+        }
+
+        // Adjust playerLeft and currentSongTitle/currentArtistName for mini view
+        // Make playerLeft fill available space, and ensure text is truncated
+        if (playerLeft) {
+            playerLeft.style.flexGrow = '1';
+            playerLeft.style.flexShrink = '1';
+            playerLeft.style.overflow = 'hidden'; // Essential for text ellipsis
+        }
+        if (currentSongTitle) currentSongTitle.style.whiteSpace = 'nowrap';
+        if (currentArtistName) currentArtistName.style.whiteSpace = 'nowrap';
+
+        // Ensure album art is visible and YouTube player div is removed if present
+        if (currentAlbumArt) currentAlbumArt.style.display = 'block';
+        const dynamicPlayerContainer = playerLeft.querySelector('#youtube-player-container');
+        if (dynamicPlayerContainer) dynamicPlayerContainer.remove();
+        console.log("toggleMainPlaybarView: Main play bar transformed to MINI view (overlay closed).");
+    }
+    // Always update the UI of the detailed playbar whenever its visibility might change
+    updateMainAlbumPlaybarUI();
+}
+
 function openAlbumDetails(albumData, highlightTrackTitle = null) {
     console.log("openAlbumDetails called with albumData:", albumData);
-
-    // Hide the video overlay immediately when opening any album details
-    toggleEmbeddedPlayerVideoOverlay(false); // <--- Hide video overlay
-
     const isOpeningEmbeddedAlbum = (
         albumData.rawHtmlEmbed || albumData.fullSoundcloudEmbed || albumData.audiomackEmbed || albumData.soundcloudEmbed || albumData.iframeSrc
     );
@@ -1614,25 +2109,68 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
     console.log("DEBUG: currentAlbum for evaluation:", currentAlbum);
 
     // --- Critical DOM element checks ---
-    if (!albumOverlay) { console.error("Error: albumOverlay element not found."); return; }
-    if (!topBar) { console.error("Error: topBar element not found."); return; }
-    if (!rightPanel) { console.error("Error: rightPanel element not found."); return; }
-    if (!playerBar) { console.error("Error: playerBar element not found."); return; }
-    if (!albumFullEmbedContainer) { console.error("Error: albumFullEmbedContainer element not found."); return; }
-
+    if (!albumOverlay) {
+        console.error("Error: albumOverlay element not found.");
+        return;
+    }
+    if (!topBar) {
+        console.error("Error: topBar element not found.");
+        return;
+    }
+    if (!rightPanel) {
+        console.error("Error: rightPanel element not found.");
+        return;
+    }
+    if (!mainPlayBar) {
+        console.error("Error: mainPlayBar element not found.");
+        return;
+    } // Changed from playerBar
+    if (!albumFullEmbedContainer) {
+        console.error("Error: albumFullEmbedContainer element not found.");
+        return;
+    }
     // Assign to the global variable
     albumDetailsContent = document.getElementById('albumDetails');
-    if (!albumDetailsContent) { console.error("Error: albumDetails element (main content) not found."); return; }
-    if (!closeOverlayBtn) { console.error("Error: closeOverlayBtn element not found."); return; }
-    if (!albumHeader) { console.error("Error: albumHeader element not found."); return; } // Added check
-    if (!albumDetailsCover) { console.error("Error: albumDetailsCover element not found."); return; } // Added check
-    if (!albumDetailsTitle) { console.error("Error: albumDetailsTitle element not found."); return; } // Added check
-    if (!albumDetailsArtist) { console.error("Error: albumDetailsArtist element not found."); return; } // Added check
-    if (!albumDetailsMeta) { console.error("Error: albumDetailsMeta element not found."); return; } // Added check
-    if (!albumTracksSection) { console.error("Error: albumTracksSection element not found."); return; } // Added check
-    if (!albumPlayButton) { console.error("Error: albumPlayButton element not found."); return; } // Added check
-    if (!albumDetailsTracksBody) { console.error("Error: albumDetailsTracksBody element not found."); return; } // Added check
-
+    if (!albumDetailsContent) {
+        console.error("Error: albumDetails element (main content) not found.");
+        return;
+    }
+    if (!closeOverlayBtn) {
+        console.error("Error: closeOverlayBtn element not found.");
+        return;
+    }
+    if (!albumHeader) {
+        console.error("Error: albumHeader element not found.");
+        return;
+    } // Added check
+    if (!albumDetailsCover) {
+        console.error("Error: albumDetailsCover element not found.");
+        return;
+    } // Added check
+    if (!albumDetailsTitle) {
+        console.error("Error: albumDetailsTitle element not found.");
+        return;
+    } // Added check
+    if (!albumDetailsArtist) {
+        console.error("Error: albumDetailsArtist element not found.");
+        return;
+    } // Added check
+    if (!albumDetailsMeta) {
+        console.error("Error: albumDetailsMeta element not found.");
+        return;
+    } // Added check
+    if (!albumTracksSection) {
+        console.error("Error: albumTracksSection element not found.");
+        return;
+    } // Added check
+    if (!albumPlayButton) {
+        console.error("Error: albumPlayButton element not found.");
+        return;
+    } // Added check
+    if (!albumDetailsTracksBody) {
+        console.error("Error: albumDetailsTracksBody element not found.");
+        return;
+    } // Added check
 
     // IMPORTANT CHANGE:
     // Only clear albumFullEmbedContainer if we are about to load a *new* embedded album into it.
@@ -1649,7 +2187,7 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
         // just hide the full embed container. DO NOT remove its children.
         albumFullEmbedContainer.style.display = 'none';
         console.log("Opening non-embedded album. Hiding albumFullEmbedContainer to preserve existing embedded player.");
-    } else if (!isOpeningEmbeddedAlbum && !existingIframeInFullEmbedContainer) {
+    } else if (!isOpeningEmbeddedAlbum && !existingIframeInFullEmbedContainer) { // Corrected condition
         // If opening a non-embedded album and no embed is currently in the container, ensure it's empty and hidden.
         while (albumFullEmbedContainer.firstChild) {
             albumFullEmbedContainer.removeChild(albumFullEmbedContainer.firstChild);
@@ -1658,24 +2196,22 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
         console.log("Opening non-embedded album. No existing embed. Ensuring albumFullEmbedContainer is empty and hidden.");
     }
 
-
-    // Only reset currentTrackIndex if a new album is being opened (or if it's the same album but not an embed)
-    // If we are re-opening the *same* album (controllable or embedded), preserve currentTrackIndex.
-    if (currentAlbum === null || currentAlbum.id !== albumData.id) {
-        currentTrackIndex = 0; // Reset if it's a completely new album
-        console.log("Resetting currentTrackIndex to 0 as a new album is being opened.");
+    // MODIFIED LOGIC FOR currentTrackIndex RESET:
+    // Determine if the album being opened is different from the one currently playing.
+    // If it's a new album, reset currentTrackIndex. Otherwise, preserve it.
+    // Also, if nothing is playing, reset to 0.
+    if (!playingAlbum || playingAlbum.id !== albumData.id) {
+        currentTrackIndex = 0; // Reset if a new album is being opened for playback or viewing
+        console.log("openAlbumDetails: Resetting currentTrackIndex to 0 as a new album is being opened or nothing is playing.");
     } else {
-        console.log("Preserving currentTrackIndex as the same album is being re-opened.");
+        // If the album being opened is the same as the one currently playing,
+        // currentTrackIndex should already be correct from the playback.
+        console.log("openAlbumDetails: Preserving currentTrackIndex as the same album is already playing.");
     }
 
-    // Set the current album globally (always update to the album being opened)
+    // Always set currentAlbum to the album being opened, as this is the *viewed* album.
     currentAlbum = albumData;
-    // If this is an embedded album being opened, set it as the background embedded album
-    if (isOpeningEmbeddedAlbum) {
-        backgroundEmbeddedAlbum = albumData;
-    }
-    console.log("currentAlbum set to:", currentAlbum);
-
+    console.log("openAlbumDetails: currentAlbum set to:", currentAlbum ? currentAlbum.title : "null");
 
     // Remove explicit background color and border-radius from JavaScript
     if (albumOverlay) {
@@ -1695,7 +2231,7 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
         albumOverlay.style.removeProperty('align-items');
         albumOverlay.style.removeProperty('overflow');
         albumOverlay.style.removeProperty('transform'); // NEW: Ensure no transform
-        albumOverlay.style.removeProperty('filter');   // NEW: Ensure no filter
+        albumOverlay.style.removeProperty('filter'); // NEW: Ensure no filter
         console.log("albumOverlay inline styles reset.");
     }
     if (albumDetailsCover) {
@@ -1710,7 +2246,6 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
     if (albumDetailsMeta) {
         albumDetailsMeta.textContent = `Album • ${albumData.year || 'Year N/A'} • ${albumData.genre || 'Genre N/A'}`;
     }
-
 
     // 2. Populate the tracklist table OR the full embed container
     if (albumDetailsTracksBody) {
@@ -1804,9 +2339,10 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
         albumFullEmbedContainer.style.zIndex = '1'; // Ensure it has a z-index to form a stacking context
         console.log("albumFullEmbedContainer positioned to fill parent and set to display: flex.");
         // Hide the player bar for embedded albums
-        if (playerBar) {
-            playerBar.style.display = 'none';
-            console.log("playerBar set to display: none for embedded album.");
+        if (mainPlayBar) { // Changed from playerBar
+            mainPlayBar.style.display = 'flex'; // Ensure mainPlayBar is visible
+            togglePlayerControls(false); // Disable controls for embedded content
+            updateMiniPlayerForEmbed(albumData); // Update mini-player with embed info
         }
 
         if (albumOverlay && topBar) {
@@ -1879,9 +2415,9 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
             albumHeader.style.backgroundColor = 'rgba(0, 0, 0, 0.3)'; // Slightly darker background for header
             albumHeader.style.borderRadius = '8px'; // Rounded corners for the header
             albumHeader.style.flexWrap = 'wrap'; // Allow wrapping on smaller screens
-            
+
             // Reduced margin-bottom to decrease space between header and tracks
-            albumHeader.style.marginBottom = '15px'; 
+            albumHeader.style.marginBottom = '15px';
             console.log("albumHeader styled.");
 
             // Responsive adjustments for albumHeader and albumDetailsCover
@@ -2095,6 +2631,7 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
 
                     // Check if the clicked track is the same as the currently playing track
                     const isCurrentlyPlayingThisTrack = (playingAlbum && playingAlbum.id === currentAlbum.id && clickedTrackIndex === currentTrackIndex);
+
                     // Check if the track is controllable by our JS (YouTube or Spotify SDK, or native audio)
                     const isControllableTrack = clickedTrack.spotifyUri || (clickedTrack.iframeSrc && clickedTrack.iframeSrc.includes('https://www.youtube.com/embed/')) || (clickedTrack.src && !clickedTrack.iframeSrc && !clickedTrack.spotifyUri && !clickedTrack.rawHtmlEmbed && !clickedTrack.soundcloudEmbed && !clickedTrack.audiomackEmbed && !clickedTrack.fullSoundcloudEmbed);
 
@@ -2104,11 +2641,11 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
                     if (isCurrentlyPlayingThisTrack && isControllableTrack) {
                         // If it's the same controllable track, toggle play/pause
                         let isPlaying = false;
-                        if (audio.src === clickedTrack.src) {
+                        if (audio.src && audio.src === clickedTrack.src) {
                             isPlaying = !audio.paused;
                         } else if (ytPlayer && clickedTrack.iframeSrc && clickedTrack.iframeSrc.includes('https://www.youtube.com/embed/')) {
                             const videoIdMatch = clickedTrack.iframeSrc.match(/\/embed\/([a-zA-Z0-9_-]+)/);
-                            const videoId = videoIdMatch ? videoId[1] : null;
+                            const videoId = videoIdMatch ? videoIdMatch[1] : null;
                             if (videoId && ytPlayer.getVideoData() && ytPlayer.getVideoData().video_id === videoId) {
                                 isPlaying = ytPlayer.getPlayerState() === YT.PlayerState.PLAYING;
                             }
@@ -2125,7 +2662,7 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
 
                         if (isPlaying) {
                             // Pause
-                            if (audio.src === clickedTrack.src) audio.pause();
+                            if (audio.src && audio.src === clickedTrack.src) audio.pause();
                             else if (ytPlayer) ytPlayer.pauseVideo();
                             else if (spotifyPlayer) await spotifyPlayer.pause();
                             shouldPlay = false; // Don't call playTrack, just pause
@@ -2138,20 +2675,22 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
                     } else {
                         // If it's a different track or a non-controllable embed, stop all and play fresh
                         stopAllPlaybackUI();
-                        backgroundEmbeddedAlbum = null; // Clear background embed if a new track is clicked
                         console.log(`DEBUG: Playing new track or non-controllable embedded track "${clickedTrack.title}". Starting fresh.`);
                     }
 
                     // No need to reset all track icons here. updateTrackHighlightingInOverlay will handle it.
-
                     if (shouldPlay) {
                         playTrack(clickedTrack, clickedTrackIndex, seekTime);
                     } else {
                         // If paused, just update the UI to reflect pause state
                         updateTrackHighlightingInOverlay(); // Re-apply highlights and icons
-                        if (playPauseBtn) playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><path d="M8 5v14l11-7z"/></svg>'; // Green Play icon
+                        if (playPauseBtn) {
+                            playIcon.classList.remove('hidden');
+                            pauseIcon.classList.add('hidden');
+                        }
                         updateAlbumPlayButtonIcon(); // Sync album play button
                     }
+                    updateMainAlbumPlaybarUI(); // Sync main album playbar
                 });
                 if (albumDetailsTracksBody) {
                     albumDetailsTracksBody.appendChild(row);
@@ -2159,59 +2698,65 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
             });
             // After populating tracks, update highlighting based on current playback
             updateTrackHighlightingInOverlay();
-
-            if (closeOverlayBtn) {
-                closeOverlayBtn.style.display = 'flex';
-                closeOverlayBtn.style.position = 'absolute';
-                closeOverlayBtn.style.top = '15px';
-                closeOverlayBtn.style.right = '16px';
-                closeOverlayBtn.style.backgroundColor = 'rgb(26, 2, 2)';
-                closeOverlayBtn.style.color = 'white';
-                closeOverlayBtn.style.border = 'none';
-                closeOverlayBtn.style.borderRadius = '50%';
-                closeOverlayBtn.style.width = '34px';
-                closeOverlayBtn.style.height = '34px';
-                closeOverlayBtn.style.justifyContent = 'center';
-                closeOverlayBtn.style.alignItems = 'center';
-                closeOverlayBtn.style.cursor = 'pointer';
-                closeOverlayBtn.style.zIndex = '1000';
-                console.log("closeOverlayBtn styled and displayed.");
-            }
         }
-        // Always update the album play button icon when opening a non-embedded album
-        updateAlbumPlayButtonIcon();
+        if (closeOverlayBtn) {
+            closeOverlayBtn.style.display = 'flex';
+            closeOverlayBtn.style.position = 'absolute';
+            closeOverlayBtn.style.top = '15px';
+            closeOverlayBtn.style.right = '16px';
+            closeOverlayBtn.style.backgroundColor = 'rgb(26, 2, 2)';
+            closeOverlayBtn.style.color = 'white';
+            closeOverlayBtn.style.border = 'none';
+            closeOverlayBtn.style.borderRadius = '50%';
+            closeOverlayBtn.style.width = '34px';
+            closeOverlayBtn.style.height = '34px';
+            closeOverlayBtn.style.justifyContent = 'center';
+            closeOverlayBtn.style.alignItems = 'center';
+            closeOverlayBtn.style.cursor = 'pointer';
+            closeOverlayBtn.style.zIndex = '1000';
+            console.log("closeOverlayBtn styled and displayed.");
+        }
     }
+    // Always update the album play button icon when opening a non-embedded album
+    updateAlbumPlayButtonIcon();
+    // NEW: Update the main album playbar UI when opening a non-embedded album
+    updateMainAlbumPlaybarUI();
 
     // Add the event listeners for player controls here, once the album details are populated
     // and the player is ready to be interacted with for the *newly opened album*.
     if (prevTrackBtn) {
-        prevTrackBtn.removeEventListener('click', prevTrack); // Remove previous listener to prevent duplicates
+        prevTrackBtn.removeEventListener('click', prevTrack); // Prevent duplicates
         prevTrackBtn.addEventListener('click', prevTrack);
     }
-
     if (nextTrackBtn) {
-        nextTrackBtn.removeEventListener('click', nextTrack); // Remove previous listener to prevent duplicates
+        nextTrackBtn.removeEventListener('click', nextTrack); // Prevent duplicates
         nextTrackBtn.addEventListener('click', nextTrack);
     }
-
     // Attach event listener for the close button
     if (closeOverlayBtn) {
         closeOverlayBtn.removeEventListener('click', closeAlbumOverlay); // Prevent multiple listeners
         closeOverlayBtn.addEventListener('click', closeAlbumOverlay);
     }
+    if (albumOverlay && topBar && rightPanel && mainPlayBar) { // Changed from playerBar
+        // Log the current state before attempting to show
+        console.log(`openAlbumDetails: Album overlay state before update - hidden: ${albumOverlay.classList.contains('hidden')}, show: ${albumOverlay.classList.contains('show')}, active: ${albumOverlay.classList.contains('active')}`);
 
-
-    if (albumOverlay && topBar && rightPanel && playerBar) {
         albumOverlay.classList.remove('hidden');
         albumOverlay.classList.add('show');
+        albumOverlay.classList.add('active'); // Add the active class here
         document.body.style.overflow = 'hidden';
-        console.log("albumOverlay classes updated: hidden removed, show added. body overflow hidden.");
+        console.log("albumOverlay classes updated: hidden removed, show added, active added. body overflow hidden.");
+        // --- NEW: Call toggleMainPlaybarView based on overlay state ---
+        toggleMainPlaybarView(true); // Album overlay is open
     } else {
-        console.error("Error: One or more critical elements for albumOverlay visibility are missing. Overlay will not show.", { albumOverlay, topBar, rightPanel, playerBar });
+        console.error("Error: One or more critical elements for albumOverlay visibility are missing. Overlay will not show.", {
+            albumOverlay,
+            topBar,
+            rightPanel,
+            mainPlayBar
+        }); // Changed from playerBar
     }
 }
-
-
 
 /**
  * Function to handle the click on the main album play button within the overlay.
@@ -2224,16 +2769,13 @@ async function handleAlbumPlayButtonClick() {
         showMessageBox("No tracks available to play for this album.", 'info');
         return;
     }
-
     const currentTrack = currentAlbum.tracks[currentTrackIndex];
     if (!currentTrack) {
         console.error("Current track is undefined, cannot play.");
         showMessageBox("Error: Current track data is missing.", 'error');
         return;
     }
-
     let isPlaying = false;
-
     // Check if native audio is playing the current track
     if (audio.src && audio.src === currentTrack.src && !audio.paused) {
         isPlaying = true;
@@ -2259,57 +2801,50 @@ async function handleAlbumPlayButtonClick() {
             isPlaying = false;
         }
     }
+    // For embedded content, if it's the currently playing album, assume it's playing
+    else if (currentTrack.rawHtmlEmbed || currentTrack.soundcloudEmbed || currentTrack.audiomackEmbed || currentTrack.fullSoundcloudEmbed) {
+        if (playingAlbum && playingAlbum.id === currentAlbum.id) {
+            isPlaying = true;
+        }
+    }
+
 
     if (isPlaying) {
         // If currently playing, pause it
         if (audio.src && audio.src === currentTrack.src) {
             audio.pause();
-            playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><path d="M8 5v14l11-7z"/></svg>'; // Green Play icon
+            playIcon.classList.remove('hidden');
+            pauseIcon.classList.add('hidden');
         } else if (ytPlayer && currentTrack.iframeSrc && currentTrack.iframeSrc.includes('https://www.youtube.com/embed/')) {
             ytPlayer.pauseVideo();
-            playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><path d="M8 5v14l11-7z"/></svg>'; // Green Play icon
+            playIcon.classList.remove('hidden');
+            pauseIcon.classList.add('hidden');
         } else if (spotifyPlayer && currentTrack.spotifyUri) {
             await spotifyPlayer.pause();
-            playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><path d="M8 5v14l11-7z"/></svg>'; // Green Play icon
+            playIcon.classList.remove('hidden');
+            pauseIcon.classList.add('hidden');
+        } else if (currentTrack.rawHtmlEmbed || currentTrack.soundcloudEmbed || currentTrack.audiomackEmbed || currentTrack.fullSoundcloudEmbed) {
+            // Cannot directly pause embedded iframes from here.
+            console.log("Attempted to pause embedded content from album play button, but direct control is not possible.");
+            // Optionally, provide a visual cue that the button was clicked but no action taken
+            albumPlayButton.classList.add('clicked-effect');
+            setTimeout(() => {
+                albumPlayButton.classList.remove('clicked-effect');
+            }, 200);
+            return; // Exit as we cannot control it
         }
         console.log("Album Play Button: Paused current track.");
     } else {
-        // If not playing, or paused, play/resume it
-        if (audio.src === currentTrack.src && audio.paused) { // Same track, just resume
-            audio.play();
-            playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'; // Green Pause icon
-        } else if (ytPlayer && currentTrack.iframeSrc && currentTrack.iframeSrc.includes('https://www.youtube.com/embed/')) {
-            const videoIdMatch = currentTrack.iframeSrc.match(/\/embed\/([a-zA-Z0-9_-]+)/);
-            const currentVideoId = videoIdMatch ? videoIdMatch[1] : null;
-            if (currentVideoId && ytPlayer.getVideoData() && ytPlayer.getVideoData().video_id === currentVideoId && ytPlayer.getPlayerState() === YT.PlayerState.PAUSED) {
-                ytPlayer.playVideo(); // Resume YouTube
-                playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'; // Green Pause icon
-            } else {
-                playTrack(currentTrack, currentTrackIndex); // Play new YouTube track
-            }
-        } else if (spotifyPlayer && currentTrack.spotifyUri) {
-            try {
-                const state = await spotifyPlayer.getCurrentState();
-                if (state && state.track_window.current_track.uri === currentTrack.spotifyUri && state.paused) {
-                    await spotifyPlayer.resume(); // Resume Spotify
-                    playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'; // Green Pause icon
-                } else {
-                    playTrack(currentTrack, currentTrackIndex); // Play new Spotify track
-                }
-            } catch (e) {
-                console.warn("Error resuming Spotify from album play button:", e);
-                playTrack(currentTrack, currentTrackIndex); // Fallback to play new
-            }
-        } else {
-            // No current player or different track, start playing the current album's track
-            playTrack(currentTrack, currentTrackIndex);
-        }
-        console.log("Album Play Button: Playing/Resuming current track.");
+        // If not playing, or paused, play/resume it.
+        // The playTrack function will handle whether to resume from lastKnownPlaybackPosition
+        // or start from 0 if it's a completely new track/player.
+        playTrack(currentTrack, currentTrackIndex, lastKnownPlaybackPosition);
+        console.log("Album Play Button: Playing/Resuming current track from lastKnownPlaybackPosition.");
     }
     updateAlbumPlayButtonIcon(); // Always update icon after action
     updateTrackHighlightingInOverlay(); // Update track highlighting in overlay
+    updateMainAlbumPlaybarUI(); // Sync main album playbar
 }
-
 
 /**
  * Function to close the album overlay.
@@ -2320,7 +2855,10 @@ function closeAlbumOverlay() {
     if (albumOverlay) {
         albumOverlay.classList.add('hidden'); // Hide the overlay
         albumOverlay.classList.remove('show'); // Remove the show class
-        console.log("albumOverlay classes updated: hidden added, show removed.");
+        albumOverlay.classList.remove('active'); // Remove the active class here
+        document.body.style.overflow = ''; // Re-enable scrolling
+        console.log("albumOverlay classes updated: hidden added, show removed, active removed. body overflow restored.");
+
         // Ensure all inline styles are removed when closing
         albumOverlay.style.removeProperty('background-color');
         albumOverlay.style.removeProperty('border-radius');
@@ -2338,14 +2876,41 @@ function closeAlbumOverlay() {
         albumOverlay.style.removeProperty('align-items');
         albumOverlay.style.removeProperty('overflow');
         albumOverlay.style.removeProperty('transform'); // NEW: Ensure no transform
-        albumOverlay.style.removeProperty('filter');   // NEW: Ensure no filter
+        albumOverlay.style.removeProperty('filter'); // NEW: Ensure no filter
         console.log("albumOverlay inline styles reset.");
 
-        // Re-show the player bar when the overlay is closed
-        if (playerBar) {
-            playerBar.style.display = 'flex'; // Or 'block', depending on its original display type
-            console.log("playerBar set to display: flex.");
+        // --- CRITICAL CHANGE: Manage mainPlayBar visibility based on playingAlbum type ---
+        // The mainPlayBar should now always be visible, its layout is handled by toggleMainPlaybarView.
+        // Controls are enabled/disabled based on whether the playing track is controllable.
+        mainPlayBar.style.setProperty('display', 'flex', 'important'); // Ensure it's always visible
+        console.log("mainPlayBar set to display: flex !important.");
+
+        const isEmbeddedAlbumPlayingInBackground = playingAlbum && (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc);
+
+        if (isEmbeddedAlbumPlayingInBackground) {
+            // Update mini-player to reflect the embedded album playing in background
+            updateMiniPlayerForEmbed(playingAlbum);
+            togglePlayerControls(false); // Disable controls for embedded content
+            if (progressBar) progressBar.disabled = true;
+            console.log("closeAlbumOverlay: Controls disabled for embedded album playing in background.");
+        } else {
+            // Ensure mini-player shows the image for controllable tracks
+            if (currentAlbumArt) currentAlbumArt.style.display = 'block';
+            const dynamicPlayerContainer = playerLeft.querySelector('#youtube-player-container');
+            if (dynamicPlayerContainer) dynamicPlayerContainer.remove();
+            togglePlayerControls(true); // Re-enable controls for controllable playback
+            if (progressBar) progressBar.disabled = false;
+            console.log("closeAlbumOverlay: Controls enabled for controllable album playing in background.");
         }
+
+        // NEW: Call toggleMainPlaybarView to revert to frontpage view
+        toggleMainPlaybarView(false); // Album overlay is closed
+
+        // Reset album overlay content padding for larger screens
+        if (albumDetailsContent) {
+            albumDetailsContent.style.paddingBottom = '20px'; // Default padding
+        }
+
         // Remove the interaction layer if it exists when closing the overlay
         const existingInteractionLayer = albumFullEmbedContainer.querySelector('#embed-interaction-layer');
         if (existingInteractionLayer) {
@@ -2353,11 +2918,13 @@ function closeAlbumOverlay() {
             existingInteractionLayer.remove();
             console.log("Existing embed-interaction-layer removed on close.");
         }
+
         // Remove the closeOverlayBtn listener when the overlay is closed
         if (closeOverlayBtn) {
             closeOverlayBtn.removeEventListener('click', closeAlbumOverlay);
             console.log("closeOverlayBtn listener removed.");
         }
+
         // Remove prev/next track button listeners when overlay closes
         if (prevTrackBtn) {
             prevTrackBtn.removeEventListener('click', prevTrack);
@@ -2368,187 +2935,64 @@ function closeAlbumOverlay() {
             console.log("nextTrackBtn listener removed.");
         }
 
+        // NEW: Clear main album playbar progress bar interval
+        if (albumOverlayProgressBarInterval) {
+            clearInterval(albumOverlayProgressBarInterval);
+            albumOverlayProgressBarInterval = null;
+            console.log("albumOverlayProgressBarInterval cleared on close.");
+        }
+
+        // NEW: Remove event listeners from main album playbar buttons (these are the main playbar buttons)
+        // These are the main playbar buttons, they should not be removed as they are always active.
+        // The `playPauseBtn`, `prevTrackBtn`, `nextTrackBtn`, `progressBar` listeners are permanent.
+        // The `handleMainAlbumPlaybarPlayPause` and `handleMainAlbumPlaybarProgressSeek` functions
+        // are merely wrappers that call the main button's click/input events.
+        // So, no need to remove them here.
+        console.log("Main album playbar event listeners are permanent, no removal needed on close.");
+
         // When closing the overlay, manage the albumFullEmbedContainer's visibility.
         // IMPORTANT: Do NOT clear content if it's an embedded player that should continue playing.
         // We only hide it. The content remains in the DOM but is not visible.
         // This is crucial for the embedded player to continue playing.
         if (albumFullEmbedContainer) {
-            // Check if there's a background embedded album playing
-            const isEmbeddedAlbumPlayingInBackground = playingAlbum && (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc);
-
+            // If an embedded album is playing in the background, just hide the full embed container.
             if (isEmbeddedAlbumPlayingInBackground) {
-                // For embedded albums, just hide the full embed container.
-                // The iframe inside it remains in the DOM to potentially retain state.
                 albumFullEmbedContainer.style.display = 'none';
-                console.log("albumFullEmbedContainer hidden for embedded album on close.");
-                backgroundEmbeddedAlbum = playingAlbum; // Ensure backgroundEmbeddedAlbum is set to the currently playing embed
-                updateMiniPlayerForEmbed(backgroundEmbeddedAlbum); // Update the mini-player to reflect the active embed
-                toggleEmbeddedPlayerVideoOverlay(true); // <--- Show video overlay for embedded background playback
+                console.log("albumFullEmbedContainer hidden to allow embedded player to continue in background.");
             } else {
-                // For non-embedded albums, clear children and ensure player image is visible
+                // If no embedded album is playing, or it's a controllable one, clear the container.
                 while (albumFullEmbedContainer.firstChild) {
                     albumFullEmbedContainer.removeChild(albumFullEmbedContainer.firstChild);
                 }
-                if (playerImg) playerImg.style.display = 'block';
-                // Clear any lingering dynamic player container if it's not an embed
-                const existingPlayerContainer = playerLeft.querySelector('#dynamic-player-container');
-                if (existingPlayerContainer) {
-                    existingPlayerContainer.remove();
-                }
-                const existingYoutubePlayerDiv = playerLeft.querySelector('#youtube-player-container');
-                if (existingYoutubePlayerDiv) {
-                    existingYoutubePlayerDiv.remove();
-                }
-                backgroundEmbeddedAlbum = null; // No background embedded album if a controllable track is playing
-                togglePlayerControls(true); // Re-enable controls for non-embedded playback
-                toggleEmbeddedPlayerVideoOverlay(false); // <--- Hide video overlay for non-embedded playback
-                console.log("albumFullEmbedContainer content cleared and hidden on close for non-embedded album.");
+                albumFullEmbedContainer.style.display = 'none';
+                console.log("albumFullEmbedContainer cleared and hidden as no embedded player is active.");
             }
-            // Reset all inline styles that were applied for embeds
-            albumFullEmbedContainer.style.removeProperty('position');
-            albumFullEmbedContainer.style.removeProperty('top');
-            albumFullEmbedContainer.style.removeProperty('left');
-            albumFullEmbedContainer.style.removeProperty('right');
-            albumFullEmbedContainer.style.removeProperty('bottom');
-            albumFullEmbedContainer.style.removeProperty('width');
-            albumFullEmbedContainer.style.removeProperty('height');
-            albumFullEmbedContainer.style.removeProperty('z-index');
-            albumFullEmbedContainer.style.removeProperty('margin');
-            albumFullEmbedContainer.style.removeProperty('padding');
-            albumFullEmbedContainer.style.removeProperty('overflow');
-            albumFullEmbedContainer.style.removeProperty('background-color');
-            albumFullEmbedContainer.style.removeProperty('justify-content');
-            albumFullEmbedContainer.style.removeProperty('align-items');
-            albumFullEmbedContainer.style.removeProperty('border-radius');
-            albumFullEmbedContainer.style.removeProperty('border');
-            console.log("albumFullEmbedContainer inline styles reset on close.");
         }
-        // Re-show the traditional album details content if it was hidden
-        // This is important for when a tracklist album is opened next.
-        if (albumDetailsContent) { // Now uses the global albumDetailsContent
-            albumDetailsContent.style.display = 'block';
-            console.log("albumDetailsContent set to display: block.");
-        }
-        // Always reset header, tracks section, and album play button to their default visibility
-        if (albumHeader) albumHeader.style.display = 'flex'; // Reset to default (flex in your CSS)
-        if (albumTracksSection) albumTracksSection.style.display = 'block'; // Reset to default (block in your CSS)
-        if (albumPlayButton) albumPlayButton.style.display = 'inline-block'; // Reset to default (inline-block in your CSS)
-        console.log("Album header, tracks section, and play button reset to default display.");
-
-        // Ensure all album cards are visible after closing the overlay
-        const albumCards = document.querySelectorAll('.card'); // Select all cards
-        albumCards.forEach(card => {
-            card.style.display = 'block'; // Ensure all cards are displayed
-        });
-        console.log("All album cards set to display: block.");
-
-        // Do NOT stop any playback here. Playback continues in the background.
-    }
-    document.body.style.overflow = ''; // Re-enable background scrolling
-    clearSearchMessage(); // Clear search message when overlay is closed
-    console.log("Body overflow re-enabled, search message cleared.");
-}
-
-
-// --- Spotify Web Playback SDK Integration ---
-
-// Placeholder for Spotify login initiation (you'll need to implement the actual OAuth flow)
-function initiateSpotifyLogin() {
-    console.log("Initiating Spotify login...");
-    // This would typically redirect to Spotify's authorization page
-    window.location.href = `https://accounts.spotify.com/authorize?client_id=${SPOTIFY_CLIENT_ID}&response_type=token&redirect_uri=${SPOTIFY_REDIRECT_URI}&scope=${SPOTIFY_SCOPES}`;
-    showMessageBox("Redirecting to Spotify for login...", 'info');
-}
-
-// Function to handle Spotify callback from redirect URI
-async function handleSpotifyCallback() { // Made async to await fetch
-    const hash = window.location.hash
-        .substring(1)
-        .split('&')
-        .reduce((initial, item) => {
-            if (item) {
-                const parts = item.split('=');
-                initial[parts[0]] = decodeURIComponent(parts[1]);
-            }
-            return initial;
-        }, {});
-
-    window.location.hash = ''; // Clear the hash from the URL
-
-    if (hash.access_token) {
-        spotifyAccessToken = hash.access_token;
-        localStorage.setItem('spotifyAccessToken', spotifyAccessToken);
-        console.log("Spotify Access Token obtained:", spotifyAccessToken);
-
-        // NEW: Fetch user profile to get display name
-        try {
-            const userProfileResponse = await fetch('https://api.spotify.com/v1/me', {
-                headers: {
-                    'Authorization': `Bearer ${spotifyAccessToken}`
-                }
-            });
-
-            if (userProfileResponse.ok) {
-                const userProfile = await userProfileResponse.json();
-                currentUserName = userProfile.display_name || userProfile.id || 'Spotify User';
-                console.log("Spotify User Profile fetched:", userProfile);
-                showMessageBox(`Spotify login successful! Welcome, ${currentUserName}!`, 'success');
-            } else {
-                console.warn("Failed to fetch Spotify user profile:", userProfileResponse.status);
-                showMessageBox('Spotify login successful, but failed to get username.', 'warning');
-                currentUserName = 'Spotify User'; // Fallback
-            }
-        } catch (error) {
-            console.error("Error fetching Spotify user profile:", error);
-            showMessageBox('Spotify login successful, but error fetching username.', 'warning');
-            currentUserName = 'Spotify User'; // Fallback
-        }
-
-        updateLoginUI(true); // Update UI to show logged-in state
-        loadSpotifySDK();
-    } else if (hash.error) {
-        console.error("Spotify login error:", hash.error);
-        showMessageBox(`Spotify login failed: ${hash.error}`, 'error');
-        updateLoginUI(false); // Update UI to show logged-out state
     }
 }
 
-// Function to dynamically load the Spotify Web Playback SDK
-function loadSpotifySDK() {
-    if (document.getElementById('spotify-playback-sdk')) {
-        console.log("Spotify Web Playback SDK script already loaded.");
-        return;
-    }
-    const script = document.createElement('script');
-    script.id = 'spotify-playback-sdk';
-    script.src = 'https://sdk.scdn.co/spotify-player.js';
-    script.async = true;
-    document.body.appendChild(script);
-    console.log("Spotify Web Playback SDK script appended to body.");
-}
 
-
-// This function is called when the Spotify Web Playback SDK is ready
+// --- Spotify Web Playback SDK ---
 window.onSpotifyWebPlaybackSDKReady = () => {
-    console.log('Spotify Web Playback SDK is ready.');
-    // Try to retrieve token from localStorage if not already set by callback
+    console.log("Spotify Web Playback SDK is ready.");
     if (!spotifyAccessToken) {
-        spotifyAccessToken = localStorage.getItem('spotifyAccessToken');
-    }
-
-    if (!spotifyAccessToken) {
-        console.warn('Spotify access token not available. Please log in to Spotify.');
-
+        console.warn("Spotify Access Token not available. Cannot initialize Spotify Player.");
+        showMessageBox('Spotify access token missing. Please log in with Spotify.', 'error');
         updateLoginUI(false); // Ensure UI reflects logged out state
         return;
     }
+
     spotifyPlayer = new Spotify.Player({
         name: 'My Custom Music Player',
-        getOAuthToken: cb => { cb(spotifyAccessToken); },
+        getOAuthToken: cb => {
+            cb(spotifyAccessToken);
+        },
         volume: volumeBar ? volumeBar.value : 0.5
     });
 
-    spotifyPlayer.addListener('ready', ({ device_id }) => {
+    spotifyPlayer.addListener('ready', ({
+        device_id
+    }) => {
         spotifyDeviceId = device_id;
         console.log('Ready with Device ID', spotifyDeviceId);
         showMessageBox(`Spotify player ready! Device ID: ${deviceId.substring(0, 8)}...`, 'success');
@@ -2556,7 +3000,9 @@ window.onSpotifyWebPlaybackSDKReady = () => {
         transferPlaybackToDevice(spotifyDeviceId);
     });
 
-    spotifyPlayer.addListener('not_ready', ({ device_id }) => {
+    spotifyPlayer.addListener('not_ready', ({
+        device_id
+    }) => {
         console.log('Device ID has gone offline', device_id);
         showMessageBox(`Spotify device offline: ${device_id.substring(0, 8)}...`, 'error');
     });
@@ -2566,18 +3012,24 @@ window.onSpotifyWebPlaybackSDKReady = () => {
             console.log("Spotify player state is null.");
             return;
         }
-
-        const { current_track } = state.track_window;
+        const {
+            current_track
+        } = state.track_window;
         if (current_track) {
             // Update UI with Spotify track info if needed (though playTrack does this)
             // This listener mainly helps keep our UI in sync with external Spotify actions
             if (!state.paused) {
-                if (playPauseBtn) playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
+                if (playPauseBtn) {
+                    playIcon.classList.add('hidden');
+                    pauseIcon.classList.remove('hidden');
+                }
             } else {
-                if (playPauseBtn) playPauseBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><path d="M8 5v14l11-7z"/></svg>';
+                if (playPauseBtn) {
+                    playIcon.classList.remove('hidden');
+                    pauseIcon.classList.add('hidden');
+                }
             }
         }
-
         // Handle track ending for Spotify (also handled in playTrack's interval, but good to have)
         if (state.paused && state.position === 0 && current_track && current_track.id !== null) {
             // This might fire multiple times, ensure logic is idempotent
@@ -2601,37 +3053,49 @@ window.onSpotifyWebPlaybackSDKReady = () => {
         // Update the main album play button icon after player state change
         updateAlbumPlayButtonIcon();
         updateTrackHighlightingInOverlay(); // Update track highlighting in overlay
+        updateMainAlbumPlaybarUI(); // Sync main album playbar
     });
 
-    spotifyPlayer.addListener('initialization_error', ({ message }) => {
+    spotifyPlayer.addListener('initialization_error', ({
+        message
+    }) => {
         console.error('Failed to initialize Spotify player:', message);
         showMessageBox(`Spotify player init error: ${message}`, 'error');
     });
-    spotifyPlayer.addListener('authentication_error', ({ message }) => {
+
+    spotifyPlayer.addListener('authentication_error', ({
+        message
+    }) => {
         console.error('Authentication error with Spotify:', message);
         spotifyAccessToken = null;
         localStorage.removeItem('spotifyAccessToken');
         showMessageBox('Spotify authentication failed. Please log in again.', 'error');
         updateLoginUI(false); // Ensure UI reflects logged out state
     });
-    spotifyPlayer.addListener('account_error', ({ message }) => {
+
+    spotifyPlayer.addListener('account_error', ({
+        message
+    }) => {
         console.error('Account error with Spotify:', message);
         showMessageBox('Spotify account error. Please check your Spotify Premium status.', 'error');
     });
-    spotifyPlayer.addListener('playback_error', ({ message }) => {
+
+    spotifyPlayer.addListener('playback_error', ({
+        message
+    }) => {
         console.error('Playback error with Spotify:', message);
         showMessageBox('Spotify playback error. Please try again or check your Spotify app.', 'error');
     });
 
     spotifyPlayer.connect();
 }
+
 /**
  * Transfers playback to the newly created Spotify Web Playback SDK device.
  * @param {string} deviceId - The Spotify device ID to transfer playback to.
  */
 async function transferPlaybackToDevice(deviceId) {
     if (!spotifyAccessToken) return;
-
     try {
         const response = await fetch('https://api.spotify.com/v1/me/player', {
             method: 'PUT',
@@ -2644,6 +3108,7 @@ async function transferPlaybackToDevice(deviceId) {
                 play: false // Do not start playing immediately, let playTrack handle it
             })
         });
+
         if (!response.ok) {
             const errorData = await response.json();
             console.error('Failed to transfer playback:', errorData);
@@ -2656,6 +3121,111 @@ async function transferPlaybackToDevice(deviceId) {
         showMessageBox('Error transferring playback.', 'error');
     }
 }
+
+
+// --- Spotify Authentication Flow ---
+async function handleSpotifyCallback() {
+    console.log("handleSpotifyCallback: Checking for Spotify authentication callback...");
+    const hash = window.location.hash;
+    let token = localStorage.getItem('spotifyAccessToken');
+    let expiresIn = localStorage.getItem('spotifyExpiresIn');
+    let tokenTimestamp = localStorage.getItem('spotifyTokenTimestamp');
+
+    // Check if token exists and is still valid
+    if (token && expiresIn && tokenTimestamp) {
+        const now = Date.now();
+        const storedTime = parseInt(tokenTimestamp, 10);
+        const expiryTime = storedTime + (parseInt(expiresIn, 10) * 1000); // Convert seconds to milliseconds
+        if (now < expiryTime) {
+            spotifyAccessToken = token;
+            console.log("handleSpotifyCallback: Reusing existing valid Spotify access token.");
+            // If token is valid, initialize Spotify Player SDK
+            if (typeof Spotify !== 'undefined' && Spotify.Player) {
+                window.onSpotifyWebPlaybackSDKReady();
+            } else {
+                // If SDK not yet loaded, it will call onSpotifyWebPlaybackSDKReady when ready
+                console.log("Spotify SDK not yet loaded, will initialize player when ready.");
+            }
+            return;
+        } else {
+            console.log("handleSpotifyCallback: Stored Spotify access token expired.");
+            localStorage.removeItem('spotifyAccessToken');
+            localStorage.removeItem('spotifyExpiresIn');
+            localStorage.removeItem('spotifyTokenTimestamp');
+            spotifyAccessToken = null;
+        }
+    }
+
+    if (hash.includes('access_token')) {
+        const params = new URLSearchParams(hash.substring(1)); // Remove #
+        token = params.get('access_token');
+        expiresIn = params.get('expires_in'); // in seconds
+        const state = params.get('state'); // For CSRF protection, if you implemented it
+
+        if (token) {
+            spotifyAccessToken = token;
+            localStorage.setItem('spotifyAccessToken', token);
+            localStorage.setItem('spotifyExpiresIn', expiresIn);
+            localStorage.setItem('spotifyTokenTimestamp', Date.now().toString());
+            console.log("handleSpotifyCallback: New Spotify access token obtained and stored.");
+
+            // Clear hash from URL to prevent issues on refresh
+            window.history.replaceState({}, document.title, window.location.pathname);
+
+            // Initialize Spotify Player SDK
+            if (typeof Spotify !== 'undefined' && Spotify.Player) {
+                window.onSpotifyWebPlaybackSDKReady();
+            } else {
+                console.log("Spotify SDK not yet loaded, will initialize player when ready.");
+            }
+        } else {
+            console.warn("handleSpotifyCallback: No access token found in hash.");
+            showMessageBox('Spotify login failed. No access token received.', 'error');
+        }
+    } else {
+        console.log("handleSpotifyCallback: No Spotify authentication callback detected in URL.");
+    }
+}
+
+if (spotifyLoginBtn) {
+    spotifyLoginBtn.addEventListener('click', () => {
+        console.log("Spotify Login button clicked. Redirecting for authorization...");
+        const authUrl = `https://accounts.spotify.com/authorize?client_id=${SPOTIFY_CLIENT_ID}&redirect_uri=${encodeURIComponent(SPOTIFY_REDIRECT_URI)}&scope=${encodeURIComponent(SPOTIFY_SCOPES)}&response_type=token&show_dialog=true`;
+        window.location.href = authUrl;
+    });
+}
+
+// --- Message Box Functionality ---
+let messageBoxTimeout;
+
+/**
+ * Displays a custom message box.
+ * @param {string} message - The message to display.
+ * @param {string} type - 'success', 'error', or 'info'.
+ * @param {number} duration - How long to show the message in milliseconds. Default 3000.
+ */
+function showMessageBox(message, type = 'info', duration = 3000) {
+    const box = document.getElementById('messageBox');
+    if (!box) {
+        console.error("Message box element not found!");
+        return;
+    }
+
+    // Clear any existing timeout
+    if (messageBoxTimeout) {
+        clearTimeout(messageBoxTimeout);
+    }
+
+    box.textContent = message;
+    box.className = 'message-box'; // Reset classes
+    box.classList.add(type); // Add type class for styling
+    box.classList.add('show'); // Make it visible
+
+    messageBoxTimeout = setTimeout(() => {
+        box.classList.remove('show'); // Hide after duration
+    }, duration);
+}
+
 // --- Sidebar toggle functionality ---
 function toggleSidebar() {
     const sidebarElement = document.querySelector('.left.sidebar'); // Use a different variable name to avoid conflict
@@ -2671,17 +3241,14 @@ function toggleSidebar() {
 // --- Event Listeners for Overlay and Sidebar ---
 // These are now handled within openAlbumDetails and closeAlbumOverlay for dynamic attachment/detachment
 // if (closeOverlayBtn) {
-//      closeOverlayBtn.addEventListener('click', closeAlbumOverlay);
+//     closeOverlayBtn.addEventListener('click', closeAlbumOverlay);
 // }
-
 if (hamburger) {
     hamburger.addEventListener('click', toggleSidebar);
 }
-
 if (closeBtn) {
     closeBtn.addEventListener('click', toggleSidebar);
 }
-
 if (overlay) {
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) { // Only close if the overlay itself is clicked, not its children
@@ -2691,7 +3258,6 @@ if (overlay) {
 }
 
 // --- User Dropdown Functionality ---
-
 let isUserDropdownOpen = false; // New global state for dropdown
 let closeDropdownTimeout = null; // To manage delayed closing
 
@@ -2714,103 +3280,41 @@ function toggleUserDropdown(show) {
     }
 
     if (show) {
-        // Open the dropdown
-        if (userDropdown.parentNode !== document.body) {
-            document.body.appendChild(userDropdown);
-            console.log("toggleUserDropdown: User dropdown moved to document.body.");
-        }
-
-        if (userAvatarContainer) {
-            const avatarRect = userAvatarContainer.getBoundingClientRect();
-            userDropdown.style.position = 'fixed';
-            userDropdown.style.top = `${avatarRect.bottom + 10}px`;
-            userDropdown.style.right = `${window.innerWidth - avatarRect.right}px`;
-            userDropdown.style.left = 'auto';
-            userDropdown.style.minWidth = '150px';
-            userDropdown.style.backgroundColor = '#282828';
-            userDropdown.style.borderRadius = '8px';
-            userDropdown.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.6)';
-            userDropdown.style.padding = '10px 0';
-            userDropdown.style.zIndex = '9999999';
-            userDropdown.style.display = 'block';
-            userDropdown.offsetHeight; // Trigger reflow
-            userDropdown.style.opacity = '1';
-            userDropdown.style.pointerEvents = 'auto';
-
-            console.log(`toggleUserDropdown: User dropdown shown. Position: fixed, Top: ${userDropdown.style.top}, Right: ${userDropdown.style.right}, Z-index: ${userDropdown.style.zIndex}`);
-
-            if (dropdownUsername) {
-                dropdownUsername.textContent = currentUserName;
-                dropdownUsername.style.padding = '8px 15px';
-                dropdownUsername.style.color = '#b3b3b3';
-                dropdownUsername.style.fontSize = '0.9em';
-                dropdownUsername.style.borderBottom = '1px solid #333';
-                dropdownUsername.style.marginBottom = '5px';
-            }
-            if (dropdownLogoutBtn) {
-                dropdownLogoutBtn.style.display = 'block';
-                dropdownLogoutBtn.style.width = 'calc(100% - 20px)';
-                dropdownLogoutBtn.style.padding = '10px 15px';
-                dropdownLogoutBtn.style.backgroundColor = 'transparent';
-                dropdownLogoutBtn.style.color = '#fff';
-                dropdownLogoutBtn.style.border = 'none';
-                dropdownLogoutBtn.style.textAlign = 'left';
-                dropdownLogoutBtn.style.cursor = 'pointer';
-                dropdownLogoutBtn.style.fontSize = '1em';
-                dropdownLogoutBtn.style.fontWeight = 'normal';
-                dropdownLogoutBtn.style.transition = 'background-color 0.2s ease';
-                dropdownLogoutBtn.onmouseover = function() { this.style.backgroundColor = '#3e3e3e'; };
-                dropdownLogoutBtn.onmouseout = function() { this.style.backgroundColor = 'transparent'; };
-            }
-        }
+        userDropdown.classList.add('show');
+        userDropdown.setAttribute('aria-expanded', 'true');
         isUserDropdownOpen = true;
-        console.log("toggleUserDropdown: User dropdown state: OPEN. isUserDropdownOpen:", isUserDropdownOpen);
+        console.log("toggleUserDropdown: Dropdown opened.");
     } else {
-        // Close the dropdown
-        userDropdown.style.opacity = '0';
-        userDropdown.style.pointerEvents = 'none';
-        // Delay setting display: 'none' to allow transition to complete
-        closeDropdownTimeout = setTimeout(() => {
-            userDropdown.style.display = 'none';
-            closeDropdownTimeout = null; // Clear the timeout ID
-            console.log("toggleUserDropdown: User dropdown display set to none after transition.");
-        }, 300); // Match CSS transition duration
+        userDropdown.classList.remove('show');
+        userDropdown.setAttribute('aria-expanded', 'false');
         isUserDropdownOpen = false;
-        console.log("toggleUserDropdown: User dropdown state: CLOSED. isUserDropdownOpen:", isUserDropdownOpen);
+        console.log("toggleUserDropdown: Dropdown closed.");
     }
 }
 
-// Event listener for the user avatar to toggle the dropdown
+// Event listener for the user avatar click
 if (userAvatarContainer) {
     userAvatarContainer.addEventListener('click', (event) => {
-        event.stopPropagation(); // Prevent document click listener from immediately closing it
-        console.log("userAvatarContainer click: isUserDropdownOpen before toggle:", isUserDropdownOpen);
-        if (isUserDropdownOpen) {
-            toggleUserDropdown(false); // Explicitly close
-        } else {
-            toggleUserDropdown(true); // Explicitly open
-        }
-        console.log("userAvatarContainer click: isUserDropdownOpen after toggle:", isUserDropdownOpen);
+        event.stopPropagation(); // Prevent document click from immediately closing it
+        console.log("User avatar clicked.");
+        toggleUserDropdown(!isUserDropdownOpen); // Toggle visibility
     });
 }
 
-// Event listener to close the dropdown when clicking anywhere else on the document
+// Event listener for clicks anywhere on the document to close the dropdown
 document.addEventListener('click', (event) => {
     console.log(`Document click: target=${event.target.id || event.target.className || event.target.tagName}, isUserDropdownOpen=${isUserDropdownOpen}`);
-
     // Add a small timeout to allow the avatar click's stopPropagation to fully register
     // This is a common workaround for race conditions where the document click listener
     // might fire before the event bubbling for the avatar click is fully processed.
     setTimeout(() => {
-        if (isUserDropdownOpen) { // Only attempt to close if it's currently open
+        if (isUserDropdownOpen) {
+            // Only attempt to close if it's currently open
             const isClickInsideDropdown = userDropdown.contains(event.target);
             const isClickOnAvatar = userAvatarContainer.contains(event.target);
-
             // Check if the click is inside the album overlay (to prevent closing dropdown if overlay is active)
             const isClickInsideAlbumOverlay = albumOverlay && albumOverlay.classList.contains('show') && albumOverlay.contains(event.target);
-
             console.log(`Document click (delayed check): isClickInsideDropdown=${isClickInsideDropdown}, isClickOnAvatar=${isClickOnAvatar}, isClickInsideAlbumOverlay=${isClickInsideAlbumOverlay}`);
-
             // Close the dropdown if click is outside both dropdown and avatar, AND outside album overlay (if open)
             if (!isClickInsideDropdown && !isClickOnAvatar && !isClickInsideAlbumOverlay) {
                 console.log("Closing dropdown due to outside click (delayed).");
@@ -2819,6 +3323,7 @@ document.addEventListener('click', (event) => {
         }
     }, 50); // Small delay, e.g., 50ms
 });
+
 
 // Event listener for the logout button
 if (dropdownLogoutBtn) {
@@ -2840,7 +3345,6 @@ if (dropdownLogoutBtn) {
     });
 }
 
-
 // --- Initial Setup on DOM Content Loaded ---
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("DOM Content Loaded: Script execution started.");
@@ -2848,22 +3352,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Add padding to the player-left container for better spacing of the album cover/mini-player
     if (playerLeft) {
-        playerLeft.style.padding = '8px';
-        console.log("DOMContentLoaded: playerLeft padding set to 8px.");
+        // This is now the album art + song info container
+        playerLeft.style.padding = '0'; // The HTML already has padding on the main-play-bar-inner
+        // Ensure playerLeft can grow but also shrink if content is too long
+        playerLeft.style.minWidth = '0'; // Allow flex item to shrink below its content size
+        console.log("DOMContentLoaded: playerLeft padding reset to 0 and min-width set to 0.");
     }
+
     // Apply consistent styling to the player image (album cover)
-    if (playerImg) {
-        playerImg.style.width = '80px';
-        playerImg.style.height = '80px';
-        playerImg.style.borderRadius = '8px';
-        playerImg.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.4)';
-        playerImg.style.objectFit = 'cover'; // Ensure image covers the area
-        playerImg.style.display = 'block'; // Ensure it's visible by default
-        console.log("DOMContentLoaded: playerImg styling applied.");
+    if (currentAlbumArt) { // Changed from playerImg
+        currentAlbumArt.style.width = '64px'; // Matches new HTML
+        currentAlbumArt.style.height = '64px'; // Matches new HTML
+        currentAlbumArt.style.borderRadius = '8px';
+        currentAlbumArt.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.4)';
+        currentAlbumArt.style.objectFit = 'cover'; // Ensure image covers the area
+        currentAlbumArt.style.display = 'block'; // Ensure it's visible by default
+        console.log("DOMContentLoaded: currentAlbumArt styling applied.");
     }
 
     showMessageBox('Initializing app...', 'info', 5000); // Initial loading message
-
     try {
         // Attempt to handle Spotify callback on page load
         await handleSpotifyCallback();
@@ -2874,19 +3381,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log("DOMContentLoaded: loadYoutubeIframeAPI called.");
 
         // Set initial UI state for login (e.g., if no Spotify token found)
-        // Moved here to update UI after potential Spotify login
         updateLoginUI();
         console.log("DOMContentLoaded: updateLoginUI called.");
 
         // Fetch and display initial content (these are placeholders now)
-        if (typeof fetchAndDisplayTrendingSongs === 'function') fetchAndDisplayTrendingSongs();
-        if (typeof fetchAndDisplayPopularAlbums === 'function') fetchAndDisplayPopularAlbums();
-        if (typeof fetchAndDisplayPopularArtists === 'function') fetchAndDisplayPopularArtists();
+        // Ensure these functions actually exist in your project
+        if (typeof fetchAndDisplayTrendingSongs === 'function') {
+            fetchAndDisplayTrendingSongs();
+        } else {
+            console.warn("fetchAndDisplayTrendingSongs function not found.");
+        }
+        if (typeof fetchAndDisplayPopularAlbums === 'function') {
+            fetchAndDisplayPopularAlbums();
+        } else {
+            console.warn("fetchAndDisplayPopularAlbums function not found.");
+        }
+        if (typeof fetchAndDisplayPopularArtists === 'function') {
+            fetchAndDisplayPopularArtists();
+        } else {
+            console.warn("fetchAndDisplayPopularArtists function not found.");
+        }
         console.log("DOMContentLoaded: Initial content display functions called (if defined).");
 
         // IMPORTANT: Fetch and attach listeners after everything else
-        await fetchAlbums(); // This call includes attachEventListenersToHtmlCards()
-        console.log("DOMContentLoaded: fetchAlbums completed and listeners attached.");
+        // Ensure fetchAlbums is defined and correctly populates cardcontainers
+        if (typeof fetchAlbums === 'function') {
+            await fetchAlbums(); // This call includes attachEventListenersToHtmlCards()
+            console.log("DOMContentLoaded: fetchAlbums completed and listeners attached.");
+        } else {
+            console.warn("fetchAlbums function not found. Card event listeners might not be attached.");
+        }
 
         // Set initial volume for the native audio element
         if (volumeBar) {
@@ -2894,171 +3418,133 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log("DOMContentLoaded: Initial native audio volume set.");
         }
 
-        // Add an event listener to the player-left container to re-open the album overlay
-        if (playerLeft) {
-            playerLeft.addEventListener('click', () => {
+        // NEW: Add an event listener to the entire mainPlayBar to open the album overlay
+        if (mainPlayBar) { // Changed from playerBar
+            mainPlayBar.addEventListener('click', async (event) => {
+                // The individual control buttons now handle their own event.stopPropagation()
+                // So, any click reaching here is intended to open the album details.
                 let albumToReopen = null;
-
                 // Priority 1: If there's an album actively playing (controllable or embedded)
                 if (playingAlbum) {
                     albumToReopen = playingAlbum;
-                    console.log("Mini-player clicked. Actively playing album found. Opening its details.");
+                    console.log("Player bar background clicked. Actively playing album found. Opening its details.");
                 }
                 // Priority 2: If no album is actively playing, but an album's details were last opened
                 else if (currentAlbum) {
                     albumToReopen = currentAlbum;
-                    console.log("Mini-player clicked. No actively playing album, opening last viewed album details.");
+                    console.log("Player bar background clicked. No actively playing album, opening last viewed album details.");
                 } else {
-                    console.log("Mini-player clicked, but no current or playing album to open.");
+                    console.log("Player bar background clicked, but no current or playing album to open.");
                     return; // No album to open
                 }
 
                 // Open the album details. Importantly, openAlbumDetails should NOT stop playback
                 // if it's the same album already playing.
-                openAlbumDetails(albumToReopen);
-
-                // If it's a controllable track and it was paused, resume it.
-                // If it's an embedded track, it should continue playing automatically.
-                if (albumToReopen === playingAlbum && playingAlbum && playingAlbum.tracks && playingAlbum.tracks.length > 0) {
-                    const track = playingAlbum.tracks[currentTrackIndex]; // Use currentTrackIndex from playingAlbum context
-
-                    // Check if it's a controllable track and currently paused
-                    const isControllableTrack = track.spotifyUri || (track.iframeSrc && track.iframeSrc.includes('https://www.youtube.com/embed/')) || (track.src && !track.iframeSrc && !track.spotifyUri && !track.rawHtmlEmbed && !track.soundcloudEmbed && !track.audiomackEmbed && !track.fullSoundcloudEmbed);
-
-                    if (isControllableTrack) {
-                        let isPaused = false;
-                        if (audio.src === track.src) {
-                            isPaused = audio.paused;
-                        } else if (ytPlayer && track.iframeSrc && track.iframeSrc.includes('https://www.youtube.com/embed/')) {
-                            const videoIdMatch = track.iframeSrc.match(/\/embed\/([a-zA-Z0-9_-]+)/);
-                            const videoId = videoIdMatch ? videoIdMatch[1] : null;
-                            if (videoId && ytPlayer.getVideoData() && ytPlayer.getVideoData().video_id === videoId) {
-                                isPaused = ytPlayer.getPlayerState() === YT.PlayerState.PAUSED;
-                            }
-                        } else if (spotifyPlayer && track.spotifyUri) {
-                            spotifyPlayer.getCurrentState().then(state => {
-                                if (state && state.track_window.current_track.uri === track.spotifyUri) {
-                                    isPaused = state.paused;
-                                }
-                                if (isPaused) {
-                                    // Resume playback if it was paused
-                                    playTrack(track, currentTrackIndex, lastKnownPlaybackPosition);
-                                    console.log("Mini-player clicked: Resuming paused controllable track.");
-                                }
-                            }).catch(e => console.warn("Error checking Spotify state for mini-player resume:", e));
-                        }
-
-                        if (isPaused) {
-                            // Resume playback if it was paused
-                            playTrack(track, currentTrackIndex, lastKnownPlaybackPosition);
-                            console.log("Mini-player clicked: Resuming paused controllable track.");
-                        }
-                    }
+                if (typeof openAlbumDetails === 'function') {
+                    openAlbumDetails(albumToReopen);
+                } else {
+                    console.warn("openAlbumDetails function not found.");
                 }
             });
-            console.log("DOMContentLoaded: playerLeft click listener attached.");
+            console.log("DOMContentLoaded: mainPlayBar click listener attached."); // Changed from playerBar
         }
-        showMessageBox('App is ready!', 'success'); // Final ready message
 
-    } catch (error) {
+        // NEW: Add resize event listener to manage playbar view on window resize
+        window.addEventListener('resize', () => {
+            const isAlbumOverlayCurrentlyOpen = albumOverlay && albumOverlay.classList.contains('show');
+            toggleMainPlaybarView(isAlbumOverlayCurrentlyOpen);
+        });
+        console.log("DOMContentLoaded: window resize listener attached for playbar view.");
+
+        // Initial call to set the correct playbar view on load
+        toggleMainPlaybarView(false); // Assume overlay is closed on initial load
+        console.log("DOMContentLoaded: Initial toggleMainPlaybarView called.");
+
+        showMessageBox('App is ready!', 'success'); // Final ready message
+    }
+    catch (error) {
         console.error("DOMContentLoaded: An error occurred during initial setup:", error);
         showMessageBox(`Critical error during setup: ${error.message}`, 'error', 10000);
     }
     console.log("DOMContentLoaded: Script execution finished.");
 
-const searchInput = document.getElementById('search-input');
-    const voiceSearchBtn = document.getElementById('voice-search-btn');
-    const voiceStartSound = document.getElementById('voice-start-sound');
-    const voiceEndSound = document.getElementById('voice-end-sound');
+    const searchInput = document.getElementById('search-input');
+    const voiceSearchBtn = document.getElementById('voice-search-btn'); // Assuming these audio elements are defined in your HTML and globally accessible
 
-    // Check if browser supports Web Speech API
+    const voiceStartSound = new Audio('https://files.catbox.moe/z41l8g.mp3'); // Replace with your actual path
+    const voiceEndSound = new Audio('https://files.catbox.moe/v08732.mp3'); // Replace with your actual path
+
+    let isListening = false; // To prevent multiple recognition instances
+
+    // Check for Web Speech API compatibility
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    if (voiceSearchBtn && SpeechRecognition) {
+    if (SpeechRecognition && voiceSearchBtn) {
         const recognition = new SpeechRecognition();
         recognition.continuous = false; // Listen for a single utterance
-        recognition.lang = 'en-US'; // Set recognition language
+        recognition.lang = 'en-US'; // Set language
         recognition.interimResults = false; // Only return final results
-
-        let isListening = false; // Track listening state
-
-        // Function to play sound effects
-        function playSound(audioElement) {
-            if (audioElement) {
-                audioElement.currentTime = 0; // Rewind to start
-                audioElement.play().catch(e => console.warn("Audio playback failed:", e));
-            }
-        }
+        recognition.maxAlternatives = 1; // Get the most likely result
 
         voiceSearchBtn.addEventListener('click', () => {
-            if (!isListening) {
-                playSound(voiceStartSound); // Play start sound
-                voiceSearchBtn.classList.add('listening'); // Add visual cue
-                searchInput.placeholder = "Listening...";
-                recognition.start();
-                isListening = true;
-                console.log("Voice search started.");
-            } else {
-                playSound(voiceEndSound); // Play end sound
-                voiceSearchBtn.classList.remove('listening'); // Remove visual cue
-                searchInput.placeholder = "Search...";
+            if (isListening) {
                 recognition.stop();
-                isListening = false;
-                console.log("Voice search stopped.");
+                return;
             }
+
+            // Stop any ongoing playback when voice search is initiated
+            stopAllPlaybackUI();
+
+            recognition.start();
+            // Assuming playSound function is defined elsewhere
+            // playSound(voiceStartSound); // Play start sound
+            voiceSearchBtn.classList.add('listening'); // Add visual cue
+            searchInput.placeholder = "Listening...";
+            isListening = true;
+            console.log("Voice search started.");
         });
 
         recognition.onresult = (event) => {
             const transcript = event.results[0][0].transcript;
-            console.log("Speech recognized:", transcript);
-            if (searchInput) {
-                searchInput.value = transcript; // Write voice input to search box
-                // Trigger an 'input' event so existing search listeners pick it up
-                const inputEvent = new Event('input', { bubbles: true });
-                searchInput.dispatchEvent(inputEvent);
+            console.log("Speech recognition result:", transcript);
+            searchInput.value = transcript; // Set the transcript to the search input
 
-                // Optionally, trigger a search immediately if your search logic is tied to a button click
-                // const searchIcon = document.querySelector('.search-icon');
-                // if (searchIcon) {
-                //     searchIcon.click(); // Simulate click on search icon
-                // }
+            // Trigger the search logic
+            if (transcript.trim().length > 0) {
+                clearTimeout(debounceTimer); // Clear any existing debounce
+                searchAndOpenAlbum(transcript.trim().toLowerCase());
+            } else {
+                closeAlbumOverlay();
+                clearSearchMessage();
             }
-            playSound(voiceEndSound); // Play end sound
-            voiceSearchBtn.classList.remove('listening'); // Remove visual cue
-            searchInput.placeholder = "Search...";
-            isListening = false;
-        };
-
-        recognition.onerror = (event) => {
-            console.error("Speech recognition error:", event.error);
-            showMessageBox(`Voice search error: ${event.error}`, 'error');
-            playSound(voiceEndSound); // Play end sound
-            voiceSearchBtn.classList.remove('listening'); // Remove visual cue
-            searchInput.placeholder = "Search...";
-            isListening = false;
         };
 
         recognition.onend = () => {
             console.log("Speech recognition ended.");
             if (isListening) { // If it ended without manual stop, means no speech detected or timed out
-                playSound(voiceEndSound); // Play end sound
+                // Assuming playSound function is defined elsewhere
+                // playSound(voiceEndSound); // Play end sound
                 voiceSearchBtn.classList.remove('listening'); // Remove visual cue
                 searchInput.placeholder = "Search...";
                 isListening = false;
             }
         };
 
+        recognition.onerror = (event) => {
+            console.error("Speech recognition error:", event.error);
+            showMessageBox(`Voice search error: ${event.error}`, 'error');
+            // Assuming playSound function is defined elsewhere
+            // playSound(voiceEndSound); // Play end sound
+            voiceSearchBtn.classList.remove('listening'); // Remove visual cue
+            searchInput.placeholder = "Search...";
+            isListening = false;
+        };
     } else if (voiceSearchBtn) {
         // If SpeechRecognition is not supported, hide the button or inform the user
         voiceSearchBtn.style.display = 'none';
         console.warn("Web Speech API not supported in this browser.");
         showMessageBox("Your browser does not support voice search.", 'info', 5000);
     }
-
-
-
-
-
 });
 
 // Placeholder for loadYoutubeIframeAPI function
@@ -3070,19 +3556,19 @@ function loadYoutubeIframeAPI() {
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 }
 
-// Placeholder for fetchAndDisplayTrendingSongs
+// Placeholder for fetchAndDisplayTrendingSongs function
 function fetchAndDisplayTrendingSongs() {
     console.log("Fetching and displaying trending songs (placeholder - now handled by existing HTML).");
     // No longer dynamically populates HTML here per user request.
 }
 
-// Placeholder for fetchAndDisplayPopularAlbums
+// Placeholder for fetchAndDisplayPopularAlbums function
 function fetchAndDisplayPopularAlbums() {
     console.log("Fetching and displaying popular albums (placeholder - now handled by existing HTML).");
     // No longer dynamically populates HTML here per user request.
 }
 
-// Placeholder for fetchAndDisplayPopularArtists
+// Placeholder for fetchAndDisplayPopularArtists function
 function fetchAndDisplayPopularArtists() {
     console.log("Fetching and displaying popular artists (placeholder - now handled by existing HTML).");
     // No longer dynamically populates HTML here per user request.
@@ -3113,10 +3599,12 @@ function updateLoginUI(isLoggedIn) {
             spotifyLoginBtn.style.border = 'none';
             spotifyLoginBtn.style.cursor = 'pointer';
             spotifyLoginBtn.style.fontWeight = 'bold';
-            spotifyLoginBtn.style.marginTop = '10px';
         }
     }
 }
+
+
+
 
 // The BACKEND_URL constant is already defined at the very top of the script as BACKEND_BASE_URL.
 // Using BACKEND_BASE_URL for consistency.
@@ -3215,7 +3703,7 @@ function showMessageBox(message, type = 'info', duration = 3000) {
         setTimeout(() => {
             messageBox.style.display = 'none';
             messageBox.style.pointerEvents = 'none';
-        }, 500);
+        }, duration);
     }, duration);
 }
 

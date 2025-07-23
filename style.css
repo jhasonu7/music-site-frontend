@@ -659,7 +659,7 @@ body.popup-active .player-bar {
     left: 25%; /* Starts where .left ends */
     width: 75%; /* Matches .right width */
     /* Height fills space between top-bar and player-bar */
-    height: calc(100vh - var(--top-bar-height-desktop) - var(--player-bar-height-desktop));
+    height: calc(95.5vh - var(--top-bar-height-desktop) - var(--player-bar-height-desktop));
     background: #2e0e0e; /* Default background, will be dynamically set by JS for album art color */
     z-index: 999;
     display: none; /* Hidden by default */
@@ -902,7 +902,7 @@ body.popup-active .player-bar {
 /* --- Hamburger Menu (Left) --- */
 .hamburgerContainer {
     position: relative;
-    top: 0px;
+    top: -3px;
     left:-21px;
     display: flex;
     align-items: center;
@@ -1180,7 +1180,7 @@ body.popup-active .player-bar {
         top: var(--top-bar-height-tablet);
         left: 0; /* Full width on tablet */
         width: 100%;
-        height: calc(100vh - var(--top-bar-height-tablet) - var(--player-bar-height-tablet));
+        height: calc(81vh - var(--top-bar-height-tablet) - var(--player-bar-height-tablet));
     }
 
     .album-header {
@@ -1309,8 +1309,8 @@ body.popup-active .player-bar {
 
     .search-box {
         position: relative;
-        left:-74px;
-        margin-right: -93px;
+        left:-12px;
+        
         width: calc(100% - 100px);
         min-height: 32px;
         margin-right: -30px;
@@ -1342,9 +1342,11 @@ body.popup-active .player-bar {
     }
 
     .player-left {
+        position: relative;
+        top:2px;
         width: 100%; /* Take full width */
         justify-content: center; /* Center items */
-        margin-bottom: 5px; /* Space between sections */
+        margin-bottom: -24px; /* Space between sections */
     }
 
     .player-left img {
@@ -1373,7 +1375,7 @@ body.popup-active .player-bar {
     .player-center {
         width: 100%; /* Take full width */
         order: 3; /* Place below left and right sections */
-        margin-top: -6px;
+        margin-top: 4px;
     }
 
     .controls {
@@ -1415,7 +1417,7 @@ body.popup-active .player-bar {
     /* Album overlay for mobile */
     .album-overlay {
         top: var(--top-bar-height-mobile);
-        height: calc(100vh - var(--top-bar-height-mobile) - var(--player-bar-height-mobile));
+        height: calc(84vh - var(--top-bar-height-mobile) - var(--player-bar-height-mobile));
     }
 
     .album-overlay-content {
@@ -1705,6 +1707,7 @@ body.popup-active .player-bar {
     border-radius: 12px;
     background-color: transparent;
     z-index: 10;
+    margin-top: 0px;
 }
 
 /* 4. Target the iframe directly inside the embed container */
@@ -2858,17 +2861,18 @@ header, main {
     position: relative;
     flex-grow: 1;
     max-width: 550px;
-    margin-right: -93px;
-    left:-93px;
+    margin-right: -31px;
+    left:-12px;
     top: -3px;
 }
 @media (max-width: 480px) {
-    .search-box {
+.search-box {
     position: relative;
     flex-grow: 1;
     max-width: 550px;
-    margin-right: -90px;
-    left: -73px;
+    margin-right: -31px;
+    left:-12px;
+    top: -3px;
 }
 }
 
@@ -2898,3 +2902,695 @@ header, main {
     padding: 3px 20px;
 }
 
+/* --- Adjustments for Carousel Navigation Buttons (Green Theme) --- */
+
+.carousel-nav-btn {
+    /* Essential positioning and base styles (keep these) */
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 50%; /* Make them round */
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10; /* Ensure they are above the cards */
+    
+    /* --- NEW & UPDATED STYLES FOR GREEN THEME --- */
+    background-color: #373837; /* Spotify Green background */
+    color: #f8f6f6; /* White arrow icon */
+    border: none; /* No border, let the color speak */
+    width: 45px; /* Slightly larger button size */
+    height: 45px;
+    font-size: 28px; /* Larger arrow icon */
+    font-weight: bold; /* Make arrow bolder */
+    
+    /* Smooth transition for all properties on hover */
+    transition: opacity 0.3s ease, background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.5); /* Stronger shadow for depth */
+
+    /* Initial opacity (still hidden by default, visible on hover) */
+    opacity: 0; 
+}
+
+.carousel-nav-btn:hover {
+    opacity: 1; /* Fully visible on direct button hover */
+    background-color: #242323; /* Slightly darker green on hover for a subtle change */
+    transform: translateY(-50%) scale(1.08); /* More noticeable scale up for interaction */
+    box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.7); /* Even stronger shadow on hover */
+}
+
+/* Show buttons when hovering over the whole carousel wrapper */
+.carousel-wrapper:hover .carousel-nav-btn {
+    opacity: 0.9; /* Make them more visible (almost fully opaque) when hovering over the section */
+}
+
+/* Positioning (keep as is, or adjust slightly if needed) */
+.carousel-nav-btn.prev-btn {
+    left: 10px; /* Inset from the left edge */
+}
+
+.carousel-nav-btn.next-btn {
+    right: 10px; /* Inset from the right edge */
+}
+
+/* Ensure your .carousel-wrapper has padding so buttons don't overlay the first/last card content */
+.carousel-wrapper {
+    position: relative; 
+    overflow: hidden; 
+    padding: 0 0px; 
+}
+
+/* Rest of your existing CSS for .cardcontainer and .card */
+.cardcontainer {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 20px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.cardcontainer::-webkit-scrollbar {
+    display: none;
+}
+
+.carousel-wrapper:hover .carousel-nav-btn {
+    opacity: 0.9; /* <--- REMOVE OR COMMENT THIS LINE */
+    pointer-events: auto; /* <--- REMOVE OR COMMENT THIS LINE */
+}
+
+.carousel-nav-btn:hover {
+    opacity: 1 !important; /* Use !important to ensure it overrides JS's inline style */
+    background-color: #2c2c2c; /* Slightly darker green on hover for a subtle change */
+    transform: translateY(-50%) scale(1.08); /* More noticeable scale up for interaction */
+    box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.7); /* Even stronger shadow on hover */
+    pointer-events: auto !important; /* Ensure it's always clickable on direct hover */
+}
+
+/* --- DEBUG & OVERRIDE STYLES FOR PLAYER BAR --- */
+/* Add this at the VERY END of your CSS file or in a <style> tag in HTML for testing */
+
+.player-bar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 25% !important;
+    width: 75% !important;
+    background-color: #1a1a1a !important; /* Make sure background is visible */
+    border-top: 1px solid #333 !important;
+    padding: 8px 10px !important; /* Fixed padding for mobile */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important; /* Distribute content */
+    z-index: 9999 !important; /* Highest possible z-index to ensure visibility */
+    box-sizing: border-box !important;
+    min-height: 92px !important; /* Ensure a minimum height */
+    height: 60px !important; /* Fixed height */
+    overflow: hidden !important; /* Ensure nothing spills outside the bar itself */
+}
+
+/* Ensure body has enough padding at the bottom for the fixed player bar */
+body {
+    padding-bottom: 0px !important; /* Must be larger than player-bar height + its padding */
+    margin: 0 !important; /* Remove default body margins */
+    overflow-x: hidden !important; /* Prevent horizontal scrolling caused by hidden content */
+    box-sizing: border-box !important;
+}
+html {
+    overflow-x: hidden !important; /* Prevent horizontal scrolling on the html element too */
+    box-sizing: border-box !important;
+}
+
+
+/* Specific styles for screens smaller than or equal to 768px (Tablets and Mobiles) */
+@media (max-width: 768px) {
+    .player-bar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+        padding: 8px 10px !important; /* Consistent padding */
+        height: 81px !important;
+        min-height: 60px !important;
+        gap: 6px !important; /* Gap between flex items */
+    }
+
+    .player-left {
+        display: flex !important;
+        align-items: center !important;
+        flex: 1 1 auto !important; /* Allow to grow and shrink, auto basis */
+        min-width: 0 !important; /* Crucial for text ellipsis */
+        /* background-color: rgba(255, 0, 0, 0.3) !important; /* DEBUG: See player-left boundary */ */
+        overflow: hidden !important; /* Ensure text is clipped */
+    }
+
+    .player-left img {
+        position: relative;
+        top:-12px;
+        width: 63px !important;
+        height: 62px !important;
+        margin-right: 6px !important;
+        border-radius: 4px !important;
+        object-fit: cover !important;
+        box-shadow: none !important; /* Remove shadow to save space if needed */
+        flex-shrink: 0 !important; /* CRITICAL: Prevent album art from shrinking */
+    }
+
+    .track-info { /* Targeting track-info directly */
+        display: block !important;
+        flex: 1 1 0% !important; /* Take all remaining space */
+        min-width: 0 !important; /* CRITICAL for text ellipsis */
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .track-title { /* Targeting track-title directly */
+        font-size: 0.85em !important;
+        font-weight: bold !important;
+        color: #e0e0e0 !important;
+        margin-bottom: 1px !important;
+    }
+
+    .track-artist { /* Targeting track-artist directly */
+        font-size: 0.7em !important;
+        color: #b0b0b0 !important;
+    }
+
+    .add-to-library {
+        display: none !important;
+    }
+
+    .player-center {
+        flex: 0 0 auto !important; /* No grow, no shrink, auto basis */
+        /* background-color: rgba(0, 255, 0, 0.3) !important; /* DEBUG: See player-center boundary */ */
+      
+        align-items: center !important;
+        justify-content: flex-end !important; /* Push button to the end of its container */
+    }
+
+    .player-center .controls {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+
+    .player-center .controls .btn:not(.play) {
+        display: none !important;
+    }
+
+    .player-center .controls .play {
+        background-color: #0c0e0d !important;
+        color: #fff !important;
+        border: none !important;
+        border-radius: 50% !important;
+        width: 48px !important;
+        height: 48px !important;
+        font-size: 1.7em !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        cursor: pointer !important;
+        box-shadow: none !important; /* Remove shadow for max space/simplicity */
+        padding: 0 !important; /* Ensure no internal padding pushes it */
+        margin: 0 !important; /* Ensure no external margin pushes it */
+    }
+
+    .progress,
+    .player-right {
+        display: none !important;
+    }
+}
+
+/* Very small screens */
+@media (max-width: 375px) {
+    .player-bar {
+        padding: 5px 6px !important;
+        height: 81px !important;
+        min-height: 55px !important;
+        gap: 4px !important;
+    }
+
+    .player-left img {
+        position: relative;
+        width: 61px !important;
+        height: 60px !important;
+        top:-7px;
+        margin-right: 5px !important;
+    }
+
+    .track-title {
+        font-size: 0.75em !important;
+    }
+
+    .track-artist {
+        font-size: 0.6em !important;
+    }
+
+    .player-center .controls .play {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 1.5em !important;
+    }
+    body {
+        padding-bottom: 65px !important; /* Adjust if bar is 55px + padding */
+    }
+}
+
+@media (max-width: 480px) {
+    .controls {
+        position: relative;
+        top: -59px;
+        right:-176px;
+        gap: 10px;
+    }
+}
+
+@media (max-width: 380px) {
+    .controls {
+        position: relative;
+        top: -44px;
+        font-size: 30px;
+        right:-130px;
+        gap: 10px;
+    }
+}
+
+
+
+/* Ensure the main player-bar is hidden when album overlay is active on small screens */
+@media (max-width: 768px) {
+    .album-overlay.active + .player-bar {
+        display: none;
+    }
+}
+
+/* --- Player Bar General Styling (Adjust if needed) --- */
+.player-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 90px; /* Adjust height as needed for both playbar types */
+    background-color: #181818; /* Dark background */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px; /* Horizontal padding */
+    z-index: 1000; /* Ensure it's above other content */
+    border-top: 1px solid #282828; /* Subtle top border */
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5); /* Shadow for depth */
+    transition: height 0.3s ease-in-out, background-color 0.3s ease-in-out; /* Smooth transitions */
+}
+
+.player-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-shrink: 0; /* Prevent shrinking when space is tight */
+    padding: 8px; /* Consistent padding for the left section */
+}
+
+.player-left #player-img {
+    width: 60px; /* Smaller image in the main bar */
+    height: 60px;
+    border-radius: 8px;
+    object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.player-left .track-info {
+    display: flex;
+    flex-direction: column;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player-left .track-info .track-title {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: #fff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player-left .track-info .track-artist {
+    font-size: 0.75em;
+    color: #b3b3b3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player-left .add-to-library {
+    background: none;
+    border: none;
+    color: #b3b3b3;
+    font-size: 1.5em;
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.2s ease;
+}
+
+.player-left .add-to-library:hover {
+    color: #1ED760;
+}
+
+
+/* --- Main Frontpage Playbar Details (Default View) --- */
+.main-frontpage-playbar-details {
+    display: flex;
+    flex-grow: 1; /* Allows it to take up available space */
+    justify-content: center; /* Center controls */
+    align-items: center;
+    gap: 20px;
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.main-frontpage-playbar-details .player-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex-grow: 1;
+    max-width: 720px; /* Limit width for larger screens */
+}
+
+.main-frontpage-playbar-details .player-center .controls {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.main-frontpage-playbar-details .player-center .controls .btn {
+    background: none;
+    border: none;
+    color: #b3b3b3;
+    font-size: 1.5em;
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.1s ease;
+}
+
+.main-frontpage-playbar-details .player-center .controls .btn:hover {
+    color: #fff;
+    transform: scale(1.05);
+}
+
+.main-frontpage-playbar-details .player-center .controls .btn.play {
+    color: #1ED760; /* Green play button */
+    font-size: 2.2em;
+}
+
+.main-frontpage-playbar-details .player-center .progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.main-frontpage-playbar-details .player-center .progress .time {
+    font-size: 0.75em;
+    color: #b3b3b3;
+    min-width: 35px; /* Ensure time display doesn't collapse */
+    text-align: center;
+}
+
+.main-frontpage-playbar-details .player-center .progress #progress-bar {
+    width: 100%;
+    height: 4px;
+    background: #535353;
+    -webkit-appearance: none;
+    border-radius: 2px;
+    cursor: pointer;
+    outline: none;
+}
+
+.main-frontpage-playbar-details .player-center .progress #progress-bar::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #1ED760;
+    cursor: pointer;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+.main-frontpage-playbar-details .player-center .progress #progress-bar::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #1ED760;
+    cursor: pointer;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+.main-frontpage-playbar-details .player-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.main-frontpage-playbar-details .player-right .volume-icon {
+    background: none;
+    border: none;
+    color: #b3b3b3;
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+.main-frontpage-playbar-details .player-right #volume-bar {
+    width: 100px; /* Adjust as needed */
+    height: 4px;
+    background: #535353;
+    -webkit-appearance: none;
+    border-radius: 2px;
+    cursor: pointer;
+    outline: none;
+}
+
+.main-frontpage-playbar-details .player-right #volume-bar::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #1ED760;
+    cursor: pointer;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+.main-frontpage-playbar-details .player-right #volume-bar::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #1ED760;
+    cursor: pointer;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+/* --- Main Album Playbar Details (Detailed View for Mobile/Tablet) --- */
+.main-album-playbar-details {
+    display: flex; /* Will be toggled to flex by JS */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1;
+    width: 100%; /* Take full width of player-bar */
+    height: 100%; /* Take full height of player-bar */
+    padding: 0 16px; /* Match player-bar padding */
+    box-sizing: border-box; /* Include padding in width/height */
+    opacity: 0; /* Hidden by default for transition */
+    transform: translateY(100%); /* Slide up from bottom */
+    pointer-events: none; /* Prevent interaction when hidden */
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.main-album-playbar-details.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.main-album-playbar-track-info {
+    text-align: center;
+    margin-bottom: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%; /* Ensure it respects padding */
+}
+
+.main-album-playbar-title {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.main-album-playbar-artist {
+    font-size: 0.8em;
+    color: #b3b3b3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.main-album-playbar-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 600px; /* Limit width for larger screens */
+}
+
+.main-album-playbar-progress {
+    display: flex;
+    align-items: center;
+    width: 90%; /* Adjust width to give some margin */
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.main-album-playbar-progress-bar {
+    flex-grow: 1;
+    height: 6px; /* Thicker progress bar */
+    background: #535353;
+    -webkit-appearance: none;
+    border-radius: 3px;
+    cursor: pointer;
+    outline: none;
+}
+
+.main-album-playbar-progress-bar::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; /* Larger thumb */
+    height: 16px;
+    border-radius: 50%;
+    background: #1ED760;
+    cursor: pointer;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+}
+
+.main-album-playbar-progress-bar::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #1ED760;
+    cursor: pointer;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+}
+
+.main-album-playbar-current-time,
+.main-album-playbar-duration {
+    font-size: 0.8em;
+    color: #b3b3b3;
+    min-width: 40px; /* Ensure time display doesn't collapse */
+    text-align: center;
+}
+
+.main-album-playbar-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 25px; /* Increased gap between buttons */
+}
+
+.main-album-playbar-btn {
+    background: none;
+    border: none;
+    color: #b3b3b3;
+    font-size: 1.6em; /* Larger icons */
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%; /* Make buttons circular */
+    transition: color 0.2s ease, background-color 0.2s ease, transform 0.1s ease;
+}
+
+.main-album-playbar-btn:hover {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+}
+
+.main-album-playbar-btn.main-album-playbar-play {
+    color: #1ED760; /* Green play button */
+    font-size: 2.5em; /* Even larger play button */
+    padding: 10px;
+}
+
+.main-album-playbar-btn.main-album-playbar-play:hover {
+    background-color: rgba(30, 215, 96, 0.2);
+}
+
+/* --- Responsive Media Queries --- */
+
+/* Hide main frontpage playbar details and show album details on smaller screens */
+@media (max-width: 736px) { /* Adjust breakpoint as needed for tablet/mobile */
+    .main-frontpage-playbar-details {
+        opacity: 0;
+        transform: translateY(100%);
+        pointer-events: none;
+        display: none; /* Hide completely when not active to prevent layout issues */
+    }
+
+    .main-album-playbar-details {
+        /* This will be shown by JS, but ensure it's positioned correctly */
+        display: flex; /* Ensure it's ready to be shown as flex */
+        opacity: 0; /* Still hidden by default, JS will add .show */
+        transform: translateY(100%);
+        pointer-events: none;
+    }
+
+    /* Adjust player-left to take less space on small screens */
+    .player-bar .player-left {
+        flex-basis: auto; /* Allow content to dictate width */
+        max-width: 150px; /* Limit width */
+        gap: 10px;
+    }
+
+    .player-left .track-info {
+        max-width: 80px; /* Limit track info width */
+    }
+
+    .player-left #player-img {
+        width: 50px;
+        height: 50px;
+    }
+
+    .player-left .add-to-library {
+        font-size: 1.2em;
+        padding: 0;
+    }
+}
+
+/* Hide album details and show main frontpage playbar details on larger screens */
+@media (min-width: 737px) { /* Adjust breakpoint as needed for desktop */
+    .main-album-playbar-details {
+        opacity: 0;
+        transform: translateY(100%);
+        pointer-events: none;
+        display: none; /* Hide completely when not active */
+    }
+
+    .main-frontpage-playbar-details {
+        display: flex; /* Ensure it's ready to be shown as flex */
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+}
+
+/* Utility class for hiding elements */
+.hidden {
+    display: none !important;
+}
+
+@media (min-width: 480px) { 
+    .right{
+        height: 80vh;
+    }
+}

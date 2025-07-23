@@ -7,23 +7,89 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="utility.css">
     <title>Swarify - Web Player: Music for everyone</title>
-    <!-- Google tag (gtag.js) -->
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-5CKMYFDESW"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-5CKMYFDESW');
-</script>
     <link rel="icon" type="image/svg+xml" href="fav.svg">
     <script src="https://sdk.scdn.co/spotify-player.js"></script>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Equivalent to bg-gray-900 */
+            color: white;
+        }
+        /* Custom styles for the range input (progress and volume bars) */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px; /* Even larger thumb */
+            height: 24px; /* Even larger thumb */
+            border-radius: 50%;
+            /* Radial gradient for a more refined look */
+            background: radial-gradient(circle, #1ED760 0%, #17A34A 100%);
+            border: 2px solid rgba(255, 255, 255, 0.7); /* Subtle white border */
+            cursor: grab; /* Indicate draggable */
+            box-shadow: 0 0 0 6px rgba(30, 215, 96, 0.3), /* Inner glow */
+                        0 0 15px 5px rgba(30, 215, 96, 0.7); /* Stronger outer glow */
+            transition: background .3s ease-in-out, box-shadow .3s ease-in-out, transform .15s ease-in-out, border-color .3s ease-in-out;
+            /* Centering the thumb vertically on the track */
+            margin-top: calc((8px - 24px) / 2); /* (track height - thumb height) / 2 */
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.05); /* Slight scale on hover */
+            box-shadow: 0 0 0 7px rgba(30, 215, 96, 0.4),
+                        0 0 20px 8px rgba(30, 215, 96, 0.8); /* More intense glow on hover */
+        }
+        input[type="range"]::-webkit-slider-thumb:active {
+            cursor: grabbing; /* Indicate grabbing */
+            transform: scale(1.15); /* More pronounced scale on active */
+            background: radial-gradient(circle, #17A34A 0%, #1ED760 100%); /* Invert gradient on active */
+            border-color: rgba(255, 255, 255, 0.9); /* Brighter border on active */
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 24px; /* Even larger thumb */
+            height: 24px; /* Even larger thumb */
+            border-radius: 50%;
+            /* Radial gradient for a more refined look */
+            background: radial-gradient(circle, #1ED760 0%, #17A34A 100%);
+            border: 2px solid rgba(255, 255, 255, 0.7); /* Subtle white border */
+            cursor: grab; /* Indicate draggable */
+            box-shadow: 0 0 0 6px rgba(30, 215, 96, 0.3), /* Inner glow */
+                        0 0 15px 5px rgba(30, 215, 96, 0.7); /* Stronger outer glow */
+            transition: background .3s ease-in-out, box-shadow .3s ease-in-out, transform .15s ease-in-out, border-color .3s ease-in-out;
+            /* Centering the thumb vertically on the track */
+            margin-top: calc((8px - 24px) / 2); /* (track height - thumb height) / 2 */
+        }
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.05); /* Slight scale on hover */
+            box-shadow: 0 0 0 7px rgba(30, 215, 96, 0.4),
+                        0 0 20px 8px rgba(30, 215, 96, 0.8); /* More intense glow on hover */
+        }
+        input[type="range"]::-moz-range-thumb:active {
+            cursor: grabbing; /* Indicate grabbing */
+            transform: scale(1.15); /* More pronounced scale on active */
+            background: radial-gradient(circle, #17A34A 0%, #1ED760 100%); /* Invert gradient on active */
+            border-color: rgba(255, 255, 255, 0.9); /* Brighter border on active */
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 8px; /* Even thicker track */
+            background: linear-gradient(to right, #1ED760 var(--progress, 0%), #4A5568 var(--progress, 0%)); /* Dynamic progress fill */
+            border-radius: 4px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3); /* Subtle inner shadow for depth */
+        }
+        input[type="range"]::-moz-range-track {
+            height: 8px; /* Even thicker track */
+            background: linear-gradient(to right, #1ED760 var(--progress, 0%), #4A5568 var(--progress, 0%)); /* Dynamic progress fill */
+            border-radius: 4px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3); /* Subtle inner shadow for depth */
+        }
+    </style>
 </head>
 
 <body>
 
-    <div class="container flex bg-black">
+    <div class="container flex bg-black" style="max-width: 100% !important; width: 100% !important;">
         <div class="left sidebar">
             <div class="close-btn">×</div>
             <div class="home bg-grey rounded m-1 p-1">
@@ -67,7 +133,8 @@
 
 
         </div>
-        <div class="right bg-grey rounded">
+        <!-- Added pb-24 to ensure content is not hidden behind the fixed playbar -->
+        <div class="right bg-grey rounded pb-24">
             <div class="top-bar">
                 <div class="header">
                     <div class="nav">
@@ -75,20 +142,7 @@
                         <div class="hamburgerContainer">
 
                             <img width="40" class="invert hamburger" src="hamburger.svg" alt="">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M15 6L9.70711 11.2929C9.37377 11.6262 9.20711 11.7929 9.20711 12C9.20711 12.2071 9.37377 12.3738 9.70711 12.7071L15 18"
-                                    stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"
-                                    stroke-linejoin="round" />
-                            </svg>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M9 18L14.2929 12.7071C14.6262 12.3738 14.7929 12.2071 14.7929 12C14.7929 11.7929 14.6262 11.6262 14.2929 11.2929L9 6"
-                                    stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"
-                                    stroke-linejoin="round" />
-                            </svg>
+                            <!-- Removed the two unused SVG buttons here -->
                         </div>
                     </div>
 
@@ -97,24 +151,20 @@
                             <img src="search.svg" alt="Search" />
                         </span>
                         <input type="text" id="search-input" placeholder="What do you want to play?">
-
                         <span class="divider"></span>
-<button id="voice-search-btn" class="voice-search-icon">
+
+                        <button id="voice-search-btn" class="voice-search-icon">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24px" height="24px">
             <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.2-3c0 3.53-2.92 6.43-6.4 6.43S5.6 14.53 5.6 11H4c0 4.17 3.13 7.64 7.2 8.16V22h1.6v-2.84c4.07-.52 7.2-3.99 7.2-8.16h-1.6z"/>
         </svg>
     </button>
-
                     </div>
                     <div class="buttons">
-                        <!-- Login/Signup buttons (initially visible, hidden when logged in) -->
                         <button class="signupbtn" id="top-signup-btn">Sign up</button>
                         <button class="loginbtn" id="top-login-btn">Log in</button>
 
-                        <!-- User Avatar and Dropdown (initially hidden, shown when logged in) -->
                         <div id="user-avatar-container" class="user-avatar-container hidden">
-                            <div id="user-avatar" class="user-avatar"></div>
-                            <!-- Removed 'hidden' class from user-dropdown to allow CSS transitions -->
+                            <div id="user-avatar" class="user-avatar">G</div> <!-- Initial 'G' for Guest or first letter of name -->
                             <div id="user-dropdown" class="user-dropdown">
                                 <span id="dropdown-username" class="dropdown-username"></span>
                                 <button id="dropdown-logout-btn" class="dropdown-logout-btn">Log out</button>
@@ -129,13 +179,14 @@
                     <h1>Trending songs</h1>
                 </div>
                 <div class="carousel-wrapper">
+                    <button class="carousel-nav-btn prev-btn" data-target="trending-songs-cards">&lt;</button>
+                    <div class="cardcontainer" id="trending-songs-cards">
+                        <div class="card" data-album-id="6879fa6ab29a102ef22ed744">
 
-
-                    <div class="cardcontainer">
-                        <div class="card" data-album-id="6879fa6ab29a102ef22ed744"> <!-- ADDED data-album-id -->
                             <img src="https://i.scdn.co/image/ab67616d00001e02a7e251b543c77a6ed356dfbe"
                                 alt="Saiyaara Album Art">
-                            <div class="play-button card-play-button" data-album-id="6879fa6ab29a102ef22ed744"> <!-- ADDED data-album-id and card-play-button -->
+                            <div class="play-button card-play-button" data-album-id="6879fa6ab29a102ef22ed744">
+
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -145,9 +196,11 @@
                             <div class="card-artists">Tanishk Bagchi, Faheem Abdullah, Arslan Nizami, Irshad Kamil</div>
                         </div>
                         <div class="card" data-album-id="6879349573d641c48a1ca636">
+
                             <img src="https://i.scdn.co/image/ab67616d0000b273781faf59a3cb980fe3b493f8"
                                 alt="Saiyaara Album Art">
                             <div class="play-button card-play-button" data-album-id="6879349573d641c48a1ca636">
+
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -156,10 +209,10 @@
                             <div class="card-title">Dhun (From "Saiyaara")</div>
                             <div class="card-artists">Mithoon,Arjit singh</div>
                         </div>
-                        <div class="card" data-album-id="687a120cb29a102ef22ed748"> <!-- ADDED data-album-id -->
+                        <div class="card" data-album-id="687a120cb29a102ef22ed748">
                             <img src="https://i.scdn.co/image/ab67616d0000b273bac6fad80a0e81256ee15c40"
                                 alt="Saiyaara Album Art">
-                            <div class="play-button card-play-button" data-album-id="687a120cb29a102ef22ed748"> <!-- ADDED data-album-id and card-play-button -->
+                            <div class="play-button card-play-button" data-album-id="687a120cb29a102ef22ed748">
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -168,9 +221,9 @@
                             <div class="card-title">JEE NA PAAYE</div>
                             <div class="card-artists">Haniska Pareek,Priyankit Jaiswal</div>
                         </div>
-                        <div class="card" data-album-id="68792b6884384901a6506170"> <!-- ADDED data-album-id -->
+                        <div class="card" data-album-id="68792b6884384901a6506170">
                             <img src="https://i.scdn.co/image/ab67616d0000b2730a47bbe7141fdfe0eb2cdba7" alt="Sahiba">
-                            <div class="play-button card-play-button" data-album-id="68792b6884384901a6506170"> <!-- ADDED data-album-id and card-play-button -->
+                            <div class="play-button card-play-button" data-album-id="68792b6884384901a6506170">
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -179,10 +232,10 @@
                             <div class="card-title">Sahiba</div>
                             <div class="card-artists">Aditya</div>
                         </div>
-                        <div class="card" data-album-id="68790c3b84384901a650616c"> <!-- ADDED data-album-id -->
+                        <div class="card" data-album-id="68790c3b84384901a650616c">
                             <img src="https://i.scdn.co/image/ab67616d0000b273f42805148e916145f858318b"
                                 alt="Ishg Bawla|Coke studio bharat">
-                            <div class="play-button card-play-button" data-album-id="68790c3b84384901a650616c"> <!-- ADDED data-album-id and card-play-button -->
+                            <div class="play-button card-play-button" data-album-id="68790c3b84384901a650616c">
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -191,10 +244,11 @@
                             <div class="card-title">Ishq Bawla|Coke studio bharat</div>
                             <div class="card-artists">Dhanda Nyoliwa</div>
                         </div>
-                        <div class="card" data-album-id="68790ad884384901a650616a"> <!-- ADDED data-album-id -->
+                        <div class="card" data-album-id="68790ad884384901a650616a">
+
                             <img src="https://i.scdn.co/image/ab67616d0000b273fa06cc36705ff81cd22c884c"
                                 alt="Ishg Bawla|Coke studio bharat">
-                            <div class="play-button card-play-button" data-album-id="68790ad884384901a650616a"> <!-- ADDED data-album-id and card-play-button -->
+                            <div class="play-button card-play-button" data-album-id="68790ad884384901a650616a">
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -203,10 +257,10 @@
                             <div class="card-title">Show Off</div>
                             <div class="card-artists">Prem Dholon,Iqbal</div>
                         </div>
-                        <div class="card" data-album-id="687909df84384901a6506168"> <!-- ADDED data-album-id -->
+                        <div class="card" data-album-id="687909df84384901a6506168">
                             <img src="https://i.scdn.co/image/ab67616d0000b273f7f5503cfc6a54d31e65b112"
                                 alt="Ishg Bawla|Coke studio bharat">
-                            <div class="play-button card-play-button" data-album-id="687909df84384901a6506168"> <!-- ADDED data-album-id and card-play-button -->
+                            <div class="play-button card-play-button" data-album-id="687909df84384901a6506168">
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -215,10 +269,10 @@
                             <div class="card-title">Shower</div>
                             <div class="card-artists">BeckyG</div>
                         </div>
-                        <div class="card" data-album-id="687908e084384901a6506166"> <!-- ADDED data-album-id -->
+                        <div class="card" data-album-id="687908e084384901a6506166">
                             <img src="https://i.scdn.co/image/ab67616d0000b273786a26c64ff6b997a9552910"
                                 alt="Ishg Bawla|Coke studio bharat">
-                            <div class="play-button card-play-button" data-album-id="687908e084384901a6506166"> <!-- ADDED data-album-id and card-play-button -->
+                            <div class="play-button card-play-button" data-album-id="687908e084384901a6506166">
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -228,8 +282,8 @@
                             <div class="card-artists">Karan Ujla.Ikky</div>
                         </div>
                     </div>
+                    <button class="carousel-nav-btn next-btn" data-target="trending-songs-cards">&gt;</button>
                 </div>
-
             </div>
 
             <div class="AlbumPlaylists">
@@ -237,13 +291,12 @@
                     <h1>Popular albums</h1>
                 </div>
                 <div class="carousel-wrapper">
-
-
-                    <div class="cardcontainer">
-                        <div class="card" data-album-id="687a08e6b29a102ef22ed746"> <!-- ADDED data-album-id -->
+                    <button class="carousel-nav-btn prev-btn" data-target="popular-albums-cards">&lt;</button>
+                    <div class="cardcontainer" id="popular-albums-cards">
+                        <div class="card" data-album-id="album-id-aashiqui2">
                             <img src="https://i.scdn.co/image/ab67616d0000b2736404721c1943d5069f0805f3"
                                 alt="Saiyaara Album Art">
-                            <div class="play-button card-play-button" data-album-id="687a08e6b29a102ef22ed746"> <!-- ADDED data-album-id and card-play-button -->
+                            <div class="play-button card-play-button" data-album-id="album-id-aashiqui2">
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -252,10 +305,10 @@
                             <div class="card-title">Aashiqui 2</div>
                             <div class="card-artists">Mithoon, Ankit Tiwari, Jeet Gannguli</div>
                         </div>
-                        <div class="card" data-album-id="686d45f0d1372a1d73924cd1"> <!-- ADDED data-album-id -->
+                        <div class="card" data-album-id="686d45f0d1372a1d73924cd1">
                             <img src="https://i.scdn.co/image/ab67616d0000b273707ea5b8023ac77d31756ed4"
                                 alt="Saiyaara Album Art">
-                            <div class="play-button card-play-button" data-album-id="686d45f0d1372a1d73924cd1"> <!-- ADDED data-album-id and card-play-button -->
+                            <div class="play-button card-play-button" data-album-id="686d45f0d1372a1d73924cd1">
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -276,10 +329,10 @@
                             <div class="card-title">Sanam Teri Kasam</div>
                             <div class="card-artists">Himesh Reshmiya,Sameer</div>
                         </div>
-                        <div class="card" data-album-id="6879064984384901a6506164"> <!-- ADDED data-album-id -->
+                        <div class="card" data-album-id="album-id-unlimitedlovesongs">
                             <img src="https://i.scdn.co/image/ab67616d0000b2731aa5adad8593923dcdf1a7d0"
                                 alt="Saiyaara Album Art">
-                            <div class="play-button card-play-button" data-album-id="6879064984384901a6506164"> <!-- ADDED data-album-id and card-play-button -->
+                            <div class="play-button card-play-button" data-album-id="album-id-unlimitedlovesongs">
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -288,10 +341,10 @@
                             <div class="card-title">Unlimited love songs</div>
                             <div class="card-artists">Arjit Singh</div>
                         </div>
-                        <div class="card" data-album-id="6871f7e419d863c7966eeef7"> <!-- ADDED data-album-id -->
+                        <div class="card" data-album-id="6871f7e419d863c7966eeef7">
                             <img src="https://i.scdn.co/image/ab67616d00001e02a2d5857ebcd5a4d5695ca8d4"
                                 alt="Aur Mohabbat Album Art">
-                            <div class="play-button card-play-button" data-album-id="6871f7e419d863c7966eeef7"> <!-- ADDED data-album-id and card-play-button -->
+                            <div class="play-button card-play-button"6871f7e419d863c7966eeef7">
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -305,7 +358,6 @@
                             <img src="https://i.scdn.co/image/ab67616d0000b27383141000ee8ce3b893a0b425"
                                 alt="Aur Mohabbat Album Art">
                             <div class="play-button card-play-button" data-album-id="6871f5a419d863c7966eeef5">
-
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -314,10 +366,11 @@
                             <div class="card-title">Finding Her</div>
                             <div class="card-artists">Kushgra Barat,Saheed</div>
                         </div>
-                        <div class="card" data-album-id="6871f28b19d863c7966eeef3"> <!-- ADDED data-album-id -->
+                        <div class="card" data-album-id="6871f28b19d863c7966eeef3">
+
                             <img src="https://i.scdn.co/image/ab67616d0000b273773c5f60bcb309ef8802e4ef"
                                 alt="Aur Mohabbat Album Ar">
-                            <div class="play-button card-play-button" data-album-id="6871f28b19d863c7966eeef3"> <!-- ADDED data-album-id and card-play-button -->
+                            <div class="play-button card-play-button" data-album-id="6871f28b19d863c7966eeef3">
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -327,6 +380,7 @@
                             <div class="card-artists">Sachet-Parampara, Parampara Tandon, Kausar Munir</div>
                         </div>
                     </div>
+                    <button class="carousel-nav-btn next-btn" data-target="popular-albums-cards">&gt;</button>
                 </div>
             </div>
             <div class="popular-artists">
@@ -334,10 +388,11 @@
                     <h1>Popular artists</h1>
                 </div>
                 <div class="carousel-wrapper">
-                    <div class="artist-card-container">
-                        <div class="card artist-card" data-album-id="6878fda984384901a6506159"> <!-- ADDED data-album-id -->
+                    <button class="carousel-nav-btn prev-btn" data-target="popular-artists-cards">&lt;</button>
+                    <div class="artist-card-container cardcontainer" id="popular-artists-cards">
+                        <div class="card artist-card" data-album-id="artist-id-pritam">
                             <img src="https://i.scdn.co/image/ab67616100005174cb6926f44f620555ba444fca" alt="Pritam">
-                            <div class="play-button card-play-button" data-album-id="6878fda984384901a6506159"> <!-- ADDED data-album-id and class -->
+                            <div class="play-button card-play-button" data-album-id="artist-id-pritam">
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -349,7 +404,7 @@
                         <div class="card artist-card" data-album-id="687212d419d863c7966eeefa">
                             <img src="https://i.scdn.co/image/ab67616100005174b19af0ea736c6228d6eb539c
                                 " alt="A.R. Rahman">
-                            <div class="play-button card-play-button" data-album-id="687212d419d863c7966eeefa">                                                                          
+                            <div class="play-button card-play-button" data-album-id="687212d419d863c7966eeefa">
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -358,10 +413,10 @@
                             <div class="card-title">A.R. Rahman</div>
                             <div class="card-artists">Artist</div>
                         </div>
-                        <div class="card artist-card" data-album-id="6878ffad84384901a650615b"> <!-- ADDED data-album-id -->
+                        <div class="card artist-card" data-album-id="6878fda984384901a6506159">
                             <img src="https://i.scdn.co/image/ab676161000051745ba2d75eb08a2d672f9b69b7
                                 " alt="Arijit Singh">
-                            <div class="play-button card-play-button" data-album-id="6878ffad84384901a650615b"> <!-- ADDED data-album-id and class -->
+                            <div class="play-button card-play-button" data-album-id="6878fda984384901a6506159">
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -370,10 +425,11 @@
                             <div class="card-title">Arijit Singh</div>
                             <div class="card-artists">Artist</div>
                         </div>
-                        <div class="card artist-card" data-album-id="6879023b84384901a650615d"> <!-- ADDED data-album-id -->
+                        <div class="card artist-card" data-album-id="6879023b84384901a650615d">
+
                             <img src="https://i.scdn.co/image/ab67616100005174bb4064bef3a825344d5eb79e
 " alt="Sachin-Jigar">
-                            <div class="play-button card-play-button" data-album-id="6879023b84384901a650615d"> <!-- ADDED data-album-id and class -->
+                            <div class="play-button card-play-button" data-album-id="6879023b84384901a650615d">
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -382,10 +438,10 @@
                             <div class="card-title">Sachin-Jigar</div>
                             <div class="card-artists">Artist</div>
                         </div>
-                        <div class="card artist-card" data-album-id="686e29e3a8b53196ce754861"> <!-- ADDED data-album-id -->
+                        <div class="card artist-card" data-album-id="686e29e3a8b53196ce754861">
                             <img src="https://i.scdn.co/image/ab6761610000517490b6c3d093f9b02aad628eaf"
                                 alt="Vishal-Shekhar" />
-                            <div class="play-button card-play-button" data-album-id="686e29e3a8b53196ce754861"> <!-- ADDED data-album-id and class -->
+                            <div class="play-button card-play-button" data-album-id="686e29e3a8b53196ce754861">
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -394,10 +450,10 @@
                             <div class="card-title">Vishal-Shekhar</div>
                             <div class="card-artists">Artist</div>
                         </div>
-                        <div class="card artist-card" data-album-id="687904e784384901a6506160"> <!-- ADDED data-album-id -->
+                        <div class="card artist-card" data-album-id="687904e784384901a6506160">
                             <img src="https://i.scdn.co/image/ab67616100005174c40600e02356cc86f0debe84"
                                 alt="Atif Aslam" />
-                            <div class="play-button card-play-button" data-album-id="687904e784384901a6506160"> <!-- ADDED data-album-id and class -->
+                            <div class="play-button card-play-button" data-album-id="687904e784384901a6506160">
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -406,10 +462,10 @@
                             <div class="card-title">Atif Aslam</div>
                             <div class="card-artists">Artist</div>
                         </div>
-                        <div class="card artist-card" data-album-id="6879058d84384901a6506162"> <!-- ADDED data-album-id -->
+                        <div class="card artist-card" data-album-id="6879058d84384901a6506162">
                             <img src="https://i.scdn.co/image/ab676161000051740f0be2054fe9594026a6b843"
                                 alt="Anirudh Ravichander" />
-                            <div class="play-button card-play-button" data-album-id="6879058d84384901a6506162"> <!-- ADDED data-album-id and class -->
+                            <div class="play-button card-play-button" data-album-id="6879058d84384901a6506162">
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -419,6 +475,7 @@
                             <div class="card-artists">Artist</div>
                         </div>
                     </div>
+                    <button class="carousel-nav-btn next-btn" data-target="popular-artists-cards">&gt;</button>
                 </div>
             </div>
 
@@ -457,72 +514,111 @@
                             </table>
                         </div>
                     </div>
+
+                    <!-- New playbar for album overlay - visible on mobile/tablet -->
+                  
                 </div>
 
                 <div id="album-full-embed-container"
-                    style="width: 100%; height: 352px; margin-top: 20px; border-radius: 12px; overflow: hidden; display: none;">
+                    style="width: 100%; height: 352px; margin-top: 0px; border-radius: 12px; overflow: hidden; display: none;">
                 </div>
-
-                <!-- This second album-tracks table seems redundant if the first one is used for albumDetails-tracks -->
-                <!-- If it's intended for something else, please clarify. For now, I'm assuming it's a duplicate. -->
-                <!-- <div class="album-tracks">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Title</th>
-                                <th>Artist</th>
-                                <th>Duration</th>
-                            </tr>
-                        </thead>
-                        <tbody id="albumDetails-tracks"></tbody>
-                    </table>
-                </div> -->
 
             </div>
 
 
-            <div class="player-bar">
-                <div class="player-left">
-                    <img src="https://pickasso.spotifycdn.com/image/ab67c0de0000deef/dt/v1/img/radio/artist/7uIbLdzzSEqnX0Pkrb56cR/en"
-                        alt="Album Cover" id="player-img" />
-                    <div class="track-info">
-                        <div class="track-title" id="track-title">Explore the music</div>
-                        <div class="track-artist" id="track-artist">lets start playing</div>
+            <!-- Main Play Bar Container - Fixed at the bottom -->
+            <div id="main-play-bar" class="fixed bottom-0 left-0 right-0 bg-gray-800 rounded-t-xl shadow-lg p-4 z-50">
+                <!-- Removed max-w-7xl mx-auto to allow full width within its parent -->
+                <div class="main-play-bar-inner bg-gray-700 rounded-xl p-3 flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4 w-full">
+
+                    <!-- Album Art and Song Info (Left Section) -->
+                    <div class="flex items-center w-full md:w-auto flex-grow">
+                        <img id="current-album-art"
+                            src="https://placehold.co/64x64/4a4a4a/ffffff?text=Album"
+                            alt="Album Art"
+                            class="w-16 h-16 rounded-lg shadow-md flex-shrink-0"
+                        />
+                        <div class="ml-4 flex flex-col justify-center overflow-hidden flex-grow">
+                            <span id="current-song-title" class="text-lg font-bold truncate">Song Title Example</span>
+                            <span id="current-artist-name" class="text-sm text-gray-300 truncate">Artist Name</span>
+                        </div>
                     </div>
-                    <button class="btn add-to-library">＋</button>
-                </div>
 
-                <div class="player-center">
-                    <div class="controls">
-                        <button class="btn">⤮</button>
-                        <button class="btn" id="prev-track">⏮</button>
-                        <button class="btn play" id="play-pause">▶</button>
-                        <button class="btn" id="next-track">⏭</button>
-                        <button class="btn">💬</button>
+                    <!-- Playback Controls (Center Section) -->
+                    <div id="player-controls-group" class="flex items-center justify-center space-x-4 w-full md:w-auto flex-shrink-0">
+                        <button id="prev-track-btn" class="text-gray-300 hover:text-white transition-colors duration-200 p-2 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                                <path d="M19.375 2.25A1.125 1.125 0 0 1 20.5 3.375v17.25a1.125 1.125 0 0 1-1.125 1.125h-3.5a1.125 1.125 0 0 1-1.125-1.125V3.375a1.125 1.125 0 0 1 1.125-1.125h3.5ZM4.625 2.25A1.125 1.125 0 0 1 5.75 3.375v17.25a1.125 1.125 0 0 1-1.125 1.125h-3.5A1.125 1.125 0 0 1 0 20.625V3.375A1.125 1.125 0 0 1 1.125 2.25h3.5Z" />
+                            </svg>
+                        </button>
+                        <button id="rewind-btn" class="text-gray-300 hover:text-white transition-colors duration-200 p-2 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                                <path fillRule="evenodd" d="M10.72 11.47a.75.75 0 0 0 0 1.06l1.59 1.59a.75.75 0 0 0 1.06 0l4.25-4.25a.75.75 0 0 0 0-1.06L13.37 5.66a.75.75 0 0 0-1.06 0l-1.59 1.59a.75.75 0 0 0 0 1.06l2.47 2.47-2.47 2.47ZM3.22 11.47a.75.75 0 0 0 0 1.06l1.59 1.59a.75.75 0 0 0 1.06 0l4.25-4.25a.75.75 0 0 0 0-1.06L5.87 5.66a.75.75 0 0 0-1.06 0L3.22 7.25a.75.75 0 0 0 0 1.06l2.47 2.47-2.47 2.47Z" clipRule="evenodd" />
+                            </svg>
+                        </button>
+                        <button id="play-pause-btn"
+                            class="bg-green-500 text-white p-3 rounded-full shadow-lg hover:bg-green-600 transition-colors duration-200 flex items-center justify-center"
+                        >
+                            <!-- Play icon by default, sc2.js will toggle -->
+                            <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                                <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.38 2.872-1.667l11.55 6.416c1.427.79 1.427 2.893 0 3.683l-11.549 6.416c-1.344.713-2.872-.24-2.872-1.667V5.653Z" clipRule="evenodd" />
+                            </svg>
+                            <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 hidden">
+                                <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 0 1 .75-.75H9a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H7.5a.75.75 0 0 1-.75-.75V5.25Zm7.5 0A.75.75 0 0 1 15 4.5h1.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H15a.75.75 0 0 1-.75-.75V5.25Z" clipRule="evenodd" />
+                            </svg>
+                        </button>
+                        <button id="fast-forward-btn" class="text-gray-300 hover:text-white transition-colors duration-200 p-2 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                                <path fillRule="evenodd" d="M13.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 0 1-1.06-1.06L11.69 12 4.72 5.03a.75.75 0 0 1 1.06-1.06l7.5 7.5ZM19.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 1 1-1.06-1.06L17.69 12l-6.97-6.97a.75.75 0 0 1 1.06-1.06l7.5 7.5Z" clipRule="evenodd" />
+                            </svg>
+                        </button>
+                        <button id="next-track-btn" class="text-gray-300 hover:text-white transition-colors duration-200 p-2 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                                <path d="M19.375 2.25A1.125 1.125 0 0 1 20.5 3.375v17.25a1.125 1.125 0 0 1-1.125 1.125h-3.5a1.125 1.125 0 0 1-1.125-1.125V3.375a1.125 1.125 0 0 1 1.125-1.125h3.5ZM4.625 2.25A1.125 1.125 0 0 1 5.75 3.375v17.25a1.125 1.125 0 0 1-1.125 1.125h-3.5A1.125 1.125 0 0 1 0 20.625V3.375A1.125 1.125 0 0 1 1.125 2.25h3.5Z" />
+                            </svg>
+                        </button>
                     </div>
-                    <div class="progress">
-                        <span class="time" id="current-time">1:02</span>
-                        <input type="range" id="progress-bar" value="0" min="0" max="100" step="1" />
-                        <span class="time" id="duration">5:14</span>
+
+                    <!-- Progress Bar and Volume (Right Section) -->
+                    <div class="flex items-center space-x-4 w-full md:w-auto md:flex-shrink-0 justify-end">
+                        <!-- Progress Bar -->
+                        <div id="progress-time-group" class="flex items-center w-full md:w-48 lg:w-64">
+                            <!-- Styled time reflectors -->
+                            <span id="current-time" class="text-sm font-semibold text-gray-300 w-10 text-right">0:00</span>
+                            <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value="0"
+                                id="progress-bar"
+                                class="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-green-500"
+                            />
+                            <span id="total-time" class="text-sm font-semibold text-gray-300 w-10 text-left">0:00</span>
+                        </div>
+
+                        <!-- Removed Repeat and Shuffle Buttons -->
+                        <!-- <div id="repeat-shuffle-group" class="flex items-center space-x-2">
+                            <button id="repeat-btn" class="text-gray-300 hover:text-white transition-colors duration-200 p-2 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                                    <path fill-rule="evenodd" d="M11.78 11.78a.75.75 0 0 1 .968-.078l4.5 4.25a.75.75 0 0 1-.916 1.22l-3.293-2.356-.277.277a.75.75 0 0 1-1.06 0-.75.75 0 0 1 0-1.06l.277-.277ZM9.293 2.293a.75.75 0 0 1 1.06 0l.277.277 2.356-3.293a.75.75 0 0 1 1.22-.916l4.25 4.5a.75.75 0 0 1-.078.968l-1.5 1.5a.75.75 0 0 1-1.06-1.06l.72-.72-2.11-2.11a.75.75 0 0 1-.19-.854L12 6.75l-1.47-1.47a.75.75 0 0 1 0-1.06ZM.75 12a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5H1.5a.75.75 0 0 1-.75-.75ZM3 16.5a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75ZM3 7.5a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            <button id="shuffle-btn" class="text-gray-300 hover:text-white transition-colors duration-200 p-2 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                                    <path fill-rule="evenodd" d="M12.97 3.97a.75.75 0 0 1 1.06 0l7.5 7.5a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 1 1-1.06-1.06l6.22-6.22H3a.75.75 0 0 1 0-1.5h16.19l-6.22-6.22a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                                    <path fill-rule="evenodd" d="M7.28 6.72a.75.75 0 0 1 0-1.06l.75-.75a.75.75 0 0 1 1.06 0l.75.75a.75.75 0 1 1-1.06 1.06L8.03 6.72l-.75.75a.75.75 0 0 1-1.06 0Z" clip-rule="evenodd" />
+                                    <path fill-rule="evenodd" d="M7.28 17.28a.75.75 0 0 1 0-1.06l.75-.75a.75.75 0 0 1 1.06 0l.75.75a.75.75 0 1 1-1.06 1.06l-.75-.75-.75.75a.75.75 0 0 1-1.06 0Z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div> -->
                     </div>
-                </div>
-
-                <div class="player-right">
-
-                    <button class="btn volume-icon">🔊</button>
-                    <input type="range" id="volume-bar" min="0" max="1" step="0.01" value="1" />
-
                 </div>
             </div>
 
 
-        </div>
+    
 
-
-    </div>
-
-    <div id="popup-overlay" class="popup-overlay invisible opacity-0">
+<div id="popup-overlay" class="popup-overlay invisible opacity-0">
     <div id="popup-container" class="popup-container">
 
         <button class="close-button" onclick="closePopup()">&#x2715;</button>
@@ -564,8 +660,9 @@
                     data-text="signin_with"
                     data-shape="rectangular"
                     data-logo_alignment="left"
-                    data-width="100%">
+                    data-width="100%">                    
                 </div>
+                
                 
                 <button class="auth-button phone-button" id="login-phone-otp-btn">
                     Continue with phone number (OTP)
@@ -757,7 +854,7 @@
                     <img width="110" src="logo2.svg" alt="">
                 </div>
                 <h2 id="create-password-title">Create a password</h2>
-                <p id="create-password-message" class="small-text">Set a password for future logins with your email.</p>
+                <p class="small-text">Set a password for future logins with your email.</p>
                 <div class="input-group">
                     <label for="new-password">Password</label>
                     <input type="password" id="new-password" placeholder="Create a password" required>
@@ -802,21 +899,18 @@
 <div id="user-avatar-container" class="user-avatar-container hidden">
     <div id="user-avatar" class="user-avatar">G</div> <!-- Initial 'G' for Guest or first letter of name -->
     <div id="user-dropdown" class="user-dropdown">
-        <span id="dropdown-username" class="dropdown-username">Guest</span>
+        <span id="dropdown-username" class="dropdown-username"></span>
         <button id="dropdown-logout-btn" class="dropdown-logout-btn">Logout</button>
     </div>
 </div>
-    
-
 
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://www.youtube.com/iframe_api"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.2/color-thief.umd.js"></script>
 
     <script src="script.js"></script>
-<audio id="voice-start-sound" src="https://cdn.jsdelivr.net/gh/jhasonu7/music-album@main/notification-sound-effect-372475.mp3" preload="auto"></audio>
-
-<audio id="voice-end-sound" src="https://cdn.jsdelivr.net/gh/jhasonu7/music-album@main/new-notification-09-352705.mp3" preload="auto"></audio>
+    <audio id="voice-start-sound" src="" preload="auto"></audio>
+<audio id="voice-end-sound" src="path/to/your/end-listening.mp3" preload="auto"></audio>
 
 </body>
 </html>

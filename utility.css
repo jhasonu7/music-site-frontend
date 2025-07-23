@@ -23,6 +23,13 @@
 .invert{
     filter: invert(1);
 }
+.bg-grey{
+    height: 98%;
+}
+
+.home{
+    height: 23vh;
+}
 
 .bg-grey{
     background-color: #130404;

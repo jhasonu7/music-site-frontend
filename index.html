@@ -132,6 +132,320 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
+        /* Mobile Playbar Styles (Image 2 - mini album and play button) */
+        @media (max-width: 768px) {
+            #main-play-bar {
+                /* Ensure it's fixed at the bottom, full width */
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 50;
+                background-color: #282828; /* Darker background for the mobile bar */
+                padding: 0.5rem 1rem; /* Smaller padding */
+                border-radius: 0; /* No rounded corners at the top for full width */
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: space-between; /* Space between left content and play button */
+                height: 70px; /* Fixed height for the compact bar */
+            }
+
+            #main-play-bar .main-play-bar-inner {
+                flex-direction: row; /* Keep content in a row */
+                justify-content: space-between; /* Distribute content */
+                align-items: center;
+                padding: 0; /* Remove inner padding */
+                background-color: transparent; /* No inner black background */
+                width: 100%;
+            }
+
+            /* Hide the progress bar and time on mobile */
+            #main-play-bar #progress-time-group {
+                display: none;
+            }
+
+            /* Hide individual control buttons within player-controls-group except play/pause */
+            #main-play-bar #player-controls-group #prev-track-btn,
+            #main-play-bar #player-controls-group #rewind-btn,
+            #main-play-bar #player-controls-group #fast-forward-btn,
+            #main-play-bar #player-controls-group #next-track-btn {
+                display: none;
+            }
+
+            /* Ensure the player-controls-group itself is visible and contains only play/pause */
+            #main-play-bar #player-controls-group {
+                display: flex; /* Ensure it's a flex container */
+                justify-content: flex-end; /* Push play/pause to the right */
+                align-items: center;
+                flex-grow: 0; /* Don't let it grow */
+                flex-shrink: 0; /* Don't let it shrink */
+                width: auto; /* Auto width */
+                margin-left: auto; /* Push to the right */
+            }
+
+            #main-play-bar #play-pause-btn {
+                display: flex; /* Ensure play/pause button is visible */
+                background-color: transparent; /* No background for the play button */
+                color: #1ED760; /* Green color for the play button */
+                padding: 0;
+                box-shadow: none;
+            }
+
+            #main-play-bar #play-pause-btn svg {
+                width: 40px; /* Larger icon for mobile, as per image 2 */
+                height: 40px;
+            }
+
+            #main-play-bar #current-album-art {
+                width: 50px; /* Smaller album art for compact bar, as per image 2 */
+                height: 50px;
+                border-radius: 4px; /* Slightly less rounded */
+                margin-right: 10px; /* Add some space to the right of the album art */
+            }
+
+            #main-play-bar #current-song-title {
+                font-size: 0.9rem; /* Smaller font size */
+            }
+
+            #main-play-bar #current-artist-name {
+                font-size: 0.75rem; /* Smaller font size */
+                color: #b3b3b3; /* Lighter gray for artist name */
+            }
+
+            /* The volume control group is the last flex item in main-play-bar-inner */
+            /* This needs to be hidden for mobile/tablet */
+            #main-play-bar .flex.items-center.space-x-4.w-full.md\:w-auto.md\:flex-shrink-0.justify-end {
+                display: none;
+            }
+
+            /* Ensure the left section (album art + text) takes available space */
+            #main-play-bar .flex.items-center.w-full.md\:w-auto.flex-grow {
+                flex-grow: 1;
+                overflow: hidden; /* Ensure text truncates */
+            }
+
+ /* Album Overlay Styles */
+        .album-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            /* Adjusted height to account for the fixed playbar */
+            height: calc(100% - 70px); /* Subtract playbar height (70px) */
+            background-color: #1a202c; /* Dark background */
+            z-index: 900; /* Below full-screen player (1000), above playbar (50) */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            transform: translateY(100%); /* Start off-screen (bottom) */
+            opacity: 0;
+            visibility: hidden;
+            overflow-y: auto; /* Enable scrolling for content within the overlay */
+        }
+
+        .album-overlay.active {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .album-overlay .close-overlay {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 901; /* Above other overlay content */
+        }
+
+        .album-overlay-content {
+            width: 100%;
+            max-width: 900px; /* Limit content width */
+            padding-top: 3rem; /* Space for close button */
+        }
+
+
+
+        }
+
+        /* Full Screen Player Styles (Image 2) */
+        #full-screen-player {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1a202c; /* Dark background */
+            z-index: 1000; /* Above everything */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            transform: translateY(100%); /* Start off-screen (bottom) */
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        #full-screen-player.active {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #full-screen-player .header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 1rem;
+        }
+
+        #full-screen-player .header button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        #full-screen-player .header .song-info {
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        #full-screen-player .header .song-info .title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #full-screen-player .header .song-info .artist {
+            font-size: 0.9rem;
+            color: #b3b3b3;
+        }
+
+        #full-screen-player .header .more-options {
+            font-size: 2rem;
+        }
+
+        #full-screen-player .main-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            width: 100%;
+            max-width: 400px; /* Limit album art size */
+            margin-top: 60px; /* Space for header */
+        }
+
+        #full-screen-player .album-art-large {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            margin-bottom: 2rem;
+        }
+
+        #full-screen-player .song-details {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        #full-screen-player .song-details .title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        #full-screen-player .song-details .artist {
+            font-size: 1.2rem;
+            color: #b3b3b3;
+        }
+
+        #full-screen-player .progress-section {
+            width: 90%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        #full-screen-player .progress-section .time-display {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #b3b3b3;
+            margin-top: 0.5rem;
+        }
+
+        #full-screen-player .controls-section {
+            width: 90%;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        #full-screen-player .controls-section button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        #full-screen-player .controls-section button svg {
+            width: 107px;
+            height: 52px;
+        }
+
+        #full-screen-player .controls-section #full-play-pause-btn svg {
+            width: 60px; /* Larger play button */
+            height: 60px;
+            color: #1ED760; /* Green color */
+        }
+
+        #full-screen-player .bottom-actions {
+            width: 90%;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: 1rem;
+        }
+
+        #full-screen-player .bottom-actions button {
+            background: none;
+            border: none;
+            color: #b3b3b3;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        #full-screen-player .bottom-actions button svg {
+            width: 24px;
+            height: 24px;
+        }
+
+       
     </style>
 </head>
 
@@ -182,7 +496,8 @@
 
         </div>
         <!-- Added pb-24 to ensure content is not hidden behind the fixed playbar -->
-        <div class="right bg-grey rounded pb-24">
+        <!-- Adjusted padding-bottom for the right container to match mobile playbar height -->
+        <div class="right bg-grey rounded pb-[70px]">
             <div class="top-bar">
                 <div class="header">
                     <div class="nav">
@@ -986,10 +1301,70 @@
                 </div>
             </div>
 
+            <!-- Full-Screen Player (Initially Hidden) -->
+            <div id="full-screen-player">
+                <div class="header">
+                    <button id="minimize-player-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8">
+                            <path fill-rule="evenodd" d="M19.5 8.25l-7.5 7.5-7.5-7.5" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <div class="song-info">
+                        <div class="title" id="full-screen-song-title">Song Title</div>
+                        <div class="artist" id="full-screen-artist-name">Artist Name</div>
+                    </div>
+                    <button class="more-options">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8">
+                            <path fill-rule="evenodd" d="M10.5 6a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0ZM10.5 12a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0ZM12 18a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
 
+                <div class="main-content">
+                    <img id="full-screen-album-art" src="https://placehold.co/300x300/4a4a4a/ffffff?text=Album" alt="Album Art" class="album-art-large" />
+                    <div class="song-details">
+                        <div class="title" id="full-screen-song-title-large">Song Title</div>
+                        <div class="artist" id="full-screen-artist-name-large">Artist Name</div>
+                    </div>
+                </div>
+
+                <div class="progress-section">
+                    <input type="range" min="0" max="100" value="0" id="full-screen-progress-bar" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-green-500" />
+                    <div class="time-display">
+                        <span id="full-screen-current-time">0:00</span>
+                        <span id="full-screen-total-time">0:00</span>
+                    </div>
+                </div>
+
+                <div class="controls-section">
+                   
+                    <button id="full-prev-track-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8">
+                            <path d="M11 6L5 12L11 18M19 6L13 12L19 18" />
+                        </svg>
+                    </button>
+                    <button id="full-play-pause-btn">
+                        <svg id="full-play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-10 h-10">
+                            <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.38 2.872-1.667l11.55 6.416c1.427.79 1.427 2.893 0 3.683l-11.549 6.416c-1.344.713-2.872-.24-2.872-1.667V5.653Z" clipRule="evenodd" />
+                        </svg>
+                        <svg id="full-pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-10 h-10 hidden">
+                            <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 0 1 .75-.75H9a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H7.5a.75.75 0 0 1-.75-.75V5.25Zm7.5 0A.75.75 0 0 1 15 4.5h1.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H15a.75.75 0 0 1-.75-.75V5.25Z" clipRule="evenodd" />
+                        </svg>
+                    </button>
+                    <button id="full-next-track-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8">
+                            <path d="M13 6L19 12L13 18M5 6L11 12L5 18" />
+                        </svg>
+                    </button>
+                    
+                </div>
+
+            
+            </div>
 
 
     
+    </div>
 
 <div id="popup-overlay" class="popup-overlay invisible opacity-0">
     <div id="popup-container" class="popup-container">

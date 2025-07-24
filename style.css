@@ -1417,7 +1417,7 @@ body.popup-active .player-bar {
     /* Album overlay for mobile */
     .album-overlay {
         top: var(--top-bar-height-mobile);
-        height: calc(95vh - var(--top-bar-height-mobile) - var(--player-bar-height-mobile));
+        height: calc(92vh - var(--top-bar-height-mobile) - var(--player-bar-height-mobile));
     }
 
     .album-overlay-content {

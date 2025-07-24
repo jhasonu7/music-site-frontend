@@ -659,7 +659,7 @@ body.popup-active .player-bar {
     left: 25%; /* Starts where .left ends */
     width: 75%; /* Matches .right width */
     /* Height fills space between top-bar and player-bar */
-    height: calc(97vh - var(--top-bar-height-desktop) - var(--player-bar-height-desktop));
+    height: calc(97.5vh - var(--top-bar-height-desktop) - var(--player-bar-height-desktop));
     background: #2e0e0e; /* Default background, will be dynamically set by JS for album art color */
     z-index: 999;
     display: none; /* Hidden by default */
@@ -3589,13 +3589,17 @@ html {
     display: none !important;
 }
 
+
+
 @media (min-width: 480px) { 
     .right{
         height: 80vh;
     }
 }
+
 @media (max-width: 480px) { 
 .right{
     height:95vh;
 }
 }
+

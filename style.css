@@ -659,7 +659,7 @@ body.popup-active .player-bar {
     left: 25%; /* Starts where .left ends */
     width: 75%; /* Matches .right width */
     /* Height fills space between top-bar and player-bar */
-    height: calc(95.5vh - var(--top-bar-height-desktop) - var(--player-bar-height-desktop));
+    height: calc(97vh - var(--top-bar-height-desktop) - var(--player-bar-height-desktop));
     background: #2e0e0e; /* Default background, will be dynamically set by JS for album art color */
     z-index: 999;
     display: none; /* Hidden by default */
@@ -1180,7 +1180,7 @@ body.popup-active .player-bar {
         top: var(--top-bar-height-tablet);
         left: 0; /* Full width on tablet */
         width: 100%;
-        height: calc(81vh - var(--top-bar-height-tablet) - var(--player-bar-height-tablet));
+        height: calc(96vh - var(--top-bar-height-tablet) - var(--player-bar-height-tablet));
     }
 
     .album-header {
@@ -1417,7 +1417,7 @@ body.popup-active .player-bar {
     /* Album overlay for mobile */
     .album-overlay {
         top: var(--top-bar-height-mobile);
-        height: calc(84vh - var(--top-bar-height-mobile) - var(--player-bar-height-mobile));
+        height: calc(95vh - var(--top-bar-height-mobile) - var(--player-bar-height-mobile));
     }
 
     .album-overlay-content {

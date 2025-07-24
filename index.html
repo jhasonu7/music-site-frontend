@@ -14,7 +14,7 @@
     <!-- Inter Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-       body {
+        body {
             font-family: 'Inter', sans-serif;
             background-color: #1a202c; /* Equivalent to bg-gray-900 */
             color: white;
@@ -222,7 +222,10 @@
                 </div>
             </div>
 
-            <div class="spotifyPlaylists">
+            <!-- New: Fixed Top Heading for Current Playing Album -->
+           
+
+       <div class="spotifyPlaylists">
                 <div class="section-heading">
                     <h1>Trending songs</h1>
                 </div>
@@ -561,14 +564,14 @@
                                 <tbody id="albumDetails-tracks"></tbody>
                             </table>
                         </div>
-                    </div>
 
-                    <!-- New playbar for album overlay - visible on mobile/tablet -->
-                            <div id="fixed-top-playing-heading" class="fixed-top-heading hidden">
+
+                    </div>
+                           <div id="fixed-top-playing-heading" class="fixed-top-heading hidden">
                 <img id="fixed-top-album-art" src="https://placehold.co/40x40/4a4a4a/ffffff?text=Album" alt="Album Art" class="album-art-small">
                 <span id="fixed-top-album-title" class="album-title-small"></span>
             </div>
-                      <div class="spotifyPlaylists">
+      <div class="spotifyPlaylists">
                 <div class="section-heading">
                     <h1>Trending songs</h1>
                 </div>
@@ -869,6 +872,10 @@
                             <div class="card-artists">Artist</div>
                         </div>
                     </div>
+                    <button class="carousel-nav-btn next-btn" data-target="popular-artists-cards">&gt;</button>
+                </div>
+            </div>
+           <!-- New playbar for album overlay - visible on mobile/tablet -->
                   
                 </div>
 
@@ -879,7 +886,9 @@
             </div>
 
 
-             <div id="main-play-bar" class="fixed bottom-0 left-0 right-0 rounded-t-xl shadow-lg p-4 z-50"
+            <!-- Main Play Bar Container - Fixed at the bottom -->
+            <!-- Updated background with solid reddish-black color -->
+           <div id="main-play-bar" class="fixed bottom-0 left-0 right-0 rounded-t-xl shadow-lg p-4 z-50"
                  style="background-color: #1A0303;">
                 <!-- Removed max-w-7xl mx-auto to allow full width within its parent -->
                 <!-- Added bg-black to make the inner bar opaque -->
@@ -976,6 +985,8 @@
                     </div>
                 </div>
             </div>
+
+
 
 
     

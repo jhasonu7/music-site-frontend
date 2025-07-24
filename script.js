@@ -33,6 +33,7 @@ let lastKnownPlaybackPosition = 0; // Stores the last known playback position fo
 
 let playingAlbum = null; // NEW: Stores the album object that is currently playing audio (could be embedded or controllable)
 let currentUserName = 'Guest'; // NEW: Global variable to store the logged-in user's name
+let currentlyPlayedCardId = null; // NEW: Stores the ID of the card that is currently playing audio
 
 // Create audio element (still needed for non-iframe tracks like direct audio)
 const audio = new Audio();
@@ -70,6 +71,12 @@ const rewindBtn = document.getElementById('rewind-btn'); // Rewind button in mai
 const fastForwardBtn = document.getElementById('fast-forward-btn'); // Fast-forward button in main play bar
 const repeatBtn = document.getElementById('repeat-btn'); // Repeat button in main play bar
 const shuffleBtn = document.getElementById('shuffle-btn'); // Shuffle button in main play bar
+
+// NEW: Fixed Top Heading Elements
+const fixedTopPlayingHeading = document.getElementById('fixed-top-playing-heading');
+const fixedTopAlbumArt = document.getElementById('fixed-top-album-art');
+const fixedTopAlbumTitle = document.getElementById('fixed-top-album-title');
+
 
 // Re-referencing existing elements for clarity and consistency with the new HTML structure
 // These were already defined above, but re-listed here to match the new HTML's logical grouping
@@ -284,6 +291,10 @@ function stopAllPlaybackUI() {
     // NEW: Clear playingAlbum when all playback is stopped
     playingAlbum = null;
     console.log("stopAllPlaybackUI: playingAlbum set to null.");
+    // NEW: Clear currentlyPlayedCardId and show all cards
+    currentlyPlayedCardId = null;
+    showAllCards();
+    console.log("stopAllPlaybackUI: currentlyPlayedCardId cleared and all cards shown.");
 
 
     // Clear any existing iframe/youtube player div/raw HTML embed from the player-left container (mini-player)
@@ -329,6 +340,9 @@ function stopAllPlaybackUI() {
 
     togglePlayerControls(true); // Re-enable controls when stopping all playback
     console.log("Player controls re-enabled.");
+
+    // Hide the fixed top playing heading
+    updateFixedTopHeadingVisibility(); // Call new function to manage visibility
 }
 
 
@@ -337,7 +351,7 @@ function stopAllPlaybackUI() {
 async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added initialSeekTime parameter
     // Show the main play bar when a song starts playing
     if (mainPlayBar) {
-        mainPlayBar.style.display = 'flex';
+        mainPlayBar.style.display = 'flex'; // Ensure playbar is visible
         console.log("playTrack: mainPlayBar set to display: flex.");
     }
 
@@ -360,11 +374,15 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
         console.log("stopAllPlaybackUI called before playing new controllable track.");
         playingAlbum = currentAlbum; // Set playingAlbum for controllable tracks
         console.log("playTrack: playingAlbum set to:", playingAlbum ? playingAlbum.title : "null", "currentTrackIndex:", indexInAlbum);
+        currentlyPlayedCardId = playingAlbum ? playingAlbum.id : null; // Set the ID of the playing card
+        hidePlayedCard(); // Hide the playing card from other sections
     } else {
         // For non-controllable embedded tracks, we only set playingAlbum.
         // The `firstClickEmbedHandler` will handle stopping controllable players when the embed is clicked.
         playingAlbum = currentAlbum; // Set playingAlbum for non-controllable embedded tracks
         console.log("playTrack: playingAlbum set to:", playingAlbum ? playingAlbum.title : "null", "currentTrackIndex:", indexInAlbum);
+        currentlyPlayedCardId = playingAlbum ? playingAlbum.id : null; // Set the ID of the playing card
+        hidePlayedCard(); // Hide the playing card from other sections
     }
 
 
@@ -377,6 +395,12 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
     if (currentAlbumArt) currentAlbumArt.src = track.img || 'https://placehold.co/64x64/000000/FFFFFF?text=Track'; // Fallback image
     if (currentSongTitle) currentSongTitle.textContent = track.title || 'Unknown Title';
     if (currentArtistName) currentArtistName.textContent = track.artist || 'Unknown Artist';
+
+    // Update fixed top heading
+    if (fixedTopAlbumArt) fixedTopAlbumArt.src = track.img || 'https://placehold.co/40x40/4a4a4a/ffffff?text=Album';
+    if (fixedTopAlbumTitle) fixedTopAlbumTitle.textContent = playingAlbum ? playingAlbum.title : (track.title || 'Unknown Album');
+    updateFixedTopHeadingVisibility(); // Ensure heading visibility is updated after playTrack
+
 
     // --- Play Raw HTML Embed (e.g., Spotify iframe for playlists) or Audiomack/SoundCloud (non-controllable) ---
     // For these, we only update the mini-player visually, and the full embed is handled by openAlbumDetails.
@@ -471,11 +495,30 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
                             currentTrackIndex = Math.floor(Math.random() * currentAlbum.tracks.length);
                             playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
                         } else {
-                            // Automatically play next song or stop if last
-                            if (currentAlbum && currentAlbum.tracks && currentTrackIndex < currentAlbum.tracks.length - 1) {
+                            // Automatically play next song or shift to next album if last song of current album
+                            if (playingAlbum && playingAlbum.tracks && currentTrackIndex === playingAlbum.tracks.length - 1) {
+                                // Last track of the album finished, try to play next album
+                                const currentAlbumIndex = allAlbumsData.findIndex(album => album.id === playingAlbum.id);
+                                if (currentAlbumIndex !== -1 && currentAlbumIndex < allAlbumsData.length - 1) {
+                                    const nextAlbum = allAlbumsData[currentAlbumIndex + 1];
+                                    if (nextAlbum.tracks && nextAlbum.tracks.length > 0) {
+                                        playingAlbum = nextAlbum; // Update playingAlbum to the next album
+                                        currentTrackIndex = 0; // Reset track index for the new album
+                                        openAlbumDetails(nextAlbum); // Open the next album's details if overlay is open
+                                        playTrack(nextAlbum.tracks[0], 0);
+                                        console.log("Automatically playing first track of next Spotify album.");
+                                    } else {
+                                        stopAllPlaybackUI();
+                                        console.log("Last Spotify track ended, next album has no tracks. Stopping all playback.");
+                                    }
+                                } else {
+                                    stopAllPlaybackUI();
+                                    console.log("Last Spotify track ended, no next album. Stopping all playback.");
+                                }
+                            } else if (playingAlbum && playingAlbum.tracks && currentTrackIndex < playingAlbum.tracks.length - 1) {
                                 currentTrackIndex++;
-                                playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
-                                console.log("Automatically playing next Spotify track.");
+                                playTrack(playingAlbum.tracks[currentTrackIndex], currentTrackIndex);
+                                console.log("Automatically playing next Spotify track within the same album.");
                             } else {
                                 stopAllPlaybackUI();
                                 console.log("Last Spotify track ended, no repeat/shuffle. Stopping all playback.");
@@ -574,11 +617,30 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
                                     currentTrackIndex = Math.floor(Math.random() * currentAlbum.tracks.length);
                                     playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
                                 } else {
-                                    // Automatically play next song or stop if last
-                                    if (currentAlbum && currentAlbum.tracks && currentTrackIndex < currentAlbum.tracks.length - 1) {
+                                    // Automatically play next song or shift to next album if last song of current album
+                                    if (playingAlbum && playingAlbum.tracks && currentTrackIndex === playingAlbum.tracks.length - 1) {
+                                        // Last track of the album finished, try to play next album
+                                        const currentAlbumIndex = allAlbumsData.findIndex(album => album.id === playingAlbum.id);
+                                        if (currentAlbumIndex !== -1 && currentAlbumIndex < allAlbumsData.length - 1) {
+                                            const nextAlbum = allAlbumsData[currentAlbumIndex + 1];
+                                            if (nextAlbum.tracks && nextAlbum.tracks.length > 0) {
+                                                playingAlbum = nextAlbum; // Update playingAlbum to the next album
+                                                currentTrackIndex = 0; // Reset track index for the new album
+                                                openAlbumDetails(nextAlbum); // Open the next album's details if overlay is open
+                                                playTrack(nextAlbum.tracks[0], 0);
+                                                console.log("Automatically playing first track of next YouTube album.");
+                                            } else {
+                                                stopAllPlaybackUI();
+                                                console.log("Last YouTube track ended, next album has no tracks. Stopping all playback.");
+                                            }
+                                        } else {
+                                            stopAllPlaybackUI();
+                                            console.log("Last YouTube track ended, no next album. Stopping all playback.");
+                                        }
+                                    } else if (playingAlbum && playingAlbum.tracks && currentTrackIndex < playingAlbum.tracks.length - 1) {
                                         currentTrackIndex++;
-                                        playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
-                                        console.log("Automatically playing next YouTube track.");
+                                        playTrack(playingAlbum.tracks[currentTrackIndex], currentTrackIndex);
+                                        console.log("Automatically playing next YouTube track within the same album.");
                                     } else {
                                         stopAllPlaybackUI();
                                         console.log("Last YouTube track ended, no repeat/shuffle. Stopping all playback.");
@@ -588,6 +650,7 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
                         }
                         updateTrackHighlightingInOverlay(); // Update highlighting on state change
                         updateMainAlbumPlaybarUI(); // Sync main album playbar on state change
+                        updateFixedTopHeadingVisibility(); // Sync fixed top heading on state change
                     },
                     'onError': (event) => {
                         console.error("YouTube Player Error:", event.data);
@@ -598,6 +661,7 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
                         }
                         togglePlayerControls(true); // Re-enable if playback fails
                         updateMainAlbumPlaybarUI(); // Sync main album playbar on error
+                        updateFixedTopHeadingVisibility(); // Sync fixed top heading on error
                     }
                 }
             });
@@ -662,30 +726,50 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
 
         audio.onended = () => {
             // This event listener is primarily for native audio. YouTube/Spotify APIs handle their own 'ended' state.
-            if (!currentAlbum || !currentAlbum.tracks || currentAlbum.tracks.length === 0) return;
+            if (!playingAlbum || !playingAlbum.tracks || playingAlbum.tracks.length === 0) return;
 
             // If the current track is an embed, we cannot auto-advance/repeat via this event.
-            if (currentAlbum.tracks[currentTrackIndex]?.rawHtmlEmbed || currentAlbum.tracks[currentTrackIndex]?.soundcloudEmbed || currentAlbum.tracks[currentTrackIndex]?.audiomackEmbed || currentAlbum.tracks[currentTrackIndex]?.fullSoundcloudEmbed) {
+            if (playingAlbum.tracks[currentTrackIndex]?.rawHtmlEmbed || playingAlbum.tracks[currentTrackIndex]?.soundcloudEmbed || playingAlbum.tracks[currentTrackIndex]?.audiomackEmbed || playingAlbum.tracks[currentTrackIndex]?.fullSoundcloudEmbed) {
                 console.warn("Auto-advance/repeat is not supported for raw HTML, SoundCloud, or Audiomack embedded content.");
                 return;
             }
             if (isRepeat) {
-                playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex); // Repeat current track
+                playTrack(playingAlbum.tracks[currentTrackIndex], currentTrackIndex); // Repeat current track
             } else if (isShuffle) {
-                currentTrackIndex = Math.floor(Math.random() * currentAlbum.tracks.length);
-                playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
+                currentTrackIndex = Math.floor(Math.random() * playingAlbum.tracks.length);
+                playTrack(playingAlbum.tracks[currentTrackIndex], currentTrackIndex);
             } else {
-                // Automatically play next song or stop if last
-                if (currentAlbum && currentAlbum.tracks && currentTrackIndex < currentAlbum.tracks.length - 1) {
+                // Automatically play next song or shift to next album if last song of current album
+                if (playingAlbum && playingAlbum.tracks && currentTrackIndex === playingAlbum.tracks.length - 1) {
+                    // Last track of the album finished, try to play next album
+                    const currentAlbumIndex = allAlbumsData.findIndex(album => album.id === playingAlbum.id);
+                    if (currentAlbumIndex !== -1 && currentAlbumIndex < allAlbumsData.length - 1) {
+                        const nextAlbum = allAlbumsData[currentAlbumIndex + 1];
+                        if (nextAlbum.tracks && nextAlbum.tracks.length > 0) {
+                            playingAlbum = nextAlbum; // Update playingAlbum to the next album
+                            currentTrackIndex = 0; // Reset track index for the new album
+                            openAlbumDetails(nextAlbum); // Open the next album's details if overlay is open
+                            playTrack(nextAlbum.tracks[0], 0);
+                            console.log("Automatically playing first track of next native audio album.");
+                        } else {
+                            stopAllPlaybackUI();
+                            console.log("Last native audio track ended, next album has no tracks. Stopping all playback.");
+                        }
+                    } else {
+                        stopAllPlaybackUI();
+                        console.log("Last native audio track ended, no next album. Stopping all playback.");
+                    }
+                } else if (playingAlbum && playingAlbum.tracks && currentTrackIndex < playingAlbum.tracks.length - 1) {
                     currentTrackIndex++;
-                    playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
-                    console.log("Automatically playing next native audio track.");
+                    playTrack(playingAlbum.tracks[currentTrackIndex], currentTrackIndex);
+                    console.log("Automatically playing next native audio track within the same album.");
                 } else {
                     stopAllPlaybackUI();
                     console.log("Last native audio track ended, no repeat/shuffle. Stopping all playback.");
                 }
             }
             updateMainAlbumPlaybarUI(); // Sync main album playbar
+            updateFixedTopHeadingVisibility(); // Sync fixed top heading
         };
     }
     // Call the new highlighting function after playback starts/changes
@@ -695,6 +779,44 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
     // NEW: Update the main album playbar UI
     updateMainAlbumPlaybarUI();
 }
+
+/**
+ * NEW: Hides the card that is currently playing from all card containers.
+ */
+function hidePlayedCard() {
+    if (!currentlyPlayedCardId) {
+        showAllCards(); // Ensure all are visible if nothing is playing
+        return;
+    }
+
+    // Select all card containers, including those in the overlay
+    const allCardContainers = document.querySelectorAll(
+        '#trending-songs-cards, #popular-albums-cards, #popular-artists-cards, ' +
+        '#more-trending-songs-cards, #explore-popular-albums-cards, #explore-popular-artists-cards'
+    );
+
+    allCardContainers.forEach(container => {
+        const cards = container.querySelectorAll('.card');
+        cards.forEach(card => {
+            if (card.dataset.albumId === currentlyPlayedCardId) {
+                card.classList.add('hidden-on-play'); // Add a class to hide it
+            } else {
+                card.classList.remove('hidden-on-play'); // Ensure other cards are visible
+            }
+        });
+    });
+}
+
+/**
+ * NEW: Shows all cards that might have been hidden.
+ */
+function showAllCards() {
+    const allCards = document.querySelectorAll('.card.hidden-on-play');
+    allCards.forEach(card => {
+        card.classList.remove('hidden-on-play');
+    });
+}
+
 
 /**
  * Updates the highlighting and icons for tracks in the album overlay.
@@ -850,7 +972,7 @@ async function updateAlbumPlayButtonIcon() {
 
 /**
  * NEW: Updates the UI of the main playbar's detailed album view.
- * This function is called when the album overlay is open and playback state changes,
+ * This function is now called when the album overlay is open and playback state changes,
  * and also when the window is resized to determine which playbar view to show.
  */
 async function updateMainAlbumPlaybarUI() {
@@ -879,8 +1001,12 @@ async function updateMainAlbumPlaybarUI() {
             clearInterval(albumOverlayProgressBarInterval);
             albumOverlayProgressBarInterval = null;
         }
+        mainPlayBar.style.display = 'none'; // Hide the playbar if nothing is playing
+        updateFixedTopHeadingVisibility(); // Hide fixed heading as well
         return;
     }
+
+    mainPlayBar.style.display = 'flex'; // Ensure playbar is visible if something is playing
 
     const isEmbeddedAlbum = playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc;
 
@@ -1087,7 +1213,7 @@ async function updateMainAlbumPlaybarUI() {
                     isPlaying = true;
                 }
             } catch (e) { /* ignore */ }
-        } else if (isEmbeddedAlbum && playingAlbum) { // For pure embedded albums, assume playing if it's the active album
+        } else if (isEmbeddedAlbum && playingAlbum) { // For pure embedded albums, assume playing if it's the source of playingAlbum
             // For non-controllable embeds, we can only assume it's "playing" if it's the source of playingAlbum
             // and the user has initiated playback by clicking the overlay.
             // The play/pause button won't actually control it, but the icon can reflect a "playing" state.
@@ -1185,6 +1311,7 @@ if (playPauseBtn) {
         updateAlbumPlayButtonIcon();
         updateTrackHighlightingInOverlay(); // Update track highlighting in overlay
         updateMainAlbumPlaybarUI(); // Sync main album playbar
+        updateFixedTopHeadingVisibility(); // Sync fixed top heading
     });
 }
 
@@ -1215,13 +1342,27 @@ function nextTrack(event) { // Added event parameter
     } else if (isRepeat) { // If repeat is on and at last song, go to first
         currentTrackIndex = 0;
     } else {
-        // If not repeat or shuffle and at end, do not stop playback explicitly.
-        // Let the current player finish naturally.
+        // If not repeat or shuffle and at end, try to play next album
+        if (currentTrackIndex === playingAlbum.tracks.length - 1) {
+            const currentAlbumIndex = allAlbumsData.findIndex(album => album.id === playingAlbum.id);
+            if (currentAlbumIndex !== -1 && currentAlbumIndex < allAlbumsData.length - 1) {
+                const nextAlbum = allAlbumsData[currentAlbumIndex + 1];
+                if (nextAlbum.tracks && nextAlbum.tracks.length > 0) {
+                    playingAlbum = nextAlbum; // Update playingAlbum to the next album
+                    currentTrackIndex = 0; // Reset track index for the new album
+                    openAlbumDetails(nextAlbum); // Open the next album's details if overlay is open
+                    playTrack(nextAlbum.tracks[0], 0);
+                    console.log("Manually playing first track of next album.");
+                    return; // Exit after playing next album
+                }
+            }
+        }
         console.log("No next track and not repeating/shuffling. Playback will continue until current track ends.");
         return; // Exit if no next track and not repeating/shuffling
     }
     playTrack(playingAlbum.tracks[currentTrackIndex], currentTrackIndex);
     updateMainAlbumPlaybarUI(); // Sync main album playbar
+    updateFixedTopHeadingVisibility(); // Sync fixed top heading
 }
 
 /**
@@ -1254,6 +1395,7 @@ function prevTrack(event) { // Added event parameter
     }
     playTrack(playingAlbum.tracks[currentTrackIndex], currentTrackIndex);
     updateMainAlbumPlaybarUI(); // Sync main album playbar
+    updateFixedTopHeadingVisibility(); // Sync fixed top heading
 }
 
 if (prevTrackBtn) {
@@ -1508,6 +1650,8 @@ function handlePlayButtonClick(event) {
             console.log("Embedded album play button clicked. Calling stopControllablePlayersOnly before opening overlay.");
             stopControllablePlayersOnly(); // Stop any existing controllable playback
             playingAlbum = albumToPlay; // NEW: Set playingAlbum here
+            currentlyPlayedCardId = albumToPlay.id; // Set the ID of the playing card
+            hidePlayedCard(); // Hide the playing card
             openAlbumDetails(albumToPlay); // Open the album details overlay
             console.log("Embedded album play button clicked, letting firstClickEmbedHandler manage play.");
         } else {
@@ -1811,10 +1955,13 @@ function firstClickEmbedHandler() {
     // This ensures that if a track was playing in the background, it stops.
     stopControllablePlayersOnly(); // <--- NEW CALL
     playingAlbum = currentAlbum; // Set playingAlbum when embedded album is activated
+    currentlyPlayedCardId = playingAlbum ? playingAlbum.id : null; // Set the ID of the playing card
+    hidePlayedCard(); // Hide the playing card from other sections
 
     // Update the main play bar with the embedded album's details immediately on first click
     // This ensures the play bar reflects the embedded content even before the overlay closes.
     updateMainAlbumPlaybarUI();
+    updateFixedTopHeadingVisibility(); // Update fixed top heading visibility
 
     const embedInteractionLayer = document.getElementById('embed-interaction-layer');
     if (embedInteractionLayer) {
@@ -1898,6 +2045,7 @@ function updateMiniPlayerForEmbed(albumData) {
                             }
                         }
                         updateMainAlbumPlaybarUI(); // Sync main album playbar on state change
+                        updateFixedTopHeadingVisibility(); // Sync fixed top heading on state change
                     },
                     'onError': (event) => {
                         console.error("YouTube Player Error in mini-player:", event.data);
@@ -1909,6 +2057,7 @@ function updateMiniPlayerForEmbed(albumData) {
                         }
                         togglePlayerControls(true);
                         updateMainAlbumPlaybarUI(); // Sync main album playbar on error
+                        updateFixedTopHeadingVisibility(); // Sync fixed top heading on error
                     }
                 }
             });
@@ -2106,6 +2255,33 @@ function toggleMainPlaybarView(isAlbumOverlayOpen) {
     // Always update the UI of the detailed playbar whenever its visibility might change
     updateMainAlbumPlaybarUI();
 }
+
+/**
+ * NEW: Manages the visibility of the fixed top playing heading.
+ * This function should be called whenever the `playingAlbum` state changes
+ * or on scroll events.
+ */
+function updateFixedTopHeadingVisibility() {
+    if (!fixedTopPlayingHeading) {
+        console.warn("updateFixedTopHeadingVisibility: fixedTopPlayingHeading element not found.");
+        return;
+    }
+
+    const scrollThreshold = topBar ? topBar.offsetHeight : 0; // Show after scrolling past top bar
+
+    // Only show the heading if there's a playing album AND the user has scrolled past the threshold
+    if (playingAlbum && rightPanel.scrollTop > scrollThreshold) {
+        fixedTopPlayingHeading.classList.add('visible');
+        fixedTopPlayingHeading.classList.remove('hidden'); // Ensure 'hidden' is removed if present
+        console.log("Fixed top heading set to VISIBLE.");
+    } else {
+        fixedTopPlayingHeading.classList.remove('visible');
+        // We don't add 'hidden' here, as the CSS transition handles the transform/opacity
+        // The default CSS for .fixed-top-heading already sets transform: translateY(-100%) and opacity: 0
+        console.log("Fixed top heading set to HIDDEN (via CSS transition).");
+    }
+}
+
 
 function openAlbumDetails(albumData, highlightTrackTitle = null) {
     console.log("openAlbumDetails called with albumData:", albumData);
@@ -2710,6 +2886,7 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
                         updateAlbumPlayButtonIcon(); // Sync album play button
                     }
                     updateMainAlbumPlaybarUI(); // Sync main album playbar
+                    updateFixedTopHeadingVisibility(); // Sync fixed top heading
                 });
                 if (albumDetailsTracksBody) {
                     albumDetailsTracksBody.appendChild(row);
@@ -2767,6 +2944,7 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
         console.log("albumOverlay classes updated: hidden removed, show added, active added. body overflow hidden.");
         // --- NEW: Call toggleMainPlaybarView based on overlay state ---
         toggleMainPlaybarView(true); // Album overlay is open
+        updateFixedTopHeadingVisibility(); // Update fixed top heading visibility
     } else {
         console.error("Error: One or more critical elements for albumOverlay visibility are missing. Overlay will not show.", {
             albumOverlay,
@@ -2863,6 +3041,7 @@ async function handleAlbumPlayButtonClick() {
     updateAlbumPlayButtonIcon(); // Always update icon after action
     updateTrackHighlightingInOverlay(); // Update track highlighting in overlay
     updateMainAlbumPlaybarUI(); // Sync main album playbar
+    updateFixedTopHeadingVisibility(); // Sync fixed top heading
 }
 
 /**
@@ -2924,6 +3103,7 @@ function closeAlbumOverlay() {
 
         // NEW: Call toggleMainPlaybarView to revert to frontpage view
         toggleMainPlaybarView(false); // Album overlay is closed
+        updateFixedTopHeadingVisibility(); // Update fixed top heading visibility
 
         // Reset album overlay content padding for larger screens
         if (albumDetailsContent) {
@@ -3062,11 +3242,30 @@ window.onSpotifyWebPlaybackSDKReady = () => {
                     playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
                 }
             } else {
-                // Automatically play next song or stop if last
-                if (currentAlbum && currentAlbum.tracks && currentTrackIndex < currentAlbum.tracks.length - 1) {
+                // Automatically play next song or shift to next album if last song of current album
+                if (playingAlbum && playingAlbum.tracks && currentTrackIndex === playingAlbum.tracks.length - 1) {
+                    // Last track of the album finished, try to play next album
+                    const currentAlbumIndex = allAlbumsData.findIndex(album => album.id === playingAlbum.id);
+                    if (currentAlbumIndex !== -1 && currentAlbumIndex < allAlbumsData.length - 1) {
+                        const nextAlbum = allAlbumsData[currentAlbumIndex + 1];
+                        if (nextAlbum.tracks && nextAlbum.tracks.length > 0) {
+                            playingAlbum = nextAlbum; // Update playingAlbum to the next album
+                            currentTrackIndex = 0; // Reset track index for the new album
+                            openAlbumDetails(nextAlbum); // Open the next album's details if overlay is open
+                            playTrack(nextAlbum.tracks[0], 0);
+                            console.log("Automatically playing first track of next Spotify album.");
+                        } else {
+                            stopAllPlaybackUI();
+                            console.log("Last Spotify track ended, next album has no tracks. Stopping all playback.");
+                        }
+                    } else {
+                        stopAllPlaybackUI();
+                        console.log("Last Spotify track ended, no next album. Stopping all playback.");
+                    }
+                } else if (playingAlbum && playingAlbum.tracks && currentTrackIndex < playingAlbum.tracks.length - 1) {
                     currentTrackIndex++;
-                    playTrack(currentAlbum.tracks[currentTrackIndex], currentTrackIndex);
-                    console.log("Automatically playing next Spotify track.");
+                    playTrack(playingAlbum.tracks[currentTrackIndex], currentTrackIndex);
+                    console.log("Automatically playing next Spotify track within the same album.");
                 } else {
                     stopAllPlaybackUI();
                     console.log("Last Spotify track ended, no repeat/shuffle. Stopping all playback.");
@@ -3077,6 +3276,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
         updateAlbumPlayButtonIcon();
         updateTrackHighlightingInOverlay(); // Update track highlighting in overlay
         updateMainAlbumPlaybarUI(); // Sync main album playbar
+        updateFixedTopHeadingVisibility(); // Sync fixed top heading
     });
 
     spotifyPlayer.addListener('initialization_error', ({
@@ -3455,7 +3655,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log("DOM Content Loaded: Script execution started.");
     // Hide player bar initially
     if (mainPlayBar) {
-        mainPlayBar.style.display = 'none';
+        mainPlayBar.style.display = 'none'; // Keep this to hide it until a song plays
         console.log("DOMContentLoaded: mainPlayBar initially hidden.");
     }
 
@@ -3522,6 +3722,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             setupHorizontalScroll('trending-songs-cards');
             setupHorizontalScroll('popular-albums-cards');
             setupHorizontalScroll('popular-artists-cards');
+            // Also for the "more" sections in the overlay
+            setupHorizontalScroll('more-trending-songs-cards');
+            setupHorizontalScroll('explore-popular-albums-cards');
+            setupHorizontalScroll('explore-popular-artists-cards');
             console.log("DOMContentLoaded: Horizontal scroll setup for all card sections.");
 
         } else {
@@ -3573,6 +3777,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateScrollButtonVisibility('trending-songs-cards');
             updateScrollButtonVisibility('popular-albums-cards');
             updateScrollButtonVisibility('popular-artists-cards');
+            updateScrollButtonVisibility('more-trending-songs-cards');
+            updateScrollButtonVisibility('explore-popular-albums-cards');
+            updateScrollButtonVisibility('explore-popular-artists-cards');
+            updateFixedTopHeadingVisibility(); // Update fixed top heading visibility on resize
         });
         console.log("DOMContentLoaded: window resize listener attached for playbar view and scroll buttons.");
 
@@ -3580,6 +3788,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         toggleMainPlaybarView(false); // Assume overlay is closed on initial load
         console.log("DOMContentLoaded: Initial toggleMainPlaybarView called.");
 
+        // NEW: Scroll event listener for the fixed top heading
+        if (rightPanel && fixedTopPlayingHeading) {
+            rightPanel.addEventListener('scroll', () => {
+                updateFixedTopHeadingVisibility(); // Call the dedicated function on scroll
+            });
+            console.log("DOMContentLoaded: rightPanel scroll listener attached for fixed top heading.");
+        }
        
     }
     catch (error) {
@@ -3722,6 +3937,7 @@ function updateLoginUI(isLoggedIn) {
         }
     }
 }
+
 
 
 

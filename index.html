@@ -229,11 +229,11 @@
  /* Album Overlay Styles */
         .album-overlay {
             position: fixed;
-            top: -13px;
-            left: -17px;
-            width: 108%;
+            top: 0;
+            left: 0;
+            width: 100%;
             /* Adjusted height to account for the fixed playbar */
-            height: calc(102% - 70px); /* Subtract playbar height (70px) */
+            height: calc(100% - 70px); /* Subtract playbar height (70px) */
             background-color: #1a202c; /* Dark background */
             z-index: 900; /* Below full-screen player (1000), above playbar (50) */
             display: flex;
@@ -252,10 +252,9 @@
             opacity: 1;
             visibility: visible;
         }
-.album-details {
-    width: 102%;
-    padding:0px;
-}
+    
+
+
         .album-overlay .close-overlay {
             position: absolute;
             top: 1rem;
@@ -448,7 +447,45 @@
             height: 24px;
         }
 
-       
+        /* NEW: Styles for Explore More Albums to display vertically */
+        #explore-more-albums-cards {
+            display: grid;
+            /* Responsive columns: auto-fit will fit as many columns as possible,
+               minmax ensures cards are at least 180px wide but can grow up to 1fr */
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px; /* Space between cards */
+            padding: 20px; /* Padding inside the container */
+            overflow-x: hidden; /* Ensure no horizontal scrollbar */
+            justify-items: center; /* Center cards within their grid cells */
+            /* Remove any flex or whitespace properties inherited from .cardcontainer that cause horizontal scroll */
+            flex-wrap: wrap; /* Ensure items wrap */
+            white-space: normal; /* Allow content to wrap normally */
+        }
+
+        /* Adjustments for smaller screens */
+        @media (max-width: 768px) {
+            #explore-more-albums-cards {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Smaller cards on mobile */
+                gap: 15px;
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #explore-more-albums-cards {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Even smaller cards for very small screens */
+                gap: 10px;
+                padding: 10px;
+            }
+        }
+
+        /* Ensure individual cards within this grid also respond well */
+        #explore-more-albums-cards .card {
+            width: 100%; /* Make cards fill their grid cell */
+            max-width: 200px; /* Optional: limit max width of individual cards */
+            /* Inherit existing card styles, but ensure they don't break grid layout */
+            flex-shrink: 0; /* Prevent shrinking if it's still a flex item */
+        }
     </style>
 </head>
 
@@ -543,7 +580,7 @@
             <!-- New: Fixed Top Heading for Current Playing Album -->
            
 
-       <div class="spotifyPlaylists">
+      <div class="spotifyPlaylists">
                 <div class="section-heading">
                     <h1>Trending songs</h1>
                 </div>
@@ -850,6 +887,15 @@
                 </div>
             </div>
 
+            <!-- New section for "Explore More Albums" -->
+            <div class="spotifyPlaylists" id="explore-more-albums-section">
+                <div class="section-heading">
+                    <h1>Explore More Albums</h1>
+                </div>
+                <div class="cardcontainer" id="explore-more-albums-cards">
+                    <!-- Dynamic album cards will be inserted here by JavaScript -->
+                </div>
+            </div>
 
             <div id="albumOverlay" class="album-overlay hidden">
                 <div class="album-overlay-content">
@@ -887,13 +933,12 @@
 
 
                     </div>
-                
-      <div class="spotifyPlaylists">
+             <div class="spotifyPlaylists">
                 <div class="section-heading">
                     <h1>Trending songs</h1>
                 </div>
                 <div class="carousel-wrapper">
-                 
+                    <button class="carousel-nav-btn prev-btn" data-target="trending-songs-cards">&lt;</button>
                     <div class="cardcontainer" id="trending-songs-cards">
                         <div class="card" data-album-id="6879fa6ab29a102ef22ed744">
 
@@ -996,7 +1041,7 @@
                             <div class="card-artists">Karan Ujla.Ikky</div>
                         </div>
                     </div>
-                
+                    <button class="carousel-nav-btn next-btn" data-target="trending-songs-cards">&gt;</button>
                 </div>
             </div>
 
@@ -1005,7 +1050,7 @@
                     <h1>Popular albums</h1>
                 </div>
                 <div class="carousel-wrapper">
-
+                    <button class="carousel-nav-btn prev-btn" data-target="popular-albums-cards">&lt;</button>
                     <div class="cardcontainer" id="popular-albums-cards">
                         <div class="card" data-album-id="687a08e6b29a102ef22ed746">
                             <img src="https://i.scdn.co/image/ab67616d0000b2736404721c1943d5069f0805f3"
@@ -1020,9 +1065,11 @@
                             <div class="card-artists">Mithoon, Ankit Tiwari, Jeet Gannguli</div>
                         </div>
                         <div class="card" data-album-id="68836dafda78931723317153">
+
                             <img src="https://i.scdn.co/image/ab67616d0000b273707ea5b8023ac77d31756ed4"
                                 alt="Saiyaara Album Art">
                             <div class="play-button card-play-button" data-album-id="68836dafda78931723317153">
+
                                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="12" fill="#1ED760" />
                                     <polygon points="9,6 19,12 9,18" fill="#000000" />
@@ -1094,7 +1141,7 @@
                             <div class="card-artists">Sachet-Parampara, Parampara Tandon, Kausar Munir</div>
                         </div>
                     </div>
-               
+                    <button class="carousel-nav-btn next-btn" data-target="popular-albums-cards">&gt;</button>
                 </div>
             </div>
             <div class="popular-artists">
@@ -1102,7 +1149,7 @@
                     <h1>Popular artists</h1>
                 </div>
                 <div class="carousel-wrapper">
-              
+                    <button class="carousel-nav-btn prev-btn" data-target="popular-artists-cards">&lt;</button>
                     <div class="artist-card-container cardcontainer" id="popular-artists-cards">
                         <div class="card artist-card" data-album-id="6878fda984384901a6506159">
                             <img src="https://i.scdn.co/image/ab67616100005174cb6926f44f620555ba444fca" alt="Pritam">
@@ -1189,9 +1236,11 @@
                             <div class="card-artists">Artist</div>
                         </div>
                     </div>
-                  
+                    <button class="carousel-nav-btn next-btn" data-target="popular-artists-cards">&gt;</button>
                 </div>
             </div>
+                
+            
            <!-- New playbar for album overlay - visible on mobile/tablet -->
                   
                 </div>
@@ -1363,7 +1412,6 @@
 
             
             </div>
-
 
     
     </div>

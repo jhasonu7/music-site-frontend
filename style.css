@@ -3601,5 +3601,9 @@ html {
 .right{
     height:95vh;
 }
+  
+    .search-box {
+        top:-1px
+    }
 }
 

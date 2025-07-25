@@ -6,7 +6,7 @@ const BACKEND_BASE_URL = 'https://fbcc2e0d4c04.ngrok-free.app'; // Example: 'htt
 // IMPORTANT: Replace this with your actual Netlify frontend domain for CORS setup on the backend.
 // This is crucial for your backend's CORS configuration (e.g., in Flask-CORS or Express CORS options)
 // It tells your backend which frontend domains are allowed to access its resources.
-const NETLIFY_FRONTEND_DOMAIN = 'https://swarify-play.netlify.app'; // e.g., https://my-music-site.netlify.app
+const NETLIFY_FRONTEND_DOMAIN = 'https://swarify-play.netlify.app'; // e.g., https://my-music-site.netlify.app'
 
 // --- DOM Elements (assuming these exist in your HTML) ---
 const trendingSongsContainer = document.querySelector('.trending-songs-container'); // Adjust selector as needed
@@ -14,16 +14,16 @@ const popularAlbumsContainer = document.querySelector('.popular-albums-container
 const popularArtistsContainer = document.querySelector('.popular-artists-container'); // Adjust selector as needed
 const errorMessageDisplay = document.getElementById('error-message-display'); // An element to show errors
 
-// NEW: Explore More Albums Elements
-const exploreMoreAlbumsContainer = document.getElementById('explore-more-albums-cards');
-let loadingIndicator = null; // To hold the loading message element
+// NEW: Reference for the "Explore More Albums" container
+const exploreMoreAlbumsCardsContainer = document.getElementById('explore-more-albums-cards');
+
 
 // --- Global Variables ---
 let currentAlbum = null; // Stores the currently loaded album data (for the overlay)
 let currentTrackIndex = 0; // Index of the currently playing track within currentAlbum.tracks
 let isRepeat = false; // Flag for repeat mode
 let isShuffle = false; // Flag for shuffle mode
-let allAlbumsData = []; // This will store ALL albums fetched from the backend for search lookups and card details
+let allAlbumsData = []; // This will store albums fetched from the backend for search lookups and card details
 
 let ytPlayer = null; // Global variable to hold the YouTube player instance
 let spotifyPlayer = null; // Global variable to hold the Spotify player instance
@@ -38,12 +38,6 @@ let lastKnownPlaybackPosition = 0; // Stores the last known playback position fo
 let playingAlbum = null; // NEW: Stores the album object that is currently playing audio (could be embedded or controllable)
 let currentUserName = 'Guest'; // NEW: Global variable to store the logged-in user's name
 let currentlyPlayedCardId = null; // NEW: Stores the ID of the card that is currently playing audio
-
-// NEW: Infinite Scroll Variables
-const ALBUMS_PER_PAGE = 12; // Number of albums to fetch per page
-let currentPage = 1; // Current page of albums loaded for "Explore More Albums"
-let isLoadingAlbums = false; // Flag to prevent multiple simultaneous fetch requests
-let hasMoreAlbums = true; // Flag to indicate if there are more albums to load from the backend
 
 // Create audio element (still needed for non-iframe tracks like direct audio)
 const audio = new Audio();
@@ -563,7 +557,7 @@ async function updatePlayerUI() {
                     } else if (spotifyPlayer && currentTrack.spotifyUri) {
                         try {
                             const state = await spotifyPlayer.getCurrentState();
-                            if (state && state.track_window.current_track.uri === currentTrack.spotifyUri) {
+                            if (state && !state.paused) { // Only update if state is available and not paused
                                 currentProgress = state.position / 1000;
                                 currentDuration = state.duration / 1000;
                                 playerIsPlaying = !state.paused;
@@ -671,7 +665,7 @@ async function updatePlayerUI() {
     let isPlaying = false;
     if (currentTrack && currentTrack.src && !audio.paused && audio.src === currentTrack.src) {
         isPlaying = true;
-    } else if (currentTrack && ytPlayer && currentTrack.iframeSrc && currentTrack.iframeSrc.includes('youtube.com')) {
+    } else if (currentTrack && ytPlayer && currentTrack.iframeSrc && currentTrack.iframeSrc.includes('youtube.com') && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
         isPlaying = true;
     } else if (currentTrack && spotifyPlayer && currentTrack.spotifyUri) {
         try {
@@ -726,7 +720,7 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
 
     // Determine if the track is an embedded type that we cannot control via API
     const isControllableEmbeddedTrack = (track.iframeSrc && track.iframeSrc.includes('https://www.youtube.com/embed/')) || track.spotifyUri;
-    const isNonControllableEmbeddedTrack = track.rawHtmlEmbed || track.soundcloudEmbed || track.audiomackEmbed || track.fullSoundcloudEmbed;
+    const isNonControllableEmbeddedTrack = track.rawHtmlEmbed || track.fullSoundcloudEmbed || track.audiomackEmbed || track.soundcloudEmbed; // Added soundcloudEmbed
 
     // Playback is stopped ONLY when a new controllable track is explicitly played.
     // This ensures only one controllable audio source is active.
@@ -986,7 +980,7 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
                                         } else {
                                             stopAllPlaybackUI();
                                             console.log("Last YouTube track ended, no next album. Stopping all playback.");
-                                    }
+                                        }
                                     } else if (playingAlbum && playingAlbum.tracks && currentTrackIndex < playingAlbum.tracks.length - 1) {
                                         currentTrackIndex++;
                                         playTrack(playingAlbum.tracks[currentTrackIndex], currentTrackIndex);
@@ -1073,8 +1067,8 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
             if (!playingAlbum || !playingAlbum.tracks || playingAlbum.tracks.length === 0) return;
 
             // If the current track is an embed, we cannot auto-advance/repeat via this event.
-            if (playingAlbum.tracks[currentTrackIndex]?.rawHtmlEmbed || playingAlbum.tracks[currentTrackIndex]?.soundcloudEmbed || playingAlbum.tracks[currentTrackIndex]?.audiomackEmbed || playingAlbum.tracks[currentTrackIndex]?.fullSoundcloudEmbed) {
-                console.warn("Auto-advance/repeat is not supported for raw HTML, SoundCloud, or Audiomack embedded content.");
+            if (playingAlbum.tracks[currentTrackIndex]?.rawHtmlEmbed || playingAlbum.tracks[currentTrackIndex]?.soundcloudEmbed || playingAlbum.tracks[currentTrackIndex]?.audiomackEmbed || playingAlbum.tracks[currentTrackIndex]?.fullSoundcloudEmbed || playingAlbum.tracks[currentTrackIndex]?.iframeSrc) {
+                console.warn("Auto-advance/repeat is not supported for raw HTML, SoundCloud, Audiomack, or YouTube embedded content.");
                 return;
             }
             if (isRepeat) {
@@ -1141,7 +1135,7 @@ function hidePlayedCard() {
     // Select all card containers, including those in the overlay
     const allCardContainers = document.querySelectorAll(
         '#trending-songs-cards, #popular-albums-cards, #popular-artists-cards, ' +
-        '#explore-more-albums-cards' // Added the new container
+        '#more-trending-songs-cards, #explore-more-albums-cards, #explore-popular-artists-cards' // Corrected ID for explore-more-albums-cards
     );
 
     allCardContainers.forEach(container => {
@@ -1198,7 +1192,7 @@ async function updateTrackHighlightingInOverlay() {
             let isPaused = false;
 
             // Check native audio state
-            if (audio.src === trackInRow.src) {
+            if (audio.src && audio.src === trackInRow.src) {
                 isPlaying = !audio.paused && !audio.ended;
                 isPaused = audio.paused && !audio.ended;
             }
@@ -1241,7 +1235,7 @@ async function updateTrackHighlightingInOverlay() {
                 if (iconCell) {
                     iconCell.classList.add('playing-icon-container');
                     // Check if it's a native audio track
-                    if (audio.src === trackInRow.src) {
+                    if (audio.src && audio.src === trackInRow.src) {
                         iconCell.innerHTML = ''; // Hide the number/icon for playing native audio
                     } else {
                         // For other playing types (YouTube, Spotify, and non-controllable embeds), keep the green pause icon
@@ -1645,7 +1639,7 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
             albumOverlay.style.right = '0';
             albumOverlay.style.width = 'auto';
             albumOverlay.style.height = 'auto';
-            albumOverlay.style.zIndex = '999';
+            albumOverlay.style.zIndex = '900'; // Adjusted z-index to be below full-screen player but above playbar
             console.log("albumOverlay positioned fixed and sized to full available space.");
 
             if (window.innerWidth < 772) {
@@ -1669,7 +1663,7 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
             closeOverlayBtn.style.justifyContent = 'center';
             closeOverlayBtn.style.alignItems = 'center';
             closeOverlayBtn.style.cursor = 'pointer';
-            closeOverlayBtn.style.zIndex = '1000';
+            closeOverlayBtn.style.zIndex = '901'; // Ensure it's above the embed container
             console.log("closeOverlayBtn styled and displayed.");
         }
 
@@ -2094,7 +2088,7 @@ async function handleAlbumPlayButtonClick() {
         }
     }
     // For embedded content, if it's the currently playing album, assume it's playing
-    else if (currentTrack.rawHtmlEmbed || currentTrack.soundcloudEmbed || currentTrack.audiomackEmbed || currentTrack.fullSoundcloudEmbed) {
+    else if (currentTrack.rawHtmlEmbed || currentTrack.soundcloudEmbed || currentTrack.audiomackEmbed || currentTrack.fullSoundcloudEmbed || currentTrack.iframeSrc) {
         if (playingAlbum && playingAlbum.id === currentAlbum.id) {
             isPlaying = true;
         }
@@ -2109,7 +2103,7 @@ async function handleAlbumPlayButtonClick() {
             ytPlayer.pauseVideo();
         } else if (spotifyPlayer && currentTrack.spotifyUri) {
             await spotifyPlayer.pause();
-        } else if (currentTrack.rawHtmlEmbed || currentTrack.soundcloudEmbed || currentTrack.audiomackEmbed || currentTrack.fullSoundcloudEmbed) {
+        } else if (currentTrack.rawHtmlEmbed || currentTrack.soundcloudEmbed || currentTrack.audiomackEmbed || currentTrack.fullSoundcloudEmbed || currentTrack.iframeSrc) {
             // Cannot directly pause embedded iframes from here.
             console.log("Attempted to pause embedded content from album play button, but direct control is not possible.");
             // Optionally, provide a visual cue that the button was clicked but no action taken
@@ -2612,11 +2606,17 @@ function onYouTubeIframeAPIReady() {
 
 /**
  * Creates the HTML string for an album card.
+ * This function is included for completeness but is NOT used to generate the initial
+ * cards on the front page as per user's request. It's here as a reference for how
+ * a card *should* be structured if dynamically created.
  * Make sure the play button has the 'card-play-button' class and 'data-album-id'.
  * @param {Object} album - The album data object.
  * @returns {string} The HTML string for the album card.
  */
 function createAlbumCardHtml(album) {
+    // This is a basic example. You might have more complex card structures.
+    // Ensure the `data-album-id` is on the main card div AND the play button
+    // The play button should also have a distinct class like 'card-play-button'
     return `
         <div class="card" data-album-id="${album.id}" data-album-title="${album.title}" data-album-artist="${album.artist}">
             <img src="${album.coverArt}" alt="${album.title} Cover">
@@ -2633,32 +2633,6 @@ function createAlbumCardHtml(album) {
 }
 
 /**
- * Renders an array of album data into a specified container.
- * Attaches event listeners to the newly rendered cards.
- * @param {Array<Object>} albums - Array of album data objects.
- * @param {HTMLElement} container - The DOM element to append the cards to.
- */
-function renderAlbumCards(albums, container) {
-    if (!container) {
-        console.error("renderAlbumCards: Target container is null or undefined.");
-        return;
-    }
-    const fragment = document.createDocumentFragment();
-    albums.forEach(album => {
-        const cardHtml = createAlbumCardHtml(album);
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = cardHtml;
-        const cardElement = tempDiv.firstElementChild;
-        if (cardElement) {
-            fragment.appendChild(cardElement);
-        }
-    });
-    container.appendChild(fragment);
-    attachEventListenersToDynamicCards(container); // Attach listeners to newly added cards
-}
-
-
-/**
  * Attaches event listeners to all existing HTML album cards and their play buttons.
  * This function is called once on DOMContentLoaded after albums data is fetched.
  */
@@ -2666,10 +2640,10 @@ function attachEventListenersToHtmlCards() {
     console.log("Attaching event listeners to existing HTML cards.");
 
     // Event listener for clicking anywhere on the album card (to open album details)
-    const albumCards = document.querySelectorAll('.spotifyPlaylists .card, .AlbumPlaylists .card, .popular-artists .card'); // Select all cards in all sections
+    const albumCards = document.querySelectorAll('.spotifyPlaylists .card, .AlbumPlaylists .card, .popular-artists .card, #explore-more-albums-cards .card'); // Select all cards in all sections, including dynamically added ones
     albumCards.forEach(card => {
         // Log the data attributes and text content of each card being attached
-        console.log(`Attaching listener to static card: ID='${card.dataset.albumId}', Title='${card.querySelector('.card-title')?.textContent.trim()}', Artist='${card.querySelector('.card-artists')?.textContent.trim()}'`);
+        console.log(`Attaching listener to card: ID='${card.dataset.albumId}', Title='${card.querySelector('.card-title')?.textContent.trim()}', Artist='${card.querySelector('.card-artists')?.textContent.trim()}'`);
 
         // Remove existing listener to prevent duplicates if this function is called multiple times
         card.removeEventListener('click', handleCardClick);
@@ -2681,31 +2655,12 @@ function attachEventListenersToHtmlCards() {
     playButtons.forEach(button => {
         // Log the data-album-id of each play button
         const card = button.closest('.card');
-        console.log(`Attaching listener to play button for static card ID: '${card?.dataset.albumId}'`);
+        console.log(`Attaching listener to play button for card ID: '${card?.dataset.albumId}'`);
 
         button.removeEventListener('click', handlePlayButtonClick);
         button.addEventListener('click', handlePlayButtonClick);
     });
 }
-
-/**
- * NEW: Attaches event listeners to dynamically created album cards and their play buttons
- * within a given container.
- * @param {HTMLElement} container - The container element where new cards were added.
- */
-function attachEventListenersToDynamicCards(container) {
-    console.log("Attaching event listeners to dynamically added cards in container:", container.id);
-    const newCards = container.querySelectorAll('.card:not([data-listeners-attached])'); // Select cards without the flag
-    newCards.forEach(card => {
-        card.addEventListener('click', handleCardClick);
-        const playButton = card.querySelector('.card-play-button');
-        if (playButton) {
-            playButton.addEventListener('click', handlePlayButtonClick);
-        }
-        card.dataset.listenersAttached = 'true'; // Mark card so listeners aren't re-attached
-    });
-}
-
 
 /**
  * Handler for general album card clicks (opens details).
@@ -2797,39 +2752,12 @@ function handlePlayButtonClick(event) {
 
 
 // --- Fetch Albums from Backend ---
-/**
- * Fetches album data from the backend with pagination.
- * @param {number} page - The page number to fetch.
- * @param {number} limit - The number of albums per page.
- * @param {boolean} appendToAllAlbumsData - Whether to append to the global allAlbumsData array.
- * @param {HTMLElement} targetContainer - The DOM element to append the cards to.
- */
-async function fetchAlbums(page = 1, limit = ALBUMS_PER_PAGE, appendToAllAlbumsData = true, targetContainer = exploreMoreAlbumsContainer) {
-    if (isLoadingAlbums || !hasMoreAlbums) {
-        console.log("fetchAlbums: Already loading or no more albums to load.");
-        return;
-    }
-
-    isLoadingAlbums = true;
-    if (targetContainer) {
-        // Show loading indicator
-        if (!loadingIndicator) {
-            loadingIndicator = document.createElement('p');
-            loadingIndicator.textContent = 'Loading more albums...';
-            loadingIndicator.style.cssText = `
-                text-align: center;
-                color: #b3b3b3;
-                padding: 20px;
-                font-size: 1.1em;
-            `;
-            targetContainer.parentNode.appendChild(loadingIndicator); // Append below the card container
-        }
-        loadingIndicator.style.display = 'block';
-    }
-
-    console.log(`fetchAlbums: Starting album data fetch for page ${page}, limit ${limit}...`);
+async function fetchAlbums() {
+    console.log("fetchAlbums: Starting album data fetch...");
+    // showMessageBox('Loading albums data...', 'info'); // Removed as per user request
     try {
-        const response = await fetch(`${BACKEND_BASE_URL}/api/albums?page=${page}&limit=${limit}`, {
+        console.log(`fetchAlbums: Attempting to fetch from: ${BACKEND_BASE_URL}/api/albums`);
+        const response = await fetch(`${BACKEND_BASE_URL}/api/albums`, {
             method: 'GET',
             headers: {
                 'ngrok-skip-browser-warning': 'true', // Crucial for ngrok free plan
@@ -2839,20 +2767,24 @@ async function fetchAlbums(page = 1, limit = ALBUMS_PER_PAGE, appendToAllAlbumsD
         console.log("fetchAlbums: Fetch response received.");
 
         if (!response.ok) {
-            const errorText = await response.text();
+            const errorText = await response.text(); // Read error response as text
             throw new Error(`HTTP error! status: ${response.status}. Details: ${errorText.substring(0, 200)}...`);
         }
 
         const rawAlbumsData = await response.json();
         console.log("fetchAlbums: Raw album data received from backend:", rawAlbumsData);
 
-        const newAlbums = rawAlbumsData.map(album => {
+        // --- IMPORTANT CHANGE: Map _id to id for consistency and parse track durations ---
+        allAlbumsData = rawAlbumsData.map(album => {
             const albumId = album._id && typeof album._id === 'object' && album._id.$oid
-                ? album._id.$oid
-                : album._id;
+                ? album._id.$oid // Value if true
+                : album._id; // Value if false
 
+            // Process tracks to ensure duration is a number
             const processedTracks = album.tracks ? album.tracks.map(track => {
                 const durationInSeconds = parseDurationToSeconds(track.duration);
+                // NEW: Added logging here to see raw and parsed duration
+                console.log(`Processing track "${track.title}": Raw duration from backend: "${track.duration}" (Type: ${typeof track.duration}), Parsed duration (seconds): ${durationInSeconds}`);
                 return {
                     ...track,
                     duration: durationInSeconds
@@ -2860,36 +2792,12 @@ async function fetchAlbums(page = 1, limit = ALBUMS_PER_PAGE, appendToAllAlbumsD
             }) : [];
 
             return {
-                ...album,
-                id: albumId,
-                tracks: processedTracks
+                ...album, // Copy all existing properties
+                id: albumId, // Add an 'id' property with the string representation of _id
+                tracks: processedTracks // Use the processed tracks array
             };
         });
-
-        if (appendToAllAlbumsData) {
-            allAlbumsData = allAlbumsData.concat(newAlbums);
-            console.log("fetchAlbums: Albums data appended to allAlbumsData. Total albums:", allAlbumsData.length);
-        }
-
-        // Render the new albums to the target container
-        if (targetContainer) {
-            renderAlbumCards(newAlbums, targetContainer);
-        }
-
-        // Determine if there are more albums to load
-        hasMoreAlbums = newAlbums.length === limit;
-        if (!hasMoreAlbums) {
-            console.log("fetchAlbums: No more albums to load.");
-            if (loadingIndicator) {
-                loadingIndicator.textContent = 'No more albums to load.';
-                // Optionally hide after a delay or change style
-                setTimeout(() => {
-                    if (loadingIndicator) loadingIndicator.style.display = 'none';
-                }, 3000);
-            }
-        } else {
-            if (loadingIndicator) loadingIndicator.style.display = 'none'; // Hide if more albums are expected
-        }
+        console.log("fetchAlbums: Albums data transformed and stored. Total albums:", allAlbumsData.length); // Log all fetched data
 
         // Remove any previous error message if fetch was successful
         const existingErrorMessage = document.querySelector('.backend-error-message');
@@ -2897,15 +2805,36 @@ async function fetchAlbums(page = 1, limit = ALBUMS_PER_PAGE, appendToAllAlbumsD
             existingErrorMessage.remove();
         }
 
-        // showMessageBox('Album data loaded successfully!', 'success'); // Removed as per user request
+        showMessageBox('Album data loaded successfully!', 'success');
+
+        // NEW: Dynamically populate the "Explore More Albums" section
+        if (exploreMoreAlbumsCardsContainer) {
+            exploreMoreAlbumsCardsContainer.innerHTML = ''; // Clear existing content
+            allAlbumsData.forEach(album => {
+                // Only add albums that are not already present in the hardcoded sections
+                // This is a simplified check, assuming unique album IDs across sections
+                const isAlreadyDisplayed = document.querySelector(`.card[data-album-id="${album.id}"]`);
+                if (!isAlreadyDisplayed) {
+                    const cardHtml = createAlbumCardHtml(album);
+                    exploreMoreAlbumsCardsContainer.insertAdjacentHTML('beforeend', cardHtml);
+                }
+            });
+            console.log("fetchAlbums: 'Explore More Albums' section dynamically populated.");
+        }
+
+
+        // IMPORTANT: We no longer dynamically create HTML cards here.
+        // We only attach listeners to the *existing* HTML cards.
+        attachEventListenersToHtmlCards();
     } catch (error) {
         console.error("fetchAlbums: Error fetching albums data:", error);
-        const mainContentArea = document.querySelector('.main-content');
+        const mainContentArea = document.querySelector('.main-content'); // Or a more specific container where you want to show the error
         if (mainContentArea) {
+            // Create the error message div dynamically
             let errorMessageDiv = mainContentArea.querySelector('.backend-error-message');
             if (!errorMessageDiv) {
                 errorMessageDiv = document.createElement('div');
-                errorMessageDiv.classList.add('backend-error-message');
+                errorMessageDiv.classList.add('backend-error-message'); // Add a class for easier identification and removal
                 errorMessageDiv.style.cssText = `
                     color: white;
                     text-align: center;
@@ -2917,7 +2846,7 @@ async function fetchAlbums(page = 1, limit = ALBUMS_PER_PAGE, appendToAllAlbumsD
                     margin-left: auto;
                     margin-right: auto;
                 `;
-                mainContentArea.prepend(errorMessageDiv);
+                mainContentArea.prepend(errorMessageDiv); // Prepend to appear at the top of content
             }
 
             errorMessageDiv.innerHTML = `
@@ -2926,39 +2855,7 @@ async function fetchAlbums(page = 1, limit = ALBUMS_PER_PAGE, appendToAllAlbumsD
                 <p>Error: ${error.message}</p>
             `;
         }
-        if (loadingIndicator) {
-            loadingIndicator.textContent = 'Error loading albums.';
-            loadingIndicator.style.color = '#FF6B6B'; // Red for error
-        }
-        hasMoreAlbums = false; // Stop trying to load more if there's an error
-    } finally {
-        isLoadingAlbums = false;
-    }
-}
 
-
-/**
- * NEW: Handles infinite scroll for the right panel.
- * Loads more albums when the user scrolls near the bottom.
- */
-async function handleInfiniteScroll() {
-    if (!rightPanel) return;
-
-    // Check if the user has scrolled to the bottom of the right panel
-    const scrollHeight = rightPanel.scrollHeight;
-    const scrollTop = rightPanel.scrollTop;
-    const clientHeight = rightPanel.clientHeight;
-
-    // A buffer of 200 pixels from the bottom
-    const scrollBuffer = 200;
-
-    if (scrollTop + clientHeight >= scrollHeight - scrollBuffer) {
-        console.log("handleInfiniteScroll: Scrolled near bottom.");
-        if (!isLoadingAlbums && hasMoreAlbums) {
-            currentPage++;
-            console.log(`handleInfiniteScroll: Loading next page: ${currentPage}`);
-            await fetchAlbums(currentPage, ALBUMS_PER_PAGE, true, exploreMoreAlbumsContainer);
-        }
     }
 }
 
@@ -3088,8 +2985,7 @@ async function searchAndOpenAlbum(searchQuery) {
 
     if (allAlbumsData.length === 0) {
         console.warn("allAlbumsData is empty. Attempting to re-fetch albums for search.");
-        // Fetch all albums for search, not paginated
-        await fetchAlbums(1, 1000, true, null); // Fetch a large number to ensure search data is complete
+        await fetchAlbums(); // Ensure data is loaded if not already
         if (allAlbumsData.length === 0) {
             displaySearchMessage("Album data not loaded. Cannot perform search.", 'error');
             return;
@@ -3219,8 +3115,8 @@ function toggleMainPlaybarView() {
 
             if (playerControls) playerControls.style.display = 'flex';
             if (document.getElementById('progress-time-group')) document.getElementById('progress-time-group').style.display = 'flex';
-            if (document.querySelector('.flex.items-center.ml-4.hidden.md\\:flex')) { // Volume group
-                document.querySelector('.flex.items-center.ml-4.hidden.md\\:flex').style.display = 'flex';
+            if (document.querySelector('.flex.items-center.space-x-4.w-full.md\\:w-auto.md\\:flex-shrink-0.justify-end')) { // Volume group
+                document.querySelector('.flex.items-center.space-x-4.w-full.md\\:w-auto.md\\:flex-shrink-0.justify-end').style.display = 'flex';
             }
             if (playerLeft) {
                 playerLeft.style.flexGrow = '1';
@@ -3248,8 +3144,8 @@ function toggleMainPlaybarView() {
             if (playerControls) playerControls.style.display = 'flex'; // Still show play/pause controls
             if (playPauseBtn) playPauseBtn.style.display = 'block'; // Ensure play/pause is visible
             if (document.getElementById('progress-time-group')) document.getElementById('progress-time-group').style.display = 'none';
-            if (document.querySelector('.flex.items-center.ml-4.hidden.md\\:flex')) { // Volume group
-                document.querySelector('.flex.items-center.ml-4.hidden.md\\:flex').style.display = 'none';
+            if (document.querySelector('.flex.items-center.space-x-4.w-full.md\\:w-auto.md\\:flex-shrink-0.justify-end')) { // Volume group
+                document.querySelector('.flex.items-center.space-x-4.w-full.md\\:w-auto.md\\:flex-shrink-0.justify-end').style.display = 'none';
             }
             if (playerLeft) {
                 playerLeft.style.flexGrow = '1';
@@ -3281,8 +3177,8 @@ function toggleMainPlaybarView() {
         if (playerControls) playerControls.style.display = 'flex';
         if (playPauseBtn) playPauseBtn.style.display = 'block';
         if (document.getElementById('progress-time-group')) document.getElementById('progress-time-group').style.display = 'none';
-        if (document.querySelector('.flex.items-center.ml-4.hidden.md\\:flex')) {
-            document.querySelector('.flex.items-center.ml-4.hidden.md\\:flex').style.display = 'none';
+        if (document.querySelector('.flex.items-center.space-x-4.w-full.md\\:w-auto.md\\:flex-shrink-0.justify-end')) {
+            document.querySelector('.flex.items-center.space-x-4.w-full.md\\:w-auto.md\\:flex-shrink-0.justify-end').style.display = 'none';
         }
         if (playerLeft) {
             playerLeft.style.flexGrow = '1';
@@ -3328,6 +3224,88 @@ function updateFixedTopHeadingVisibility() {
         // The default CSS for .fixed-top-heading already sets transform: translateY(-100%) and opacity: 0
         console.log("Fixed top heading set to HIDDEN (via CSS transition).");
     }
+}
+
+
+/**
+ * Updates the visibility of horizontal scroll buttons for a given container.
+ * @param {string} containerId - The ID of the scrollable container.
+ */
+function updateScrollButtonVisibility(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.warn(`Scroll container with ID '${containerId}' not found.`);
+        return;
+    }
+    const scrollLeftBtn = document.querySelector(`.carousel-nav-btn.prev-btn[data-target="${containerId}"]`);
+    const scrollRightBtn = document.querySelector(`.carousel-nav-btn.next-btn[data-target="${containerId}"]`);
+
+    if (!scrollLeftBtn || !scrollRightBtn) {
+        // console.warn(`Scroll buttons for container ID '${containerId}' not found.`); // This warning can be noisy if buttons are intentionally absent
+        return;
+    }
+
+    const scrollTolerance = 5; // Small tolerance for floating point errors
+
+    // Check if there's content to scroll horizontally
+    const hasHorizontalScroll = container.scrollWidth > container.clientWidth + scrollTolerance;
+
+    if (!hasHorizontalScroll) {
+        // If no scrollbar is needed, hide both buttons
+        scrollLeftBtn.classList.add('hidden');
+        scrollRightBtn.classList.add('hidden');
+        return;
+    }
+
+    // Show/hide left button
+    if (container.scrollLeft <= scrollTolerance) {
+        scrollLeftBtn.classList.add('hidden');
+    } else {
+        scrollLeftBtn.classList.remove('hidden');
+    }
+
+    // Show/hide right button
+    // Check if scrolled all the way to the right
+    if (container.scrollLeft + container.clientWidth >= container.scrollWidth - scrollTolerance) {
+        scrollRightBtn.classList.add('hidden');
+    } else {
+        scrollRightBtn.classList.remove('hidden');
+    }
+}
+
+/**
+ * Sets up horizontal scrolling for a given container with associated buttons.
+ * @param {string} containerId - The ID of the scrollable container.
+ */
+function setupHorizontalScroll(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const scrollLeftBtn = document.querySelector(`.carousel-nav-btn.prev-btn[data-target="${containerId}"]`);
+    const scrollRightBtn = document.querySelector(`.carousel-nav-btn.next-btn[data-target="${containerId}"]`);
+
+    if (scrollLeftBtn) {
+        scrollLeftBtn.addEventListener('click', () => {
+            container.scrollBy({
+                left: -container.clientWidth / 1.5, // Scroll 2/3 of the visible width
+                behavior: 'smooth'
+            });
+        });
+    }
+
+    if (scrollRightBtn) {
+        scrollRightBtn.addEventListener('click', () => {
+            container.scrollBy({
+                left: container.clientWidth / 1.5, // Scroll 2/3 of the visible width
+                behavior: 'smooth'
+            });
+        });
+    }
+
+    // Update button visibility on scroll and resize
+    container.addEventListener('scroll', () => updateScrollButtonVisibility(containerId));
+    // Initial update
+    updateScrollButtonVisibility(containerId);
 }
 
 
@@ -3620,6 +3598,7 @@ function toggleSidebar() {
         }
     }
 }
+
 
 // --- Event Listeners for Overlay and Sidebar ---
 // These are now handled within openAlbumDetails and closeAlbumOverlay for dynamic attachment/detachment
@@ -4199,6 +4178,7 @@ function updateLoginUI(isLoggedIn) {
         }
     }
 }
+
 
 
 

@@ -1,7 +1,7 @@
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual ngrok static domain if you are using ngrok for your backend.
 // If your backend is hosted directly (e.g., on Render, Heroku), use that URL.
-const BACKEND_BASE_URL = 'https://68aaf6db0976.ngrok-free.app'; // Example: 'https://your-ngrok-subdomain.ngrok-free.app' or 'https://your-backend-api.com'
+const BACKEND_BASE_URL = 'http://6fde5c41b979.ngrok-free.app'; // Example: 'https://your-ngrok-subdomain.ngrok-free.app' or 'https://your-backend-api.com'
 
 // IMPORTANT: Replace this with your actual Netlify frontend domain for CORS setup on the backend.
 // This is crucial for your backend's CORS configuration (e.g., in Flask-CORS or Express CORS options)
@@ -1577,6 +1577,56 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
                 albumFullEmbedContainer.innerHTML = embedContent;
                 console.warn("openAlbumDetails: Embed content did not contain an iframe. Appending raw HTML directly. This might not be expected.");
             }
+
+          // NEW: Always ensure the top mask div is present and updated for embedded albums
+        let topMaskDiv = albumFullEmbedContainer.querySelector('#embedded-overlay-top-mask');
+        if (!topMaskDiv) {
+            topMaskDiv = document.createElement('div');
+            topMaskDiv.id = 'embedded-overlay-top-mask';
+            albumFullEmbedContainer.appendChild(topMaskDiv);
+            console.log("embedded-overlay-top-mask created and appended.");
+        }
+
+        // Populate the content of the top mask div with image on left, text on right
+        topMaskDiv.innerHTML = `
+            <img src="${albumData.coverArt || 'https://placehold.co/80x80/4a4a4a/ffffff?text=Album'}"
+                 alt="Album Cover"
+                 style="width: 80px; height: 80px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); margin-right: 15px;">
+            <div style="display: flex; flex-direction: column; flex-grow: 1; overflow: hidden;">
+                <div style="font-size: clamp(1.5em, 5vw, 2.5em); font-weight: bold; color: white; margin-bottom: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                    ${albumData.title || 'Embedded Content'}
+                </div>
+                <div style="font-size: clamp(0.9em, 3vw, 1.2em); color: #b3b3b3; margin-bottom: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                    ${albumData.artist || 'Various Artists'}
+                </div>
+                <div style="font-size: clamp(0.7em, 2.5vw, 0.9em); color: #a0a0a0; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                    Album • ${albumData.year || 'Year N/A'} • ${albumData.genre || 'Genre N/A'}
+                </div>
+            </div>
+        `;
+        console.log("embedded-overlay-top-mask content populated with image left, text right.");
+
+        // Apply styles to the topMaskDiv, letting its height adjust based on content
+        topMaskDiv.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height:188px;
+            /* Height will be determined by content + padding */
+            z-index: 906;
+            background-color: #1d1b1bff; /* Fully opaque black background as requested */
+            display: flex;
+            align-items: center; /* Vertically center content */
+            padding: 15px 20px; /* Padding around content */
+            box-sizing: border-box;
+            overflow: hidden; /* Hide overflow if text is too long */
+            box-shadow: 0 5px 25px rgba(0,0,0,0.5); /* Subtle shadow at the bottom */
+        `;
+        console.log("embedded-overlay-top-mask styled.");
+
+
+
 
             // ONLY add the interaction layer if it's a NEW embedded album
             let embedInteractionLayer = albumFullEmbedContainer.querySelector('#embed-interaction-layer');

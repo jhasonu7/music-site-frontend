@@ -8,6 +8,136 @@ const BACKEND_BASE_URL = 'https://18e16828fc6b.ngrok-free.app'; // Example: 'htt
 // It tells your backend which frontend domains are allowed to access its resources.
 const NETLIFY_FRONTEND_DOMAIN = 'https://swarify-play.netlify.app'; // e.g., https://my-music-site.netlify.app'
 
+// --- Heart Icon Styles ---
+// Inject styles for the new heart icons and related elements into the document's head.
+const styleSheet = document.createElement("style");
+styleSheet.type = "text/css";
+styleSheet.innerText = `
+   
+    #vertical-heart-strip {
+        position: absolute;
+        top: 248px; /* Position below the top info mask */
+        left: 53px;
+        width: 27px;
+        height: calc(100% - 210px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 34px;
+        z-index: 1002; /* Ensure it's above the interaction layer */
+        pointer-events: auto;
+        overflow-y: auto;
+        background: rgb(15 14 14);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        border-radius: 25px;
+        padding: 20px 0;
+        box-sizing: border-box;
+    }
+      @media (max-width: 480px) { 
+    #vertical-heart-strip {
+    position: absolute;
+    top: 231px;
+    left: 36px;
+    width: 27px;
+    height: calc(100% - 210px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+}
+}
+
+  @media (max-width: 768px) { 
+    #vertical-heart-strip {
+    position: absolute;
+    top: 231px;
+    left: 32px;
+    width: 27px;
+    height: calc(100% - 210px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+}
+}
+
+    
+    /* Hide scrollbar for the vertical strip */
+    #vertical-heart-strip::-webkit-scrollbar {
+        display: none;
+    }
+    #vertical-heart-strip {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+
+   #vertical-heart-strip1 {
+        position: absolute;
+        top: 248px; /* Position below the top info mask */
+        right: 75px;
+        width: 27px;
+        height: calc(100% - 210px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 34px;
+        z-index: 1002; /* Ensure it's above the interaction layer */
+        pointer-events: auto;
+        overflow-y: auto;
+        background: rgb(15 14 14);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        border-radius: 25px;
+        padding: 20px 0;
+        box-sizing: border-box;
+    }
+      @media (max-width: 480px) { 
+    #vertical-heart-strip1 {
+    position: absolute;
+    top: 231px;
+    right: 36px;
+    width: 27px;
+    height: calc(100% - 210px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+}
+}
+
+  @media (max-width: 768px) { 
+    #vertical-heart-strip1 {
+    position: absolute;
+    top: 231px;
+    right: 32px;
+    width: 27px;
+    height: calc(100% - 210px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+}
+}
+
+    
+    /* Hide scrollbar for the vertical strip */
+    #vertical-heart-strip1::-webkit-scrollbar {
+        display: none;
+    }
+    #vertical-heart-strip1 {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+
+
+
+
+
+`;
+document.head.appendChild(styleSheet);
+
+
 // --- DOM Elements (assuming these exist in your HTML) ---
 const trendingSongsContainer = document.querySelector('.trending-songs-container'); // Adjust selector as needed
 const popularAlbumsContainer = document.querySelector('.popular-albums-container'); // Adjust selector as needed
@@ -1181,8 +1311,18 @@ async function updateTrackHighlightingInOverlay() {
         row.querySelectorAll('td').forEach(td => td.style.color = '');
 
         if (iconCell) {
-            iconCell.innerHTML = i + 1; // Default to track number
-            iconCell.classList.remove('playing-icon-container', 'paused-icon-container');
+            // The icon cell now contains the heart and number, so we don't reset its innerHTML here.
+            // We just need to manage the playing/paused state visual cues.
+            const trackNumberSpan = iconCell.querySelector('.track-index-number');
+            const heartContainer = iconCell.querySelector('.heart-icon-container');
+
+            // Make sure number is visible by default
+            if (trackNumberSpan) trackNumberSpan.style.display = 'inline';
+            if (heartContainer) heartContainer.style.display = 'inline-flex';
+
+            // Remove any old playing/paused icons that might have been injected
+            const oldPlayingIcon = iconCell.querySelector('.playing-state-icon');
+            if (oldPlayingIcon) oldPlayingIcon.remove();
         }
 
         const isCurrentTrack = (playingAlbum && playingAlbum.id === currentAlbum.id && i === currentTrackIndex);
@@ -1231,26 +1371,31 @@ async function updateTrackHighlightingInOverlay() {
                 row.style.backgroundColor = '#25934cff';
                 row.style.color = '#1ED760';
                 row.querySelectorAll('td').forEach(td => td.style.color = '#1ED760');
+                // Also color the heart icon green
+                const heartIcon = row.querySelector('.heart-icon');
+                if(heartIcon) heartIcon.style.stroke = '#1ED760';
+
 
                 if (iconCell) {
-                    iconCell.classList.add('playing-icon-container');
-                    // Check if it's a native audio track
-                    if (audio.src && audio.src === trackInRow.src) {
-                        iconCell.innerHTML = ''; // Hide the number/icon for playing native audio
-                    } else {
-                        // For other playing types (YouTube, Spotify, and non-controllable embeds), keep the green pause icon
-                        iconCell.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
-                    }
+                    const trackNumberSpan = iconCell.querySelector('.track-index-number');
+                    const heartContainer = iconCell.querySelector('.heart-icon-container');
+                    if(trackNumberSpan) trackNumberSpan.style.display = 'none';
+                    if(heartContainer) heartContainer.style.display = 'none';
+
+                    // Inject a playing icon (e.g., sound bars)
+                    iconCell.insertAdjacentHTML('afterbegin', '<div class="playing-state-icon" style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg></div>');
                 }
             } else if (isPaused) {
                 row.classList.add('paused');
                 row.style.backgroundColor = row.classList.contains('highlighted-search-result') ? 'rgba(30, 215, 96, 0.3)' : 'transparent';
                 row.style.color = '#1ED760';
                 row.querySelectorAll('td').forEach(td => td.style.color = '#1ED760');
+                 // Also color the heart icon green
+                const heartIcon = row.querySelector('.heart-icon');
+                if(heartIcon) heartIcon.style.stroke = '#1ED760';
+
                 if (iconCell) {
-                    // Green play icon for paused state
-                    iconCell.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><path d="M8 5v14l11-7z"/></svg>`;
-                    iconCell.classList.add('paused-icon-container');
+                     // Keep heart and number visible, just colored green.
                 }
             }
         }
@@ -1651,6 +1796,57 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
             embedInteractionLayer.addEventListener('click', firstClickEmbedHandler);
             console.log("embedInteractionLayer listener attached for NEW embedded album.");
 
+            // NEW: Add vertical heart strip for embedded albums
+            const verticalHeartStrip = document.createElement('div');
+            verticalHeartStrip.id = 'vertical-heart-strip';
+            // Styles are defined in the injected stylesheet, just append it.
+            albumFullEmbedContainer.appendChild(verticalHeartStrip);
+
+            // Populate the strip with clickable hearts
+            for (let i = 0; i < 15; i++) { // Add 15 hearts as an example
+                const heartContainer = document.createElement('div');
+                heartContainer.className = 'heart-icon-container';
+                heartContainer.innerHTML = `<svg class="heart-icon" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
+                heartContainer.addEventListener('click', (e) => {
+                    e.stopPropagation(); // VERY IMPORTANT: Prevent click from reaching interaction layer
+                    const heartIcon = e.currentTarget.querySelector('.heart-icon');
+                    heartIcon.classList.toggle('liked');
+                });
+                verticalHeartStrip.appendChild(heartContainer);
+            }
+            console.log("Vertical heart strip added to embedded album overlay.");
+
+
+  // NEW: Add vertical heart strip for embedded albums
+            const verticalHeartStrip1 = document.createElement('div');
+            verticalHeartStrip1.id = 'vertical-heart-strip1';
+            // Styles are defined in the injected stylesheet, just append it.
+            albumFullEmbedContainer.appendChild(verticalHeartStrip1);
+
+            // Populate the strip with clickable hearts
+            for (let i = 0; i < 15; i++) { // Add 15 hearts as an example
+                const heartContainer1 = document.createElement('div');
+                heartContainer1.className = 'heart-icon-container1';
+                heartContainer1.innerHTML = `<svg class="heart-icon1" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
+                heartContainer1.addEventListener('click', (e) => {
+                    e.stopPropagation(); // VERY IMPORTANT: Prevent click from reaching interaction layer
+                    const heartIcon = e.currentTarget.querySelector('.heart-icon1');
+                    heartIcon.classList.toggle('liked');
+                });
+                verticalHeartStrip.appendChild(heartContainer1);
+            }
+            console.log("Vertical heart strip added to embedded album overlay.");
+
+
+
+
+
+
+
+
+
+
+
         } else {
             console.log("openAlbumDetails: Same embedded album already loaded. Reusing existing iframe.");
             // If it's the same embedded album, ensure the interaction layer is GONE
@@ -1883,21 +2079,21 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
             // Adjust specific column widths for responsiveness
             if (tableHeaders.length >= 4) {
                 if (window.innerWidth < 400) { // New breakpoint for very small screens
-                    tableHeaders[0].style.width = '8%'; // Number column (increased for icon visibility)
-                    tableHeaders[1].style.width = '42%'; // Title column (adjusted)
-                    tableHeaders[2].style.width = '28%'; // Artist column
-                    tableHeaders[3].style.width = '22%'; // Duration column
+                    tableHeaders[0].style.width = '15%'; // Number column (increased for icon visibility)
+                    tableHeaders[1].style.width = '40%'; // Title column (adjusted)
+                    tableHeaders[2].style.width = '25%'; // Artist column
+                    tableHeaders[3].style.width = '20%'; // Duration column
                 } else if (window.innerWidth < 768) {
                     // Mobile specific column widths (between 400px and 768px)
-                    tableHeaders[0].style.width = '10%'; // Number column (increased for icon visibility)
+                    tableHeaders[0].style.width = '12%'; // Number column (increased for icon visibility)
                     tableHeaders[1].style.width = '40%'; // Title column (adjusted)
-                    tableHeaders[2].style.width = '30%'; // Artist column
+                    tableHeaders[2].style.width = '28%'; // Artist column
                     tableHeaders[3].style.width = '20%'; // Duration column
                 } else {
                     // Larger screen column widths
-                    tableHeaders[0].style.width = '5%';
+                    tableHeaders[0].style.width = '10%';
                     tableHeaders[1].style.width = '45%';
-                    tableHeaders[2].style.width = '35%';
+                    tableHeaders[2].style.width = '30%';
                     tableHeaders[3].style.width = '15%';
                 }
             }
@@ -1919,13 +2115,29 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
                 row.dataset.audiomackEmbed = track.audiomackEmbed || '';
                 row.dataset.fullSoundcloudEmbed = track.fullSoundcloudEmbed || '';
 
-
+                // NEW: Updated row innerHTML with heart icon
                 row.innerHTML = `
-                    <td>${index + 1}</td>
+                    <td class="track-number-cell">
+                        <span class="heart-icon-container">
+                            <svg class="heart-icon" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                        </span>
+                        <span class="track-index-number">${index + 1}</span>
+                    </td>
                     <td class="track-title">${track.title || 'Untitled'}</td>
                     <td>${track.artist || albumData.artist || 'Various Artists'}</td>
                     <td>${formatTime(track.duration)}</td>
                 `;
+
+                // NEW: Add click listener to the heart icon container
+                const heartContainer = row.querySelector('.heart-icon-container');
+                if (heartContainer) {
+                    heartContainer.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent the row's click listener (play track) from firing
+                        const heartIcon = e.currentTarget.querySelector('.heart-icon');
+                        heartIcon.classList.toggle('liked');
+                    });
+                }
+
 
                 // Apply styles to each table cell
                 row.querySelectorAll('td').forEach(td => {
@@ -3534,6 +3746,7 @@ async function transferPlaybackToDevice(deviceId) {
 }
 
 
+
 // --- Spotify Authentication Flow ---
 async function handleSpotifyCallback() {
     console.log("handleSpotifyCallback: Checking for Spotify authentication callback...");
@@ -4228,7 +4441,6 @@ function updateLoginUI(isLoggedIn) {
         }
     }
 }
-
 
 
 

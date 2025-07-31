@@ -110,7 +110,7 @@ styleSheet.innerText = `
     #vertical-heart-strip1 {
     position: absolute;
     top: 231px;
-    right: 65px;
+    right: 63px;
     width: 27px;
     height: calc(100% - 210px);
     display: flex;

@@ -52,7 +52,7 @@ styleSheet.innerText = `
     #vertical-heart-strip {
     position: absolute;
     top: 231px;
-    left: 32px;
+    left: 33px;
     width: 27px;
     height: calc(100% - 210px);
     display: flex;
@@ -110,7 +110,7 @@ styleSheet.innerText = `
     #vertical-heart-strip1 {
     position: absolute;
     top: 231px;
-    right: 32px;
+    right: 65px;
     width: 27px;
     height: calc(100% - 210px);
     display: flex;

@@ -1,7 +1,7 @@
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual ngrok static domain if you are using ngrok for your backend.
 // If your backend is hosted directly (e.g., on Render, Heroku), use that URL.
-const BACKEND_BASE_URL = 'https://6d9c36ee70f3.ngrok-free.app'; // Example: 'https://your-ngrok-subdomain.ngrok-free.app' or 'https://your-backend-api.com'
+const BACKEND_BASE_URL = 'http://c63b3baf2ca0.ngrok-free.app'; // Example: 'https://your-ngrok-subdomain.ngrok-free.app' or 'https://your-backend-api.com'
 
 // IMPORTANT: Replace this with your actual Netlify frontend domain for CORS setup on the backend.
 // This is crucial for your backend's CORS configuration (e.g., in Flask-CORS or Express CORS options)
@@ -38,7 +38,7 @@ styleSheet.innerText = `
     #vertical-heart-strip {
     position: absolute;
     top: 231px;
-    left: 38px;
+    left: 36px;
     width: 27px;
     height: calc(100% - 210px);
     display: flex;
@@ -52,7 +52,7 @@ styleSheet.innerText = `
     #vertical-heart-strip {
     position: absolute;
     top: 231px;
-    left: 33px;
+    left: 32px;
     width: 27px;
     height: calc(100% - 210px);
     display: flex;
@@ -96,7 +96,7 @@ styleSheet.innerText = `
     #vertical-heart-strip1 {
     position: absolute;
     top: 231px;
-    right: 45px;
+    right: 36px;
     width: 27px;
     height: calc(100% - 210px);
     display: flex;
@@ -110,7 +110,7 @@ styleSheet.innerText = `
     #vertical-heart-strip1 {
     position: absolute;
     top: 231px;
-    right: 61px;
+    right: 32px;
     width: 27px;
     height: calc(100% - 210px);
     display: flex;
@@ -856,7 +856,6 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
     // This ensures only one controllable audio source is active.
     // Also stop if we are switching from an embedded to a controllable track.
     // IMPORTANT: For non-controllable embedded tracks, we do NOT stop previous playback here.
-    // The `firstClickEmbedHandler` for full embeds is responsible for stopping controllable players.
     if (track.src || isControllableEmbeddedTrack) {
         stopAllPlaybackUI(); // Stop all previous playback if a new controllable track is starting
         console.log("stopAllPlaybackUI called before playing new controllable track.");
@@ -865,12 +864,20 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
         currentlyPlayedCardId = playingAlbum ? playingAlbum.id : null; // Set the ID of the playing card
         hidePlayedCard(); // Hide the playing card from other sections
     } else {
-        // For non-controllable embedded tracks, we only set playingAlbum.
-        // The `firstClickEmbedHandler` will handle stopping controllable players when the embed is clicked.
-        playingAlbum = currentAlbum; // Set playingAlbum for non-controllable embedded tracks
-        console.log("playTrack: playingAlbum set to:", playingAlbum ? playingAlbum.title : "null", "currentTrackIndex:", indexInAlbum);
-        currentlyPlayedCardId = playingAlbum ? playingAlbum.id : null; // Set the ID of the playing card
-        hidePlayedCard(); // Hide the playing card from other sections
+        // For non-controllable embedded tracks: avoid killing an already playing embedded album when merely opening/searching another embedded album.
+        const isBackgroundEmbeddedPlaying = playingAlbum && (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc);
+        const isClickedTrackEmbedded = track && (track.rawHtmlEmbed || track.fullSoundcloudEmbed || track.audiomackEmbed || track.iframeSrc);
+        const isSwitchingEmbeddedToEmbedded = isBackgroundEmbeddedPlaying && isClickedTrackEmbedded && playingAlbum && currentAlbum && playingAlbum.id !== currentAlbum.id;
+
+        if (!isSwitchingEmbeddedToEmbedded) {
+            playingAlbum = currentAlbum; // Set playingAlbum for non-controllable embedded tracks or other transitions
+            console.log("playTrack: playingAlbum set to:", playingAlbum ? playingAlbum.title : "null", "currentTrackIndex:", indexInAlbum);
+            currentlyPlayedCardId = playingAlbum ? playingAlbum.id : null; // Set the ID of the playing card
+            hidePlayedCard(); // Hide the playing card from other sections
+        } else {
+            console.log("playTrack: embedded-to-embedded transition detected; preserving background embedded playback.");
+            // Do not overwrite playingAlbum so existing embedded playback continues
+        }
     }
 
 
@@ -1612,6 +1619,8 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
         while (albumFullEmbedContainer.firstChild) {
             albumFullEmbedContainer.removeChild(albumFullEmbedContainer.firstChild);
         }
+        
+
         console.log("albumFullEmbedContainer content cleared for a NEW embedded album.");
     } else if (!isOpeningEmbeddedAlbum && existingIframeInFullEmbedContainer) {
         // If opening a non-embedded album, and an embedded player is currently in the full embed container,
@@ -1791,10 +1800,28 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
                 albumFullEmbedContainer.appendChild(embedInteractionLayer);
                 console.log("embedInteractionLayer created and appended for NEW embedded album.");
             }
-            // Always attach/re-attach the listener for a new embed, as it will be removed on first click
-            embedInteractionLayer.removeEventListener('click', firstClickEmbedHandler);
-            embedInteractionLayer.addEventListener('click', firstClickEmbedHandler);
-            console.log("embedInteractionLayer listener attached for NEW embedded album.");
+            // Always attach/re-attach the wrapper listener for a new embed, as it will be removed on first valid click
+            if (embedInteractionLayer._firstClickWrapper) {
+                embedInteractionLayer.removeEventListener('click', embedInteractionLayer._firstClickWrapper);
+                delete embedInteractionLayer._firstClickWrapper;
+            }
+            const wrapper = function (e) {
+                const rect = embedInteractionLayer.getBoundingClientRect();
+                const y = e.clientY - rect.top;
+                if (y <= 180) {
+                    // Click in excluded top region: ignore.
+                    console.log("embedInteractionLayer click ignored because it's within top 180px."); 
+                    e.stopPropagation();
+                    return;
+                }
+                firstClickEmbedHandler();
+            };
+            embedInteractionLayer._firstClickWrapper = wrapper;
+            embedInteractionLayer.addEventListener('click', wrapper);
+            console.log("embedInteractionLayer wrapper listener attached for NEW embedded album.");
+
+
+
 
             // NEW: Add vertical heart strip for embedded albums
             const verticalHeartStrip = document.createElement('div');

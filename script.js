@@ -93,7 +93,7 @@ styleSheet.innerText = `
 
    #vertical-heart-strip1 {
         position: absolute;
-        top: 248px; /* Position below the top info mask */
+        top: 255px; /* Position below the top info mask */
         right: 75px;
         width: 27px;
         height: calc(100% - 210px);
@@ -114,7 +114,7 @@ styleSheet.innerText = `
       @media (max-width: 480px) { 
     #vertical-heart-strip1 {
     position: absolute;
-    top: 231px;
+    top: 240px;
     right: 36px;
     width: 27px;
     height: calc(100% - 210px);
@@ -128,7 +128,7 @@ styleSheet.innerText = `
   @media (max-width: 768px) { 
     #vertical-heart-strip1 {
     position: absolute;
-    top: 231px;
+    top: 240px;
     right: 56px;
     width: 27px;
     height: calc(100% - 210px);

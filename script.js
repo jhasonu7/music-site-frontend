@@ -1,3 +1,5 @@
+
+
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual ngrok static domain if you are using ngrok for your backend.
 // If your backend is hosted directly (e.g., on Render, Heroku), use that URL.
@@ -13,6 +15,23 @@ const NETLIFY_FRONTEND_DOMAIN = 'https://swarify-play.netlify.app'; // e.g., htt
 const styleSheet = document.createElement("style");
 styleSheet.type = "text/css";
 styleSheet.innerText = `
+
+/* === Embedded Album Backdrop to block background content === */
+#embedded-album-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 9998;
+    display: none;
+}
+#album-full-embed-container {
+    z-index: 9999 !important;
+}
+
+
    
     #vertical-heart-strip {
         position: absolute;
@@ -185,7 +204,17 @@ const albumDetailsTitle = document.getElementById('albumDetails-title'); // Albu
 const albumDetailsArtist = document.getElementById('albumDetails-artist'); // Album artist in overlay
 const albumDetailsMeta = document.getElementById('albumDetails-meta'); // Album meta in overlay
 const albumDetailsTracksBody = document.getElementById('albumDetails-tracks'); // Tracklist table body in overlay
-const albumPlayButton = document.getElementById('album-play'); // Play button inside album overlay
+const albumPlayButton = document.getElementById('album-play');
+
+// === Create the embedded album backdrop once ===
+let embeddedBackdrop = document.getElementById('embedded-album-backdrop');
+if (!embeddedBackdrop) {
+    embeddedBackdrop = document.createElement('div');
+    embeddedBackdrop.id = 'embedded-album-backdrop';
+    document.body.appendChild(embeddedBackdrop);
+    embeddedBackdrop.addEventListener('click', closeEmbeddedAlbum);
+}
+ // Play button inside album overlay
 
 // --- NEW Main Play Bar Elements (from the provided HTML structure) ---
 const mainPlayBar = document.getElementById('main-play-bar'); // The entire fixed play bar container
@@ -890,8 +919,8 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
     updatePlayerUI();
 
     // Update fixed top heading
-    if (fixedTopAlbumArt) fixedTopAlbumArt.src = track.img || 'https://placehold.co/40x40/4a4a4a/ffffff?text=Album';
-    if (fixedTopAlbumTitle) fixedTopAlbumTitle.textContent = playingAlbum ? playingAlbum.title : (track.title || 'Unknown Album');
+    if (fixedTopAlbumArt) fixedTopAlbumArt.src = (playingAlbum ? (playingAlbum.coverArt || 'https://placehold.co/40x40/4a4a4a/ffffff?text=Album') : track.img || 'https://placehold.co/40x40/4a4a4a/ffffff?text=Album');
+    if (fixedTopAlbumTitle) fixedTopAlbumTitle.textContent = (playingAlbum ? (playingAlbum.title || 'Unknown Album') : playingAlbum ? playingAlbum.title : (track.title || 'Unknown Album'));
     updateFixedTopHeadingVisibility();
 
 
@@ -1503,27 +1532,52 @@ function hideFullScreenPlayer() {
  * This function should be called whenever the `playingAlbum` state changes
  * or on scroll events.
  */
+
 function updateFixedTopHeadingVisibility() {
     if (!fixedTopPlayingHeading) {
         console.warn("updateFixedTopHeadingVisibility: fixedTopPlayingHeading element not found.");
         return;
     }
 
+    // Determine which album should be shown in the fixed top heading:
+    // - If the album overlay is open and a currentAlbum is set, show currentAlbum (the opened one).
+    // - Otherwise, if something is playing, show playingAlbum.
+    // - Otherwise, hide/clear the header.
+    let albumToShow = null;
+    try {
+        if (albumOverlay && albumOverlay.classList && albumOverlay.classList.contains('show') && currentAlbum) {
+            albumToShow = currentAlbum;
+        } else if (playingAlbum) {
+            albumToShow = playingAlbum;
+        }
+    } catch (e) {
+        console.warn("updateFixedTopHeadingVisibility: error determining album to show", e);
+    }
+
+    // Update header content if there is an album to show
+    if (albumToShow) {
+        if (fixedTopAlbumArt) fixedTopAlbumArt.src = albumToShow.coverArt || 'https://placehold.co/40x40/4a4a4a/ffffff?text=Album';
+        if (fixedTopAlbumTitle) fixedTopAlbumTitle.textContent = albumToShow.title || 'Unknown Album';
+    } else {
+        // No album to show; set defaults
+        if (fixedTopAlbumArt) fixedTopAlbumArt.src = 'https://placehold.co/40x40/4a4a4a/ffffff?text=Album';
+        if (fixedTopAlbumTitle) fixedTopAlbumTitle.textContent = '';
+    }
+
     const scrollThreshold = topBar ? topBar.offsetHeight : 0; // Show after scrolling past top bar
 
-    // Only show the heading if there's a playing album AND the user has scrolled past the threshold
+    // Show the heading only when there's an album to show AND the user has scrolled past the threshold
     // AND we are NOT on a desktop screen (where the main playbar is already full-width).
-    if (playingAlbum && rightPanel.scrollTop > scrollThreshold && window.innerWidth < 768) {
+    if (albumToShow && rightPanel && rightPanel.scrollTop > scrollThreshold && window.innerWidth < 768) {
         fixedTopPlayingHeading.classList.add('visible');
         fixedTopPlayingHeading.classList.remove('hidden'); // Ensure 'hidden' is removed if present
-        console.log("Fixed top heading set to VISIBLE.");
+        console.log("Fixed top heading set to VISIBLE for album:", albumToShow.title);
     } else {
         fixedTopPlayingHeading.classList.remove('visible');
-        // We don't add 'hidden' here, as the CSS transition handles the transform/opacity
-        // The default CSS for .fixed-top-heading already sets transform: translateY(-100%) and opacity: 0
         console.log("Fixed top heading set to HIDDEN (via CSS transition).");
     }
 }
+
 
 
 function openAlbumDetails(albumData, highlightTrackTitle = null) {
@@ -1533,13 +1587,21 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
     );
 
     // Get existing iframe in the full embed container to check if it's the same album
-    const existingIframeInFullEmbedContainer = albumFullEmbedContainer.querySelector('iframe');
-    const existingEmbedAlbumId = existingIframeInFullEmbedContainer ? existingIframeInFullEmbedContainer.dataset.albumId : null;
+    // Prefer an existing iframe that matches THIS album by data-album-id (handles multiple iframes kept for background playback)
+const existingMatchingIframe = albumFullEmbedContainer.querySelector(`iframe[data-album-id="${albumData.id}"]`);
+// Fallback to any iframe if a matching one isn't present
+const existingIframeInFullEmbedContainer = existingMatchingIframe || albumFullEmbedContainer.querySelector('iframe');
+const existingEmbedAlbumId = existingMatchingIframe ? albumData.id : (existingIframeInFullEmbedContainer ? existingIframeInFullEmbedContainer.dataset.albumId : null);
 
-    const isSameEmbeddedAlbumAlreadyLoaded = (
-        existingEmbedAlbumId === albumData.id &&
-        isOpeningEmbeddedAlbum
-    );
+// If a matching iframe exists, we'll reuse it and ensure it's visible while hiding others.
+const isSameEmbeddedAlbumAlreadyLoaded = !!existingMatchingIframe && isOpeningEmbeddedAlbum;
+
+if (isSameEmbeddedAlbumAlreadyLoaded) {
+    // Make sure only the matching iframe is visible to avoid showing stale/other embeds.
+    albumFullEmbedContainer.querySelectorAll('iframe').forEach(iframe => {
+        try { iframe.style.display = (iframe.dataset.albumId === albumData.id) ? 'block' : 'none'; } catch(e) {}
+    });
+}
 
     console.log(`DEBUG: isOpeningEmbeddedAlbum = ${isOpeningEmbeddedAlbum}`);
     console.log(`DEBUG: isSameEmbeddedAlbumAlreadyLoaded = ${isSameEmbeddedAlbumAlreadyLoaded}`);
@@ -1613,16 +1675,26 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
     // IMPORTANT CHANGE:
     // Only clear albumFullEmbedContainer if we are about to load a *new* embedded album into it.
     // If opening a non-embedded album, we only hide it.
-    if (isOpeningEmbeddedAlbum && !isSameEmbeddedAlbumAlreadyLoaded) {
-        // If opening a new embedded album, clear existing content to replace it.
-        console.log("openAlbumDetails: Clearing albumFullEmbedContainer for NEW embedded album.");
-        while (albumFullEmbedContainer.firstChild) {
-            albumFullEmbedContainer.removeChild(albumFullEmbedContainer.firstChild);
-        }
-        
+    
+    // Determine if we are switching from one embedded album to another
+    const isSwitchingEmbeds = playingAlbum && isOpeningEmbeddedAlbum && playingAlbum.id !== albumData.id && 
+        (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc);
 
-        console.log("albumFullEmbedContainer content cleared for a NEW embedded album.");
-    } else if (!isOpeningEmbeddedAlbum && existingIframeInFullEmbedContainer) {
+    if (isOpeningEmbeddedAlbum && !isSameEmbeddedAlbumAlreadyLoaded) {
+        if (isSwitchingEmbeds) {
+            // Hide the UI of the currently playing album before adding the new one
+            console.log("Switching embeds. Hiding previous album's UI.");
+            for (const child of albumFullEmbedContainer.children) {
+                if (child instanceof HTMLElement) {
+                    child.style.display = 'none';
+                }
+            }
+        } else {
+            // If it's the first embed or switching from a non-embed, clear the container
+            console.log("Clearing embed container for a fresh start.");
+            albumFullEmbedContainer.innerHTML = '';
+        }
+    }else if (!isOpeningEmbeddedAlbum && existingIframeInFullEmbedContainer) {
         // If opening a non-embedded album, and an embedded player is currently in the full embed container,
         // just hide the full embed container. DO NOT remove its children.
         albumFullEmbedContainer.style.display = 'none';
@@ -1725,10 +1797,26 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
 
                 // Append iframe first so the interaction layer sits on top
                 albumFullEmbedContainer.appendChild(originalIframe);
+                // Ensure the newly appended iframe is visible and hide any other iframes in the container
+                try {
+                    albumFullEmbedContainer.querySelectorAll('iframe').forEach(iframe => {
+                        iframe.style.display = (iframe === originalIframe) ? 'block' : 'none';
+                    });
+                } catch(e) {}
+
                 console.log("originalIframe appended to albumFullEmbedContainer.");
 
             } else {
                 albumFullEmbedContainer.innerHTML = embedContent;
+                // If embedContent contained an iframe inserted via innerHTML, ensure only that iframe is visible
+                try {
+                    const newIframe = albumFullEmbedContainer.querySelector('iframe');
+                    if (newIframe) {
+                        albumFullEmbedContainer.querySelectorAll('iframe').forEach(iframe => iframe.style.display = (iframe === newIframe) ? 'block' : 'none');
+                        newIframe.dataset.albumId = albumData.id; // normalize dataset if possible
+                    }
+                } catch(e) {}
+
                 console.warn("openAlbumDetails: Embed content did not contain an iframe. Appending raw HTML directly. This might not be expected.");
             }
 
@@ -2249,7 +2337,17 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
                         }
                     } else {
                         // If it's a different track or a non-controllable embed, stop all and play fresh
-                        stopAllPlaybackUI();
+                        
+// Preserve embedded playback when switching embedded->embedded (don't stop previous embed)
+const isBackgroundEmbeddedPlaying = playingAlbum && (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc || playingAlbum.soundcloudEmbed);
+const isClickedTrackEmbedded = clickedTrack && (clickedTrack.rawHtmlEmbed || clickedTrack.fullSoundcloudEmbed || clickedTrack.audiomackEmbed || clickedTrack.iframeSrc || clickedTrack.soundcloudEmbed);
+const isSwitchingEmbeddedToEmbedded = isBackgroundEmbeddedPlaying && isClickedTrackEmbedded && playingAlbum && currentAlbum && playingAlbum.id !== currentAlbum.id;
+if (!isSwitchingEmbeddedToEmbedded) {
+    stopAllPlaybackUI();
+} else {
+    console.log("Preserving background embedded playback when switching to another embedded album.");
+}
+
                         console.log(`DEBUG: Playing new track or non-controllable embedded track "${clickedTrack.title}". Starting fresh.`);
                     }
 
@@ -3334,29 +3432,92 @@ if (searchIcon) {
  * It removes itself to allow direct iframe interaction.
  * Playback of the embedded content is expected to start/be controllable directly within the iframe.
  */
+
 function firstClickEmbedHandler() {
-    console.log("First click on embedded album detected. Removing interaction layer.");
-    // Stop any currently playing *controllable* media (native, Spotify SDK, YouTube API)
-    // This ensures that if a track was playing in the background, it stops.
-    stopControllablePlayersOnly(); // <--- NEW CALL
-    playingAlbum = currentAlbum; // Set playingAlbum when embedded album is activated
-    currentlyPlayedCardId = playingAlbum ? playingAlbum.id : null; // Set the ID of the playing card
-    hidePlayedCard(); // Hide the playing card
+    console.log("First click on embedded album detected. Handling previous embedded playback removal.");
 
-    // Update the main play bar with the embedded album's details immediately on first click
-    // This ensures the play bar reflects the embedded content even before the overlay closes.
-    updatePlayerUI();
-    updateFixedTopHeadingVisibility(); // Update fixed top heading visibility
+    // Stop controllable players (native audio, YouTube API player instance, Spotify SDK)
+    // This does NOT stop embedded iframe players (they must be removed from DOM to stop).
+    try {
+        stopControllablePlayersOnly();
+    } catch (e) {
+        console.warn("Error calling stopControllablePlayersOnly:", e);
+    }
 
+    const prevPlayingAlbumId = playingAlbum ? playingAlbum.id : null;
+    const newAlbumId = currentAlbum ? currentAlbum.id : null;
+    console.log("firstClickEmbedHandler: prevPlayingAlbumId=", prevPlayingAlbumId, "newAlbumId=", newAlbumId);
+
+    // Remove any iframe elements that belong to the previously playing embedded album(s).
+    // Keep any iframe that matches the currently opened album (newAlbumId).
+    try {
+        const allIframes = Array.from(document.querySelectorAll('iframe[data-album-id]'));
+        allIframes.forEach(iframe => {
+            try {
+                const aid = iframe.dataset.albumId;
+                if (!aid) return;
+                // If the iframe belongs to a different (previous) album, remove it.
+                if (newAlbumId && aid !== String(newAlbumId)) {
+                    iframe.remove();
+                    console.log("Removed previous embedded iframe for albumId:", aid);
+                }
+                // If there's no newAlbumId (defensive), and iframe != current overlay iframe, remove all.
+            } catch (e) {
+                console.warn("Error evaluating iframe dataset:", e);
+            }
+        });
+    } catch (e) {
+        console.warn("Error removing previous iframes:", e);
+    }
+
+    // Additionally, remove any hidden iframes inside albumFullEmbedContainer that are not the new one.
+    try {
+        if (albumFullEmbedContainer) {
+            const containerIframes = Array.from(albumFullEmbedContainer.querySelectorAll('iframe'));
+            containerIframes.forEach(f => {
+                const aid = f.dataset.albumId;
+                if (newAlbumId && aid !== String(newAlbumId)) {
+                    f.remove();
+                    console.log("Removed non-current iframe from albumFullEmbedContainer (id=" + aid + ")");
+                }
+            });
+        }
+    } catch (e) {
+        console.warn("Error cleaning albumFullEmbedContainer iframes:", e);
+    }
+
+    // Now set playingAlbum to the newly opened album (the overlay's album view)
+    try {
+        playingAlbum = currentAlbum;
+        currentlyPlayedCardId = playingAlbum ? playingAlbum.id : null;
+        console.log("firstClickEmbedHandler: playingAlbum set to currentAlbum id=", currentlyPlayedCardId);
+        hidePlayedCard();
+    } catch (e) {
+        console.warn("Error setting playingAlbum/currentlyPlayedCardId:", e);
+    }
+
+    // Remove the interaction layer so iframe receives direct input
     const embedInteractionLayer = document.getElementById('embed-interaction-layer');
     if (embedInteractionLayer) {
-        embedInteractionLayer.removeEventListener('click', firstClickEmbedHandler);
-        embedInteractionLayer.remove(); // Remove from DOM
-        console.log("embed-interaction-layer removed after first click.");
+        try {
+            embedInteractionLayer.removeEventListener('click', firstClickEmbedHandler);
+        } catch (e) {}
+        embedInteractionLayer.remove();
+        console.log('embed-interaction-layer removed after first click.');
     }
+
+    // Update playbar and fixed heading to reflect the newly active embedded album
+    try {
+        updatePlayerUI();
+        updateFixedTopHeadingVisibility();
+    } catch (e) {
+        console.warn("Error updating player UI after first click:", e);
+    }
+}
+
     // The embedded iframe itself is NOT removed here. It remains active.
     // Its playback is managed by the iframe itself (e.g., YouTube's autoplay, Spotify's embed player).
-}
+
 
 
 /**
@@ -4467,6 +4628,22 @@ function updateLoginUI(isLoggedIn) {
             spotifyLoginBtn.style.fontWeight = 'bold';
         }
     }
+}
+
+// === Show/Hide embedded album with backdrop ===
+function showEmbeddedAlbum(albumHtml) {
+    if (embeddedBackdrop) embeddedBackdrop.style.display = 'block';
+    albumFullEmbedContainer.innerHTML = albumHtml;
+    albumFullEmbedContainer.style.zIndex = 9999;
+    albumFullEmbedContainer.style.position = 'fixed';
+    albumFullEmbedContainer.style.top = '50%';
+    albumFullEmbedContainer.style.left = '50%';
+    albumFullEmbedContainer.style.transform = 'translate(-50%, -50%)';
+    albumFullEmbedContainer.style.display = 'block';
+}
+function closeEmbeddedAlbum() {
+    albumFullEmbedContainer.style.display = 'none';
+    if (embeddedBackdrop) embeddedBackdrop.style.display = 'none';
 }
 
 

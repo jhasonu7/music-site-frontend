@@ -2024,7 +2024,7 @@ if (isSameEmbeddedAlbumAlreadyLoaded) {
             closeOverlayBtn.style.justifyContent = 'center';
             closeOverlayBtn.style.alignItems = 'center';
             closeOverlayBtn.style.cursor = 'pointer';
-            closeOverlayBtn.style.zIndex = '901'; // Ensure it's above the embed container
+            closeOverlayBtn.style.zIndex = '10000'; // Ensure it's above the embed container
             console.log("closeOverlayBtn styled and displayed.");
         }
 

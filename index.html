@@ -266,6 +266,9 @@
             cursor: pointer;
             z-index: 901; /* Above other overlay content */
         }
+        .close-overlay{
+            z-index: 10000;
+        }
 
         .album-overlay-content {
             width: 100%;
@@ -494,6 +497,10 @@
             max-width: 200px; /* Optional: limit max width of individual cards */
             /* Inherit existing card styles, but ensure they don't break grid layout */
             flex-shrink: 0; /* Prevent shrinking if it's still a flex item */
+        }
+
+        .close-overlay{
+            z-index: 10000;
         }
     </style>
 </head>

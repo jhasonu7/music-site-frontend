@@ -56,7 +56,7 @@ styleSheet.innerText = `
       @media (max-width: 480px) { 
     #vertical-heart-strip {
     position: absolute;
-    top: 231px;
+    top: 240px;
     left: 36px;
     width: 27px;
     height: calc(100% - 210px);
@@ -70,9 +70,9 @@ styleSheet.innerText = `
   @media (max-width: 768px) { 
     #vertical-heart-strip {
     position: absolute;
-    top: 231px;
-    left: 32px;
-    width: 30px;
+    top: 240px;
+    left: 34px;
+    width: 27px;
     height: calc(100% - 210px);
     display: flex;
     flex-direction: column;

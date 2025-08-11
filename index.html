@@ -286,22 +286,21 @@
 
         }
 
-        /* Full Screen Player Styles (Image 2) */
-        #full-screen-player {
+       #full-screen-player {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: #1a202c; /* Dark background */
-            z-index: 10006; /* Above everything */
+            background-color: #282828; /* Default dark background */
+            z-index: 10003;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             padding: 1rem;
             transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-            transform: translateY(100%); /* Start off-screen (bottom) */
+            transform: translateY(100%);
             opacity: 0;
             visibility: hidden;
         }
@@ -317,18 +316,17 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1rem 0;
+            padding: 1rem;
             position: absolute;
             top: 0;
             left: 0;
-            padding: 1rem;
         }
 
         #full-screen-player .header button {
             background: none;
             border: none;
-            color: white;
-            font-size: 2rem;
+            color: #b3b3b3;
+            font-size: 1.5rem;
             cursor: pointer;
             padding: 0.5rem;
         }
@@ -339,20 +337,17 @@
         }
 
         #full-screen-player .header .song-info .title {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: bold;
+            color: #fff;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         #full-screen-player .header .song-info .artist {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             color: #b3b3b3;
-        }
-
-        #full-screen-player .header .more-options {
-            font-size: 2rem;
         }
 
         #full-screen-player .main-content {
@@ -362,98 +357,116 @@
             justify-content: center;
             flex-grow: 1;
             width: 100%;
-            max-width: 400px; /* Limit album art size */
-            margin-top: 60px; /* Space for header */
+            max-width: 400px;
+            margin-top: 60px;
         }
 
         #full-screen-player .album-art-large {
             width: 100%;
             height: auto;
             border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
         }
 
         #full-screen-player .song-details {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
         }
 
         #full-screen-player .song-details .title {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: bold;
-            margin-bottom: 0.5rem;
+            color: #fff;
+            margin-bottom: 0.25rem;
         }
 
         #full-screen-player .song-details .artist {
-            font-size: 1.2rem;
+            font-size: 1rem;
             color: #b3b3b3;
         }
 
         #full-screen-player .progress-section {
-            width: 90%;
+            width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-bottom: 2rem;
+            padding: 0 1rem;
+            margin-bottom: 1rem;
+        }
+
+        #full-screen-player .progress-section input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: #535353;
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        #full-screen-player .progress-section input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #1ed760;
+            border-radius: 50%;
+            cursor: pointer;
         }
 
         #full-screen-player .progress-section .time-display {
             width: 100%;
             display: flex;
             justify-content: space-between;
-            font-size: 0.9rem;
+            font-size: 0.75rem;
             color: #b3b3b3;
             margin-top: 0.5rem;
         }
 
         #full-screen-player .controls-section {
-            width: 90%;
+            width: 100%;
             display: flex;
             justify-content: space-around;
             align-items: center;
-            margin-bottom: 2rem;
+            padding: 0 1rem;
+            margin-bottom: 1rem;
         }
 
         #full-screen-player .controls-section button {
             background: none;
             border: none;
-            color: white;
-            font-size: 2rem;
+            color: #b3b3b3;
+            font-size: 1.5rem;
             cursor: pointer;
             padding: 0.5rem;
         }
 
-        #full-screen-player .controls-section button svg {
-            width: 107px;
-            height: 52px;
-        }
-
-        #full-screen-player .controls-section #full-play-pause-btn svg {
-            width: 60px; /* Larger play button */
-            height: 60px;
-            color: #1ED760; /* Green color */
+        #full-screen-player .controls-section #full-play-pause-btn {
+            color: #1ed760;
+            font-size: 2rem;
         }
 
         #full-screen-player .bottom-actions {
-            width: 90%;
+            width: 100%;
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding-bottom: 1rem;
+            padding: 0 1rem 1rem;
         }
 
         #full-screen-player .bottom-actions button {
             background: none;
             border: none;
             color: #b3b3b3;
+            font-size: 1.5rem;
             cursor: pointer;
             padding: 0.5rem;
         }
 
-        #full-screen-player .bottom-actions button svg {
-            width: 24px;
-            height: 24px;
+        /* Dynamic background color based on album art */
+        @media (prefers-color-scheme: dark) {
+            #full-screen-player {
+                background-color: #282828; /* Default dark */
+            }
         }
 
         /* NEW: Styles for Explore More Albums to display vertically */
@@ -1361,66 +1374,74 @@
                 </div>
             </div>
 
-            <!-- Full-Screen Player (Initially Hidden) -->
-            <div id="full-screen-player">
-                <div class="header">
-                    <button id="minimize-player-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8">
-                            <path fill-rule="evenodd" d="M19.5 8.25l-7.5 7.5-7.5-7.5" clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                    <div class="song-info">
-                        <div class="title" id="full-screen-song-title">Song Title</div>
-                        <div class="artist" id="full-screen-artist-name">Artist Name</div>
-                    </div>
-                    <button class="more-options">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8">
-                            <path fill-rule="evenodd" d="M10.5 6a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0ZM10.5 12a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0ZM12 18a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                </div>
-
-                <div class="main-content">
-                    <img id="full-screen-album-art" src="https://placehold.co/300x300/4a4a4a/ffffff?text=Album" alt="Album Art" class="album-art-large" />
-                    <div class="song-details">
-                        <div class="title" id="full-screen-song-title-large">Song Title</div>
-                        <div class="artist" id="full-screen-artist-name-large">Artist Name</div>
-                    </div>
-                </div>
-
-                <div class="progress-section">
-                    <input type="range" min="0" max="100" value="0" id="full-screen-progress-bar" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-green-500" />
-                    <div class="time-display">
-                        <span id="full-screen-current-time">0:00</span>
-                        <span id="full-screen-total-time">0:00</span>
-                    </div>
-                </div>
-
-                <div class="controls-section">
-                   
-                    <button id="full-prev-track-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8">
-                            <path d="M11 6L5 12L11 18M19 6L13 12L19 18" />
-                        </svg>
-                    </button>
-                    <button id="full-play-pause-btn">
-                        <svg id="full-play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-10 h-10">
-                            <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.38 2.872-1.667l11.55 6.416c1.427.79 1.427 2.893 0 3.683l-11.549 6.416c-1.344.713-2.872-.24-2.872-1.667V5.653Z" clipRule="evenodd" />
-                        </svg>
-                        <svg id="full-pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-10 h-10 hidden">
-                            <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 0 1 .75-.75H9a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H7.5a.75.75 0 0 1-.75-.75V5.25Zm7.5 0A.75.75 0 0 1 15 4.5h1.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H15a.75.75 0 0 1-.75-.75V5.25Z" clipRule="evenodd" />
-                        </svg>
-                    </button>
-                    <button id="full-next-track-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8">
-                            <path d="M13 6L19 12L13 18M5 6L11 12L5 18" />
-                        </svg>
-                    </button>
-                    
-                </div>
-
-            
+        <div id="full-screen-player">
+        <div class="header">
+            <button id="minimize-player-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                    <path fill-rule="evenodd" d="M19.5 8.25l-7.5 7.5-7.5-7.5" clip-rule="evenodd" />
+                </svg>
+            </button>
+            <div class="song-info">
+                <div class="title" id="full-screen-song-title">Dhun</div>
+                <div class="artist" id="full-screen-artist-name">Mithoon, Arijit Singh</div>
             </div>
+            <button class="more-options">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                    <path fill-rule="evenodd" d="M10.5 6a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0ZM10.5 12a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0ZM12 18a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" clip-rule="evenodd" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="main-content">
+            <img id="full-screen-album-art" src="https://placehold.co/300x300/4a4a4a/ffffff?text=Album" alt="Album Art" class="album-art-large" />
+            <div class="song-details">
+                <div class="title" id="full-screen-song-title-large">Dhun</div>
+                <div class="artist" id="full-screen-artist-name-large">Mithoon, Arijit Singh</div>
+            </div>
+        </div>
+
+        <div class="progress-section">
+            <input type="range" min="0" max="100" value="0" id="full-screen-progress-bar" />
+            <div class="time-display">
+                <span id="full-screen-current-time">0:00</span>
+                <span id="full-screen-total-time">0:00</span>
+            </div>
+        </div>
+
+        <div class="controls-section">
+            <button id="full-prev-track-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                    <path d="M11 6L5 12L11 18M19 6L13 12L19 18" />
+                </svg>
+            </button>
+            <button id="full-play-pause-btn">
+                <svg id="full-play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8">
+                    <path fill-rule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.38 2.872-1.667l11.55 6.416c1.427.79 1.427 2.893 0 3.683l-11.549 6.416c-1.344.713-2.872-.24-2.872-1.667V5.653Z" clip-rule="evenodd" />
+                </svg>
+                <svg id="full-pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 hidden">
+                    <path fill-rule="evenodd" d="M6.75 5.25a.75.75 0 0 1 .75-.75H9a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H7.5a.75.75 0 0 1-.75-.75V5.25Zm7.5 0A.75.75 0 0 1 15 4.5h1.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H15a.75.75 0 0 1-.75-.75V5.25Z" clip-rule="evenodd" />
+                </svg>
+            </button>
+            <button id="full-next-track-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                    <path d="M13 6L19 12L13 18M5 6L11 12L5 18" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="bottom-actions">
+            <button>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                    <path d="M12 6v3l4-4-4-4v3c-4.42 0-8 3.58-8 8 0 1.57.46 3.03 1.24 4.26L6.7 14.8A5.87 5.87 0 0 1 6 12c0-3.31 2.69-6 6-6zm6.76 1.74L17.2 6.7A5.87 5.87 0 0 1 18 12c0 3.31-2.69 6-6 6v-3l-4 4 4 4v-3c4.42 0 8-3.58 8-8 0-1.57-.46-3.03-1.24-4.26z" />
+                </svg>
+            </button>
+            <button>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
+                </svg>
+            </button>
+        </div>
+    </div>
 
     
     </div>
@@ -1829,7 +1850,20 @@
     </nav>
 </footer>
 
-
+ <script>
+            function setDynamicBackground() {
+                const albumArt = document.getElementById('full-screen-album-art');
+                if (albumArt) {
+                    albumArt.onload = () => {
+                        const colorThief = new ColorThief();
+                        const dominantColor = colorThief.getColor(albumArt);
+                        const rgbColor = `rgb(${dominantColor[0]}, ${dominantColor[1]}, ${dominantColor[2]})`;
+                        document.getElementById('full-screen-player').style.backgroundColor = rgbColor;
+                    };
+                }
+            }
+            setDynamicBackground();
+        </script>
 
 
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -1846,5 +1880,8 @@
 
 
 </html>
+
+
+
 
 

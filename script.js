@@ -1,5 +1,17 @@
 
 
+// Inject fade-in CSS for similar albums
+(function() {
+    const style = document.createElement('style');
+    style.innerHTML = `
+    .fade-in { animation: fadeIn 0.6s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    `;
+    document.head.appendChild(style);
+})();
+
+
+
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual ngrok static domain if you are using ngrok for your backend.
 // If your backend is hosted directly (e.g., on Render, Heroku), use that URL.
@@ -46,7 +58,7 @@ styleSheet.innerText = `
         z-index: 1002; /* Ensure it's above the interaction layer */
         pointer-events: auto;
         overflow-y: auto;
-        background: rgb(15 14 14);
+        background: rgb(13,13,13);
         backdrop-filter: blur(5px);
         -webkit-backdrop-filter: blur(5px);
         border-radius: 25px;
@@ -56,7 +68,7 @@ styleSheet.innerText = `
       @media (max-width: 480px) { 
     #vertical-heart-strip {
     position: absolute;
-    top: 240px;
+    top: 231px;
     left: 36px;
     width: 27px;
     height: calc(100% - 210px);
@@ -70,8 +82,8 @@ styleSheet.innerText = `
   @media (max-width: 768px) { 
     #vertical-heart-strip {
     position: absolute;
-    top: 240px;
-    left: 34px;
+    top: 231px;
+    left: 32px;
     width: 27px;
     height: calc(100% - 210px);
     display: flex;
@@ -93,7 +105,7 @@ styleSheet.innerText = `
 
    #vertical-heart-strip1 {
         position: absolute;
-        top: 255px; /* Position below the top info mask */
+        top: 248px; /* Position below the top info mask */
         right: 75px;
         width: 27px;
         height: calc(100% - 210px);
@@ -104,7 +116,7 @@ styleSheet.innerText = `
         z-index: 1002; /* Ensure it's above the interaction layer */
         pointer-events: auto;
         overflow-y: auto;
-        background: rgb(15 14 14);
+        background: rgb(13,13,13);
         backdrop-filter: blur(5px);
         -webkit-backdrop-filter: blur(5px);
         border-radius: 25px;
@@ -114,7 +126,7 @@ styleSheet.innerText = `
       @media (max-width: 480px) { 
     #vertical-heart-strip1 {
     position: absolute;
-    top: 240px;
+    top: 231px;
     right: 36px;
     width: 27px;
     height: calc(100% - 210px);
@@ -128,8 +140,8 @@ styleSheet.innerText = `
   @media (max-width: 768px) { 
     #vertical-heart-strip1 {
     position: absolute;
-    top: 240px;
-    right: 56px;
+    top: 231px;
+    right: 32px;
     width: 27px;
     height: calc(100% - 210px);
     display: flex;
@@ -166,7 +178,24 @@ const errorMessageDisplay = document.getElementById('error-message-display'); //
 // NEW: Reference for the "Explore More Albums" container
 const exploreMoreAlbumsCardsContainer = document.getElementById('explore-more-albums-cards');
 
+// Get references to the elements we need
+const uniqueSearchIconLink = document.getElementById('unique-search-icon-link');
+const uniqueSearchPopup = document.getElementById('unique-search-popup');
+const uniqueCloseSearchPopup = document.getElementById('unique-close-search-popup');
 
+// Add event listener to the search icon link
+uniqueSearchIconLink.addEventListener('click', (event) => {
+    // Prevent the default link behavior
+    event.preventDefault();
+    // Show the search pop-up
+    uniqueSearchPopup.classList.remove('unique-hidden');
+});
+
+// Add event listener to the close button in the pop-up
+uniqueCloseSearchPopup.addEventListener('click', () => {
+    // Hide the search pop-up
+    uniqueSearchPopup.classList.add('unique-hidden');
+});
 // --- Global Variables ---
 let currentAlbum = null; // Stores the currently loaded album data (for the overlay)
 let currentTrackIndex = 0; // Index of the currently playing track within currentAlbum.tracks
@@ -3138,40 +3167,83 @@ function handlePlayButtonClick(event) {
 }
 
 
-// --- Fetch Albums from Backend ---
+/*
+  search_with_overlay_fixed.js
+  Fixed behavior:
+  - Bottom search button → popup first
+  - Popup → overlay on input/icon click
+  - Overlay back → popup
+  - Clicking album closes popup/overlay
+*/
+
+// ---------------------------
+// Configuration & globals
+
+// ---------------------------
+// Fetch albums (unchanged)
+// ---------------------------
+/*
+  search_with_overlay.js
+  This is a corrected version of the search script.
+  It ensures the mobile overlay and recent searches function as expected.
+  - Keeps user's fetchAlbums() logic as it was largely correct.
+  - Consolidates and corrects the logic for showing/hiding the small popup and the full-screen overlay.
+  - Ensures recent searches are stored in-memory and correctly rendered/cleared in the mobile overlay.
+  - Guarantees that selecting an album closes all search UI components.
+*/
+
+// ---------------------------
+// Configuration & globals
+// ---------------------------
+
+
+// Helper function to parse a duration string like "M:SS" into seconds
+function parseDurationToSeconds(duration) {
+    if (!duration) return 0;
+    if (typeof duration === 'number') return duration;
+    const parts = String(duration).split(':');
+    if (parts.length === 1) {
+        const n = parseInt(parts[0], 10);
+        return isNaN(n) ? 0 : n;
+    }
+    const mins = parseInt(parts[0], 10) || 0;
+    const secs = parseInt(parts[1], 10) || 0;
+    return mins * 60 + secs;
+}
+
+// ---------------------------
+// The main fetchAlbums() function from the previous version.
+// This function handles fetching album data and populating the UI.
+// ---------------------------
 async function fetchAlbums() {
     console.log("fetchAlbums: Starting album data fetch...");
-    // showMessageBox('Loading albums data...', 'info'); // Removed as per user request
     try {
         console.log(`fetchAlbums: Attempting to fetch from: ${BACKEND_BASE_URL}/api/albums`);
         const response = await fetch(`${BACKEND_BASE_URL}/api/albums`, {
             method: 'GET',
             headers: {
-                'ngrok-skip-browser-warning': 'true', // Crucial for ngrok free plan
+                'ngrok-skip-browser-warning': 'true',
                 'Content-Type': 'application/json'
             }
         });
         console.log("fetchAlbums: Fetch response received.");
 
         if (!response.ok) {
-            const errorText = await response.text(); // Read error response as text
+            const errorText = await response.text();
             throw new Error(`HTTP error! status: ${response.status}. Details: ${errorText.substring(0, 200)}...`);
         }
 
         const rawAlbumsData = await response.json();
         console.log("fetchAlbums: Raw album data received from backend:", rawAlbumsData);
 
-        // --- IMPORTANT CHANGE: Map _id to id for consistency and parse track durations ---
+        // Map _id to id for consistency and parse track durations
         allAlbumsData = rawAlbumsData.map(album => {
             const albumId = album._id && typeof album._id === 'object' && album._id.$oid
-                ? album._id.$oid // Value if true
-                : album._id; // Value if false
+                ? album._id.$oid
+                : album._id;
 
-            // Process tracks to ensure duration is a number
             const processedTracks = album.tracks ? album.tracks.map(track => {
                 const durationInSeconds = parseDurationToSeconds(track.duration);
-                // NEW: Added logging here to see raw and parsed duration
-                console.log(`Processing track "${track.title}": Raw duration from backend: "${track.duration}" (Type: ${typeof track.duration}), Parsed duration (seconds): ${durationInSeconds}`);
                 return {
                     ...track,
                     duration: durationInSeconds
@@ -3179,12 +3251,12 @@ async function fetchAlbums() {
             }) : [];
 
             return {
-                ...album, // Copy all existing properties
-                id: albumId, // Add an 'id' property with the string representation of _id
-                tracks: processedTracks // Use the processed tracks array
+                ...album,
+                id: albumId,
+                tracks: processedTracks
             };
         });
-        console.log("fetchAlbums: Albums data transformed and stored. Total albums:", allAlbumsData.length); // Log all fetched data
+        console.log("fetchAlbums: Albums data transformed and stored. Total albums:", allAlbumsData.length);
 
         // Remove any previous error message if fetch was successful
         const existingErrorMessage = document.querySelector('.backend-error-message');
@@ -3192,36 +3264,45 @@ async function fetchAlbums() {
             existingErrorMessage.remove();
         }
 
-        showMessageBox('Album data loaded successfully!', 'success');
+        if (typeof showMessageBox === 'function') {
+            try { showMessageBox('Album data loaded successfully!', 'success'); } catch(e) { console.warn('showMessageBox threw', e); }
+        }
 
-        // NEW: Dynamically populate the "Explore More Albums" section
+        // Populate Explore More Albums if container exists
         if (exploreMoreAlbumsCardsContainer) {
-            exploreMoreAlbumsCardsContainer.innerHTML = ''; // Clear existing content
+            exploreMoreAlbumsCardsContainer.innerHTML = '';
             allAlbumsData.forEach(album => {
-                // Only add albums that are not already present in the hardcoded sections
-                // This is a simplified check, assuming unique album IDs across sections
                 const isAlreadyDisplayed = document.querySelector(`.card[data-album-id="${album.id}"]`);
                 if (!isAlreadyDisplayed) {
-                    const cardHtml = createAlbumCardHtml(album);
+                    let cardHtml = '';
+                    if (typeof createAlbumCardHtml === 'function') {
+                        cardHtml = createAlbumCardHtml(album);
+                    } else {
+                        cardHtml = `
+                            <div class="card" data-album-id="${album.id}">
+                                <img src="${album.coverArt || ''}" alt="${album.title || ''}">
+                                <div class="card-title">${album.title || ''}</div>
+                                <div class="card-artists">${album.artist || ''}</div>
+                            </div>`;
+                    }
                     exploreMoreAlbumsCardsContainer.insertAdjacentHTML('beforeend', cardHtml);
                 }
             });
             console.log("fetchAlbums: 'Explore More Albums' section dynamically populated.");
         }
 
-
-        // IMPORTANT: We no longer dynamically create HTML cards here.
-        // We only attach listeners to the *existing* HTML cards.
-        attachEventListenersToHtmlCards();
+        // Attach listeners to HTML cards if user has function
+        if (typeof attachEventListenersToHtmlCards === 'function') {
+            try { attachEventListenersToHtmlCards(); } catch(e) { console.warn('attachEventListenersToHtmlCards threw', e); }
+        }
     } catch (error) {
         console.error("fetchAlbums: Error fetching albums data:", error);
-        const mainContentArea = document.querySelector('.main-content'); // Or a more specific container where you want to show the error
+        const mainContentArea = document.querySelector('.main-content');
         if (mainContentArea) {
-            // Create the error message div dynamically
             let errorMessageDiv = mainContentArea.querySelector('.backend-error-message');
             if (!errorMessageDiv) {
                 errorMessageDiv = document.createElement('div');
-                errorMessageDiv.classList.add('backend-error-message'); // Add a class for easier identification and removal
+                errorMessageDiv.classList.add('backend-error-message');
                 errorMessageDiv.style.cssText = `
                     color: white;
                     text-align: center;
@@ -3233,7 +3314,7 @@ async function fetchAlbums() {
                     margin-left: auto;
                     margin-right: auto;
                 `;
-                mainContentArea.prepend(errorMessageDiv); // Prepend to appear at the top of content
+                mainContentArea.prepend(errorMessageDiv);
             }
 
             errorMessageDiv.innerHTML = `
@@ -3242,27 +3323,19 @@ async function fetchAlbums() {
                 <p>Error: ${error.message}</p>
             `;
         }
-
     }
 }
 
-
-// --- Search functionality to open album and track by name ---
-let debounceTimer;
-const DEBOUNCE_DELAY = 300; // milliseconds
-
-/**
- * Displays a message near the search input.
- * @param {string} message - The message to display.
- * @param {string} type - 'info' or 'error' for styling.
- */
+// ---------------------------
+// Search message helpers
+// ---------------------------
+let searchMessageTimeoutLocal = null;
 function displaySearchMessage(message, type = 'info') {
-    // If the container doesn't exist, create it and append it
     if (!searchMessageContainer) {
         searchMessageContainer = document.createElement('div');
-        searchMessageContainer.id = 'search-message-container'; // Assign the ID for consistency
+        searchMessageContainer.id = 'search-message-container';
         searchMessageContainer.style.cssText = `
-            position: fixed; /* Changed to fixed for robust positioning */
+            position: fixed;
             background-color: #333;
             color: #ffffff;
             padding: 8px 12px;
@@ -3271,167 +3344,433 @@ function displaySearchMessage(message, type = 'info') {
             white-space: nowrap;
             opacity: 0;
             transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
-            transform: translateY(-10px); /* Start slightly above */
-            pointer-events: none; /* Allow clicks to pass through */
-            z-index: 100; /* Ensure it's on top */
+            transform: translateY(-10px);
+            pointer-events: none;
+            z-index: 100;
         `;
-        // Append it to the body to ensure it's not clipped by overflow: hidden parents
         document.body.appendChild(searchMessageContainer);
     }
-
-    // Position the message container relative to the search input
-    if (searchInput) {
-        const searchRect = searchInput.getBoundingClientRect();
+    const inputElement = document.activeElement;
+    if (inputElement && inputElement.tagName === 'INPUT' && inputElement.type === 'text') {
+        const searchRect = inputElement.getBoundingClientRect();
         searchMessageContainer.style.left = `${searchRect.left}px`;
-        searchMessageContainer.style.top = `${searchRect.bottom + 5}px`; // 5px below the search input
+        searchMessageContainer.style.top = `${searchRect.bottom + 5}px`;
     } else {
-        // Fallback positioning if searchInput is not found (though it should be)
         searchMessageContainer.style.left = '50%';
         searchMessageContainer.style.transform = 'translateX(-50%)';
-        searchMessageContainer.style.top = '10px'; // Top of the viewport
+        searchMessageContainer.style.top = '10px';
     }
-
-    // Clear any existing timeout to prevent previous messages from being cut short
-    if (searchMessageTimeout) {
-        clearTimeout(searchMessageTimeout);
-    }
-    console.log("Displaying search message:", message, "Type:", type); // Debugging log
+    if (searchMessageTimeoutLocal) clearTimeout(searchMessageTimeoutLocal);
     searchMessageContainer.textContent = message;
-    searchMessageContainer.style.color = type === 'error' ? '#FF6B6B' : '#ffffff'; // Red for error, white for info
-    searchMessageContainer.style.opacity = '1'; // Ensure full opacity when displayed
-    searchMessageContainer.style.transform = 'translateY(0)'; // Slide into place
-
-    // Set a timeout to clear the message after 5 seconds
-    searchMessageTimeout = setTimeout(() => {
-        searchMessageContainer.style.opacity = '0'; // Start fading out
-        searchMessageContainer.style.transform = 'translateY(-10px)'; // Slide up as it fades
-        // After fade, hide the element completely
-        setTimeout(() => {
-            searchMessageContainer.textContent = ''; // Clear text content
-            // No need to set display: 'none' here, as opacity 0 and translateY(-10px) makes it effectively hidden
-            // and pointer-events: none ensures it's not block clicks.
-        }, 500); // This should match your CSS transition duration for opacity
-    }, 5000); // Message visible for 5 seconds
+    searchMessageContainer.style.color = type === 'error' ? '#FF6B6B' : '#ffffff';
+    searchMessageContainer.style.opacity = '1';
+    searchMessageContainer.style.transform = 'translateY(0)';
+    searchMessageTimeoutLocal = setTimeout(() => {
+        searchMessageContainer.style.opacity = '0';
+        searchMessageContainer.style.transform = 'translateY(-10px)';
+        setTimeout(() => { searchMessageContainer.textContent = ''; }, 500);
+    }, 4000);
 }
-
-/**
- * Clears any displayed search message immediately.
- */
 function clearSearchMessage() {
     if (searchMessageContainer) {
-        if (searchMessageTimeout) {
-            clearTimeout(searchMessageTimeout);
-            searchMessageTimeout = null;
-        }
+        if (searchMessageTimeoutLocal) clearTimeout(searchMessageTimeoutLocal);
         searchMessageContainer.style.opacity = '0';
         searchMessageContainer.style.transform = 'translateY(-10px)';
         searchMessageContainer.textContent = '';
     }
 }
-if (searchInput) {
-    searchInput.addEventListener('input', (event) => {
-        const searchQuery = event.target.value.trim().toLowerCase();
-        console.log("Search input changed:", searchQuery); // Debugging log
-        clearTimeout(debounceTimer);
-        clearSearchMessage(); // Clear message on new input
 
-        if (searchQuery.length > 0) {
-            // NEW: Trigger search after a debounce delay
-            debounceTimer = setTimeout(() => {
-                searchAndOpenAlbum(searchQuery);
-            }, DEBOUNCE_DELAY);
-        } else {
-            // If the query is empty, close the overlay
-            closeAlbumOverlay();
-            clearSearchMessage();
-        }
-    });
-    // Add event listener for 'keydown' on searchInput to handle 'Enter' key
-    searchInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault(); // Prevent default form submission if it's part of a form
-            clearTimeout(debounceTimer); // Clear debounce if Enter is pressed
-            const searchQuery = searchInput.value.trim().toLowerCase();
-            if (searchQuery.length > 0) {
-                searchAndOpenAlbum(searchQuery);
+// Global function to close all search UIs
+// This function is now the single source of truth for closing all search-related elements.
+window.closeAllSearchUi = function() {
+    const mobileOverlay = document.getElementById('mobile-search-overlay');
+    const smallPopup = document.getElementById('unique-search-popup');
+    const overlayBackdrop = document.getElementById('overlay');
+    const popupSearchInput = document.querySelector(".unique-search-input");
+    
+    if (mobileOverlay) {
+        mobileOverlay.classList.remove('open');
+        mobileOverlay.setAttribute('aria-hidden', 'true');
+        mobileOverlay.querySelector('#mobile-overlay-results').innerHTML = '';
+        document.body.style.overflow = 'auto'; // Re-enable scrolling
+    }
+    if (smallPopup) {
+        smallPopup.classList.add('unique-hidden');
+    }
+    if (overlayBackdrop) {
+        overlayBackdrop.style.display = 'none';
+    }
+    // Clear the input in the small popup on close
+    if (popupSearchInput) {
+        popupSearchInput.value = '';
+    }
+};
+
+// ---------------------------
+// Enhanced renderSuggestions + attachLiveSearch with `mode`
+// mode: 'popup' (small dropdown) | 'overlay' (mobile full-screen overlay)
+// ---------------------------
+let recentSearches = [];
+
+function renderSuggestions(results, container, mode = 'popup') {
+    container.innerHTML = '';
+    if (!results || results.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    results.forEach(album => {
+        const suggestion = document.createElement('div');
+        suggestion.className = 'suggestion-item';
+        suggestion.style.cssText = (mode === 'overlay') ? `
+            display:flex;
+            align-items:center;
+            padding:12px 14px;
+            border-bottom:1px solid rgba(255,255,255,0.03);
+            cursor:pointer;
+        ` : `
+            display:flex;
+            align-items:center;
+            padding:8px;
+            cursor:pointer;
+        `;
+
+        const imgSrc = album.coverArt || album.img || '';
+        suggestion.innerHTML = `
+            <img src="${imgSrc}" alt="" style="width:${mode==='overlay'?'56px':'40px'};height:${mode==='overlay'?'56px':'40px'};border-radius:6px;margin-right:12px;object-fit:cover;">
+            <div style="min-width:0">
+                <div style="color:#fff;font-size:${mode==='overlay'?'15px':'14px'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${album.title || ''}</div>
+                <div style="color:#aaa;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${album.artist || ''}</div>
+            </div>
+        `;
+
+        suggestion.addEventListener('click', (e) => {
+            e.stopPropagation();
+            addToRecents(album);
+            closeAllSearchUi();
+            
+            if (typeof openAlbumDetails === 'function') {
+                try { openAlbumDetails(album); } catch(err) { console.error('openAlbumDetails threw', err); }
             } else {
-                closeAlbumOverlay();
-                clearSearchMessage();
+                console.warn('openAlbumDetails is not defined. Click will not open album.');
             }
-        }
+        });
+
+        container.appendChild(suggestion);
     });
+
+    container.style.display = 'block';
 }
 
-// Function to perform the search and open the album.
-// Playback is NOT stopped by this function. It calls `openAlbumDetails`,
-// which then handles playback initiation if a track is specified.
-async function searchAndOpenAlbum(searchQuery) {
-    console.log(`--- Initiating client-side search for: "${searchQuery}" ---`);
-    let matchedAlbum = null;
-    let matchedTrackTitle = null;
-
-    if (allAlbumsData.length === 0) {
-        console.warn("allAlbumsData is empty. Attempting to re-fetch albums for search.");
-        await fetchAlbums(); // Ensure data is loaded if not already
-        if (allAlbumsData.length === 0) {
-            displaySearchMessage("Album data not loaded. Cannot perform search.", 'error');
+function attachLiveSearch(inputElement, container, mode = 'popup') {
+    if (!inputElement || !container) return;
+    let dt;
+    inputElement.addEventListener('input', () => {
+        const query = inputElement.value.trim().toLowerCase();
+        clearTimeout(dt);
+        if (query.length < 2) {
+            container.innerHTML = '';
+            container.style.display = 'none';
+            // On mobile, if input is empty, show recents again
+            if (mode === 'overlay') renderMobileRecents();
             return;
         }
-    }
-
-    // Find the first album that matches the search query (case-insensitive)
-    matchedAlbum = allAlbumsData.find(album =>
-        (album.title && album.title.toLowerCase().includes(searchQuery)) ||
-        (album.artist && album.artist.toLowerCase().includes(searchQuery)) ||
-        (album.tracks && album.tracks.some(track =>
-            (track.title && track.title.toLowerCase().includes(searchQuery)) ||
-            (track.artist && track.artist.toLowerCase().includes(searchQuery))
-        ))
-    );
-
-    if (matchedAlbum) {
-        console.log(`Client-side match found: "${matchedAlbum.title}" for query "${searchQuery}"`);
-        clearSearchMessage(); // Clear message if results are found
-
-        // Re-check tracks in the matched album for highlighting
-        if (matchedAlbum.tracks) {
-            for (const track of matchedAlbum.tracks) {
-                const trackTitleLower = (track.title ?? '').toLowerCase();
-                const trackArtistLower = (track.artist ?? '').toLowerCase();
-                if (trackTitleLower.includes(searchQuery) || trackArtistLower.includes(searchQuery)) {
-                    matchedTrackTitle = track.title;
-                    break;
-                }
+        dt = setTimeout(() => {
+            if (!allAlbumsData || allAlbumsData.length === 0) return;
+            const filtered = allAlbumsData.filter(album => {
+                const title = (album.title||'').toLowerCase();
+                const artist = (album.artist||'').toLowerCase();
+                const trackMatch = (album.tracks||[]).some(t => ((t.title||'').toLowerCase().includes(query) || (t.artist||'').toLowerCase().includes(query)));
+                return title.includes(query) || artist.includes(query) || trackMatch;
+            });
+            // On mobile, hide the recents section when there's a search query
+            const mobileRecentsContainer = document.getElementById('mobile-recents');
+            if (mobileRecentsContainer) {
+                 mobileRecentsContainer.style.display = filtered.length > 0 ? 'none' : 'block';
             }
-        }
-        console.log(`Calling openAlbumDetails for: "${matchedAlbum.title}" with highlight: "${matchedTrackTitle || 'none'}"`);
-        openAlbumDetails(matchedAlbum, matchedTrackTitle);
-    } else {
-        console.log(`No specific album or track match found in loaded data for query: "${searchQuery}"`);
-        displaySearchMessage("No albums found matching your search.", 'error');
-        closeAlbumOverlay(); // If no match, ensure overlay is closed
-    }
-}
+            renderSuggestions(filtered, container, mode);
+        }, 200);
+    });
 
-// Event listener for search icon click
-if (searchIcon) {
-    searchIcon.addEventListener('click', function() {
-        const searchQuery = searchInput.value.trim().toLowerCase();
-        console.log("Search icon clicked, query:", searchQuery); // Debugging log
-        if (searchQuery.length > 0) {
-            searchAndOpenAlbum(searchQuery);
-        } else {
-            // If search input is empty on icon click, close overlay and clear search message
-            closeAlbumOverlay();
-            clearSearchMessage();
+    inputElement.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            const first = container.querySelector('.suggestion-item');
+            if (first) first.click();
         }
     });
 }
-/**
- * Handles the first click on an embedded album overlay.
- * It removes itself to allow direct iframe interaction.
- * Playback of the embedded content is expected to start/be controllable directly within the iframe.
- */
+
+// ---------------------------
+// Helper: createSuggestionsContainer
+// ---------------------------
+function createSuggestionsContainer(inputElement) {
+    const container = document.createElement('div');
+    container.classList.add('search-suggestions');
+    container.style.cssText = `
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 100%;
+        background: #121212;
+        max-height: 320px;
+        overflow-y: auto;
+        border-radius: 6px;
+        z-index: 9999;
+        display: none;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    `;
+    inputElement.parentElement.style.position = "relative";
+    inputElement.parentElement.appendChild(container);
+    return container;
+}
+
+// ---------------------------
+// Mobile/Tablet full-screen overlay (injected by JS)
+// ---------------------------
+(function injectMobileOverlay() {
+    // Only inject on mobile/tablet (if screen size is less than or equal to 1024px)
+    if (window.innerWidth > 1024) return;
+
+    // Inject minimal CSS for overlay and animations
+    const style = document.createElement('style');
+    style.innerHTML = `
+    /* mobile overlay styles */
+    #mobile-search-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: #0f0f10;
+        z-index: 10002;
+        display: none;
+        flex-direction: column;
+        transform: translateY(8%);
+        opacity: 0;
+        transition: transform 260ms ease, opacity 260ms ease;
+    }
+    #mobile-search-overlay.open {
+        display:flex;
+        transform: translateY(0);
+        opacity: 1;
+    }
+    #mobile-search-overlay .overlay-header {
+        display:flex;
+        align-items:center;
+        gap:8px;
+        padding:12px 14px;
+        border-bottom:1px solid rgba(255,255,255,0.03);
+        background:linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.05));
+    }
+    #mobile-search-overlay .overlay-back {
+        background:none;border:none;color:#fff;font-size:20px;padding:8px;cursor:pointer;
+    }
+    #mobile-search-overlay .overlay-search-input {
+        flex:1;
+        background:#171717;border-radius:999px;padding:10px 14px;border:none;color:#fff;font-size:16px;
+    }
+    #mobile-search-overlay .overlay-clear {
+        background:none;border:none;color:#aaa;font-size:18px;cursor:pointer;padding:6px;
+    }
+    #mobile-search-overlay .overlay-body {
+        padding:12px;
+        overflow:auto;
+        flex:1;
+    }
+    #mobile-recents { margin-bottom: 20px; }
+    #mobile-recent-list .recent-item {
+        display:flex;align-items:center;padding:10px;border-radius:8px;margin-bottom:8px;background:#111;cursor:pointer;
+    }
+    #mobile-recent-list .recent-item img { width:48px;height:48px;border-radius:6px;margin-right:12px;object-fit:cover; }
+    #mobile-recent-list .recent-item .meta { color:#fff; }
+    #mobile-recent-list .recent-empty { color:#888;padding:16px;text-align:center; }
+    #mobile-overlay-results { margin-top:6px;border-top:1px solid rgba(255,255,255,0.02); }
+    `;
+    document.head.appendChild(style);
+
+    const overlayHtml = `
+    <div id="mobile-search-overlay" aria-hidden="true">
+        <div class="overlay-header">
+            <button class="overlay-back" id="mobile-overlay-back">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:24px; height:24px; color:white;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                </svg>
+            </button>
+            <input id="mobile-overlay-input" class="overlay-search-input" placeholder="Search for songs, albums, artists..." autocomplete="off" />
+            <button id="mobile-overlay-clear" class="overlay-clear" title="Clear">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:24px; height:24px; color:white;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="overlay-body">
+            <div id="mobile-recents">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <h3 style="color:#fff;margin:0;font-size:16px;">Recent searches</h3>
+                    <button id="mobile-clear-recents" style="background:none;border:none;color:#8f8f8f;cursor:pointer;font-size:12px;">Clear</button>
+                </div>
+                <div id="mobile-recent-list"></div>
+            </div>
+            <div id="mobile-overlay-results"></div>
+        </div>
+    </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', overlayHtml);
+
+    // Elements
+    const mobileOverlay = document.getElementById('mobile-search-overlay');
+    const mobileOverlayBack = document.getElementById('mobile-overlay-back');
+    const mobileOverlayInput = document.getElementById('mobile-overlay-input');
+    const mobileOverlayClear = document.getElementById('mobile-overlay-clear');
+    const mobileRecentList = document.getElementById('mobile-recent-list');
+    const mobileOverlayResults = document.getElementById('mobile-overlay-results');
+    const mobileRecentsContainer = document.getElementById('mobile-recents');
+    const mobileClearRecents = document.getElementById('mobile-clear-recents');
+
+    // Recent searches helpers
+    window.renderMobileRecents = function() {
+        mobileRecentList.innerHTML = '';
+        if (!recentSearches || recentSearches.length === 0) {
+            mobileRecentList.innerHTML = '<div class="recent-empty">No recent searches</div>';
+            return;
+        }
+        recentSearches.forEach(album => {
+            const div = document.createElement('div');
+            div.className = 'recent-item';
+            div.innerHTML = `
+                <img src="${album.coverArt || album.img || ''}" alt="">
+                <div style="flex:1;min-width:0;">
+                    <div style="color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${album.title || ''}</div>
+                    <div style="color:#aaa;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${album.artist || ''}</div>
+                </div>
+                <button aria-label="Remove" class="recent-remove" style="background:none;border:none;color:#8f8f8f;font-size:18px;cursor:pointer;padding:6px;">×</button>
+            `;
+            div.querySelector('.recent-remove').addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                recentSearches = recentSearches.filter(a => a.id !== album.id);
+                window.renderMobileRecents();
+            });
+            div.addEventListener('click', () => {
+                addToRecents(album);
+                closeAllSearchUi();
+                if (typeof openAlbumDetails === 'function') openAlbumDetails(album);
+            });
+            mobileRecentList.appendChild(div);
+        });
+    }
+
+    window.addToRecents = function(album) {
+        recentSearches = recentSearches.filter(a => a.id !== album.id);
+        recentSearches.unshift(album);
+        if (recentSearches.length > 10) recentSearches.pop();
+        window.renderMobileRecents();
+    }
+
+    function clearRecents() {
+        recentSearches = [];
+        window.renderMobileRecents();
+    }
+
+    // Open overlay: called when popup search input is clicked on mobile/tablet
+    function openMobileOverlay(initialQuery = '') {
+        mobileOverlay.classList.add('open');
+        mobileOverlay.setAttribute('aria-hidden', 'false');
+        mobileOverlayInput.value = initialQuery || '';
+        mobileRecentsContainer.style.display = 'block';
+        mobileOverlayResults.innerHTML = '';
+        document.body.style.overflow = 'hidden'; // Disable background scrolling
+        window.renderMobileRecents();
+        setTimeout(() => {
+            mobileOverlayInput.focus();
+            if (initialQuery && initialQuery.length >= 2) {
+                const evt = new Event('input', { bubbles: true });
+                mobileOverlayInput.dispatchEvent(evt);
+            }
+        }, 80);
+    }
+
+    // Event listeners for the mobile overlay
+    mobileOverlayBack.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeAllSearchUi();
+    });
+
+    mobileOverlayClear.addEventListener('click', () => {
+        mobileOverlayInput.value = '';
+        mobileOverlayResults.innerHTML = '';
+        mobileRecentsContainer.style.display = 'block';
+        window.renderMobileRecents();
+        mobileOverlayInput.focus();
+    });
+
+    mobileClearRecents.addEventListener('click', () => {
+        clearRecents();
+    });
+
+    attachLiveSearch(mobileOverlayInput, mobileOverlayResults, 'overlay');
+
+    // Attach the focus event to the small popup's input to trigger the mobile overlay
+    const smallPopup = document.getElementById('unique-search-popup');
+    const smallInput = smallPopup ? smallPopup.querySelector('.unique-search-input') : null;
+    if (smallInput) {
+        smallInput.addEventListener('focus', () => {
+            smallPopup.classList.add('unique-hidden');
+            openMobileOverlay(smallInput.value || '');
+        });
+    }
+})();
+
+// ---------------------------
+// Small popup wiring (Corrected to open popup first)
+// ---------------------------
+(function wireSmallPopup() {
+    const bottomSearchLink = document.getElementById("unique-search-icon-link");
+    const searchPopup = document.getElementById("unique-search-popup");
+    const closeSearchPopupBtn = document.getElementById("unique-close-search-popup");
+    const popupSearchInput = document.querySelector(".unique-search-input");
+    const popupSearchResultsContainer = document.getElementById('unique-search-results-container');
+
+    if (bottomSearchLink && searchPopup) {
+        bottomSearchLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            searchPopup.classList.remove("unique-hidden");
+            overlay.style.display = "block";
+            // Do not focus on mobile as that will open the overlay immediately
+            if (window.innerWidth > 1024 && popupSearchInput) {
+                popupSearchInput.focus();
+            }
+        });
+    }
+
+    if (closeSearchPopupBtn) {
+        closeSearchPopupBtn.addEventListener("click", () => {
+            closeAllSearchUi();
+        });
+    }
+
+    if (overlay) {
+        overlay.addEventListener("click", (event) => {
+            if (!searchPopup.classList.contains("unique-hidden") && event.target === overlay) {
+                closeAllSearchUi();
+            }
+        });
+    }
+
+    if (popupSearchInput) {
+        if (window.innerWidth > 1024) {
+            attachLiveSearch(popupSearchInput, popupSearchResultsContainer, 'popup');
+        }
+    }
+})();
+
+// ---------------------------
+// Initial data fetch on load
+// ---------------------------
+document.addEventListener("DOMContentLoaded", () => {
+    fetchAlbums();
+});
+
+// ----------
+
 
 function firstClickEmbedHandler() {
     console.log("First click on embedded album detected. Handling previous embedded playback removal.");
@@ -4646,6 +4985,57 @@ function closeEmbeddedAlbum() {
     if (embeddedBackdrop) embeddedBackdrop.style.display = 'none';
 }
 
+
+
+function loadSimilarAlbumsOnce(albumId, container) {
+    if (container.dataset.similarLoaded === 'true') return;
+    container.dataset.similarLoaded = 'true';
+
+    fetch(`${BACKEND_BASE_URL}/similar-albums?albumId=${albumId}`)
+        .then(res => res.json())
+        .then(albums => {
+            if (!albums || !albums.length) return;
+            const section = document.createElement('div');
+            section.id = 'similar-albums-section';
+            section.innerHTML = '<h3>Similar Albums</h3>';
+            const grid = document.createElement('div');
+            grid.className = 'similar-albums-grid';
+            section.appendChild(grid);
+            albums.forEach(album => {
+                const card = document.createElement('div');
+                card.className = 'card fade-in';
+                card.innerHTML = `
+                    <img src="${album.cover}" alt="${album.title}">
+                    <div class="card-title">${album.title}</div>
+                `;
+                grid.appendChild(card);
+            });
+            container.appendChild(section);
+        })
+        .catch(err => console.error('Error loading similar albums:', err));
+}
+
+
+function attachSimilarAlbumsScrollListener(overlayElement, albumId) {
+    overlayElement.addEventListener('scroll', function() {
+        if (overlayElement.scrollTop + overlayElement.clientHeight >= overlayElement.scrollHeight - 100) {
+            loadSimilarAlbumsOnce(albumId, overlayElement);
+        }
+    });
+}
+
+
+// Hook: Call this when embedded album overlay is opened
+function initEmbeddedAlbumOverlay(overlayElement, albumId, player) {
+    attachSimilarAlbumsScrollListener(overlayElement, albumId);
+    if (player && player.on) {
+        // Assuming player emits 'ended' event on track finish
+        player.on('ended', function() {
+            overlayElement.scrollTop = 0;
+            loadSimilarAlbumsOnce(albumId, overlayElement);
+        });
+    }
+}
 
 
 

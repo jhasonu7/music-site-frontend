@@ -16,499 +16,22 @@
      <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+   
+
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #1a202c; /* Equivalent to bg-gray-900 */
-            color: white;
-            font-family: 'Inter', sans-serif;
-      background-color: #121212; /* A dark background color to match the Spotify theme */
-      color: #b3b3b3; /* Light gray text color */
-      margin: 0;
-      padding: 0;
-      padding-bottom: 80px;
-        }
-        /* Custom styles for the range input (progress and volume bars) */
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 24px; /* Even larger thumb */
-            height: 24px; /* Even larger thumb */
-            border-radius: 50%;
-            /* Radial gradient for a more refined look */
-            background: radial-gradient(circle, #1ED760 0%, #17A34A 100%);
-            border: 2px solid rgba(255, 255, 255, 0.7); /* Subtle white border */
-            cursor: grab; /* Indicate draggable */
-            box-shadow: 0 0 0 6px rgba(30, 215, 96, 0.3), /* Inner glow */
-                        0 0 15px 5px rgba(30, 215, 96, 0.7); /* Stronger outer glow */
-            transition: background .3s ease-in-out, box-shadow .3s ease-in-out, transform .15s ease-in-out, border-color .3s ease-in-out;
-            /* Centering the thumb vertically on the track */
-            margin-top: calc((8px - 24px) / 2); /* (track height - thumb height) / 2 */
-        }
-        input[type="range"]::-webkit-slider-thumb:hover {
-            transform: scale(1.05); /* Slight scale on hover */
-            box-shadow: 0 0 0 7px rgba(30, 215, 96, 0.4),
-                        0 0 20px 8px rgba(30, 215, 96, 0.8); /* More intense glow on hover */
-        }
-        input[type="range"]::-webkit-slider-thumb:active {
-            cursor: grabbing; /* Indicate grabbing */
-            transform: scale(1.15); /* More pronounced scale on active */
-            background: radial-gradient(circle, #17A34A 0%, #1ED760 100%); /* Invert gradient on active */
-            border-color: rgba(255, 255, 255, 0.9); /* Brighter border on active */
-        }
-        input[type="range"]::-moz-range-thumb {
-            width: 24px; /* Even larger thumb */
-            height: 24px; /* Even larger thumb */
-            border-radius: 50%;
-            /* Radial gradient for a more refined look */
-            background: radial-gradient(circle, #1ED760 0%, #17A34A 100%);
-            border: 2px solid rgba(255, 255, 255, 0.7); /* Subtle white border */
-            cursor: grab; /* Indicate draggable */
-            box-shadow: 0 0 0 6px rgba(30, 215, 96, 0.3), /* Inner glow */
-                        0 0 15px 5px rgba(30, 215, 96, 0.7); /* Stronger outer glow */
-            transition: background .3s ease-in-out, box-shadow .3s ease-in-out, transform .15s ease-in-out, border-color .3s ease-in-out;
-            /* Centering the thumb vertically on the track */
-            margin-top: calc((8px - 24px) / 2); /* (track height - thumb height) / 2 */
-        }
-        input[type="range"]::-moz-range-thumb:hover {
-            transform: scale(1.05); /* Slight scale on hover */
-            box-shadow: 0 0 0 7px rgba(30, 215, 96, 0.4),
-                        0 0 20px 8px rgba(30, 215, 96, 0.8); /* More intense glow on hover */
-        }
-        input[type="range"]::-moz-range-thumb:active {
-            cursor: grabbing; /* Indicate grabbing */
-            transform: scale(1.15); /* More pronounced scale on active */
-            background: radial-gradient(circle, #17A34A 0%, #1ED760 100%); /* Invert gradient on active */
-            border-color: rgba(255, 255, 255, 0.9); /* Brighter border on active */
-        }
-        input[type="range"]::-webkit-slider-runnable-track {
-            height: 8px; /* Even thicker track */
-            background: linear-gradient(to right, #1ED760 var(--progress, 0%), #4A5568 var(--progress, 0%)); /* Dynamic progress fill */
-            border-radius: 4px;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3); /* Subtle inner shadow for depth */
-        }
-        input[type="range"]::-moz-range-track {
-            height: 8px; /* Even thicker track */
-            background: linear-gradient(to right, #1ED760 var(--progress, 0%), #4A5568 var(--progress, 0%)); /* Dynamic progress fill */
-            border-radius: 4px;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3); /* Subtle inner shadow for depth */
-        }
-
-        /* Styles for the fixed top heading */
-        .fixed-top-heading {
-            position: fixed;
-            top: 62px;
-            left: 25%;
-            width:75%;
-            right: 0;
-            background-color: #1a202c; /* Match body background */
-            color: white;
-            padding: 1rem 2rem;
-            z-index: 40; /* Below playbar (z-50), above other content */
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 1rem;
-            transform: translateY(-100%); /* Start off-screen */
-            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-            opacity: 0;
-        }
-        @media (max-width: 768px) {
-            .fixed-top-heading {
-                left:0;
-                width: 100%;
-            }
-
-        }
-
-        .fixed-top-heading.visible {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        .fixed-top-heading .album-art-small {
-            width: 40px;
-            height: 40px;
-            border-radius: 4px;
-            object-fit: cover;
-        }
-
-        .fixed-top-heading .album-title-small {
-            font-size: 1.25rem; /* text-xl */
-            font-weight: 700; /* font-bold */
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* Mobile Playbar Styles (Image 2 - mini album and play button) */
-        @media (max-width: 768px) {
-            #main-play-bar {
-                /* Ensure it's fixed at the bottom, full width */
-                position: fixed;
-                bottom: 73px;
-                left: 0;
-                right: 0;
-                z-index: 10001;
-                background-color: #282828; /* Darker background for the mobile bar */
-                padding: 0.5rem 1rem; /* Smaller padding */
-                border-radius: 0; /* No rounded corners at the top for full width */
-                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
-                display: flex;
-                align-items: center;
-                justify-content: space-between; /* Space between left content and play button */
-                height: 70px; /* Fixed height for the compact bar */
-            }
-
-            #main-play-bar .main-play-bar-inner {
-                flex-direction: row; /* Keep content in a row */
-                justify-content: space-between; /* Distribute content */
-                align-items: center;
-                padding: 0; /* Remove inner padding */
-                background-color: transparent; /* No inner black background */
-                width: 100%;
-            }
-
-            /* Hide the progress bar and time on mobile */
-            #main-play-bar #progress-time-group {
-                display: none;
-            }
-
-            /* Hide individual control buttons within player-controls-group except play/pause */
-            #main-play-bar #player-controls-group #prev-track-btn,
-            #main-play-bar #player-controls-group #rewind-btn,
-            #main-play-bar #player-controls-group #fast-forward-btn,
-            #main-play-bar #player-controls-group #next-track-btn {
-                display: none;
-            }
-
-            /* Ensure the player-controls-group itself is visible and contains only play/pause */
-            #main-play-bar #player-controls-group {
-                display: flex; /* Ensure it's a flex container */
-                justify-content: flex-end; /* Push play/pause to the right */
-                align-items: center;
-                flex-grow: 0; /* Don't let it grow */
-                flex-shrink: 0; /* Don't let it shrink */
-                width: auto; /* Auto width */
-                margin-left: auto; /* Push to the right */
-            }
-
-            #main-play-bar #play-pause-btn {
-                display: flex; /* Ensure play/pause button is visible */
-                background-color: transparent; /* No background for the play button */
-                color: #1ED760; /* Green color for the play button */
-                padding: 0;
-                box-shadow: none;
-            }
-
-            #main-play-bar #play-pause-btn svg {
-                width: 40px; /* Larger icon for mobile, as per image 2 */
-                height: 40px;
-            }
-
-            #main-play-bar #current-album-art {
-                width: 50px; /* Smaller album art for compact bar, as per image 2 */
-                height: 50px;
-                border-radius: 4px; /* Slightly less rounded */
-                margin-right: 10px; /* Add some space to the right of the album art */
-            }
-
-            #main-play-bar #current-song-title {
-                font-size: 0.9rem; /* Smaller font size */
-            }
-
-            #main-play-bar #current-artist-name {
-                font-size: 0.75rem; /* Smaller font size */
-                color: #b3b3b3; /* Lighter gray for artist name */
-            }
-
-            /* The volume control group is the last flex item in main-play-bar-inner */
-            /* This needs to be hidden for mobile/tablet */
-            #main-play-bar .flex.items-center.space-x-4.w-full.md\:w-auto.md\:flex-shrink-0.justify-end {
-                display: none;
-            }
-
-            /* Ensure the left section (album art + text) takes available space */
-            #main-play-bar .flex.items-center.w-full.md\:w-auto.flex-grow {
-                flex-grow: 1;
-                overflow: hidden; /* Ensure text truncates */
-            }
-
- /* Album Overlay Styles */
-        .album-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            /* Adjusted height to account for the fixed playbar */
-            height: calc(100% - 143px); /* Subtract playbar height (70px) */
-            background-color: #1a202c; /* Dark background */
-            z-index: 900; /* Below full-screen player (1000), above playbar (50) */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 1rem;
-            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-            transform: translateY(100%); /* Start off-screen (bottom) */
-            opacity: 0;
-            visibility: hidden;
-            overflow-y: auto; /* Enable scrolling for content within the overlay */
-        }
-
-        .album-overlay.active {
-            transform: translateY(0);
-            opacity: 1;
-            visibility: visible;
-        }
-    
-
-
-        .album-overlay .close-overlay {
-            position: absolute;
-            top: 1rem;
-            left: 1rem;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 2rem;
-            cursor: pointer;
-            z-index: 901; /* Above other overlay content */
-        }
-
-        .album-overlay-content {
-            width: 100%;
-            max-width: 900px; /* Limit content width */
-            padding-top: 3rem; /* Space for close button */
-        }
-
-
-
-        }
-
-       #full-screen-player {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #282828; /* Default dark background */
-            z-index: 10003;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem;
-            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-            transform: translateY(100%);
-            opacity: 0;
-            visibility: hidden;
-        }
-
-        #full-screen-player.active {
-            transform: translateY(0);
-            opacity: 1;
-            visibility: visible;
-        }
-
-        #full-screen-player .header {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-
-        #full-screen-player .header button {
-            background: none;
-            border: none;
-            color: #b3b3b3;
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 0.5rem;
-        }
-
-        #full-screen-player .header .song-info {
-            text-align: center;
-            flex-grow: 1;
-        }
-
-        #full-screen-player .header .song-info .title {
-            font-size: 1rem;
-            font-weight: bold;
-            color: #fff;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        #full-screen-player .header .song-info .artist {
-            font-size: 0.8rem;
-            color: #b3b3b3;
-        }
-
-        #full-screen-player .main-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            flex-grow: 1;
-            width: 100%;
-            max-width: 400px;
-            margin-top: 60px;
-        }
-
-        #full-screen-player .album-art-large {
-            width: 100%;
-            height: auto;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-        }
-
-        #full-screen-player .song-details {
-            text-align: center;
-            margin-bottom: 1rem;
-        }
-
-        #full-screen-player .song-details .title {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #fff;
-            margin-bottom: 0.25rem;
-        }
-
-        #full-screen-player .song-details .artist {
-            font-size: 1rem;
-            color: #b3b3b3;
-        }
-
-        #full-screen-player .progress-section {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 0 1rem;
-            margin-bottom: 1rem;
-        }
-
-        #full-screen-player .progress-section input[type="range"] {
-            width: 100%;
-            height: 4px;
-            background: #535353;
-            border-radius: 2px;
-            outline: none;
-            -webkit-appearance: none;
-            margin: 0;
-        }
-
-        #full-screen-player .progress-section input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 12px;
-            height: 12px;
-            background: #1ed760;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-
-        #full-screen-player .progress-section .time-display {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.75rem;
-            color: #b3b3b3;
-            margin-top: 0.5rem;
-        }
-
-        #full-screen-player .controls-section {
-            width: 100%;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 0 1rem;
-            margin-bottom: 1rem;
-        }
-
-        #full-screen-player .controls-section button {
-            background: none;
-            border: none;
-            color: #b3b3b3;
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 0.5rem;
-        }
-
-        #full-screen-player .controls-section #full-play-pause-btn {
-            color: #1ed760;
-            font-size: 2rem;
-        }
-
-        #full-screen-player .bottom-actions {
-            width: 100%;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 0 1rem 1rem;
-        }
-
-        #full-screen-player .bottom-actions button {
-            background: none;
-            border: none;
-            color: #b3b3b3;
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 0.5rem;
-        }
-
-        /* Dynamic background color based on album art */
-        @media (prefers-color-scheme: dark) {
-            #full-screen-player {
-                background-color: #282828; /* Default dark */
-            }
-        }
-
-        /* NEW: Styles for Explore More Albums to display vertically */
-        #explore-more-albums-cards {
-            display: grid;
-            /* Responsive columns: auto-fit will fit as many columns as possible,
-               minmax ensures cards are at least 180px wide but can grow up to 1fr */
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 20px; /* Space between cards */
-            padding: 20px; /* Padding inside the container */
-            overflow-x: hidden; /* Ensure no horizontal scrollbar */
-            justify-items: center; /* Center cards within their grid cells */
-            /* Remove any flex or whitespace properties inherited from .cardcontainer that cause horizontal scroll */
-            flex-wrap: wrap; /* Ensure items wrap */
-            white-space: normal; /* Allow content to wrap normally */
-        }
-
-        /* Adjustments for smaller screens */
-        @media (max-width: 768px) {
-            #explore-more-albums-cards {
-                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Smaller cards on mobile */
-                gap: 15px;
-                padding: 15px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            #explore-more-albums-cards {
-                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Even smaller cards for very small screens */
-                gap: 10px;
-                padding: 10px;
-            }
-        }
-
-        /* Ensure individual cards within this grid also respond well */
-        #explore-more-albums-cards .card {
-            width: 100%; /* Make cards fill their grid cell */
-            max-width: 200px; /* Optional: limit max width of individual cards */
-            /* Inherit existing card styles, but ensure they don't break grid layout */
-            flex-shrink: 0; /* Prevent shrinking if it's still a flex item */
-        }
+      .message-box{
+        position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%);
+        background: rgba(20,20,20,.95); color: #fff; padding: 12px 16px;
+        border-radius: 10px; font-weight: 600; letter-spacing:.2px;
+        box-shadow: 0 6px 22px rgba(0,0,0,.35); opacity:0; pointer-events:none;
+        transition: opacity .25s ease, transform .25s ease; z-index: 99999;
+      }
+      .message-box.show{ opacity:1; transform: translateX(-50%) translateY(0); }
+      .message-box.info{ background:#222; }
+      .message-box.success{ background:#1DB954; color:#000; }
+      .message-box.error{ background:#e02424; }
     </style>
+    
 </head>
 
 <body>
@@ -524,20 +47,12 @@
                 </ul>
             </div>
 
-            <div class="library bg-grey rounded m-1 p-1">
+            <div class=" bg-grey rounded m-1 p-1">
                 <div class="heading">
-                    <img class="invert" src="playlist.svg" alt="">
-                    <h2>
-                        Your Library
-                    </h2>
+                
                 </div>
 
-                <div class="songList">
-
-                    <ul>
-
-                    </ul>
-                </div>
+              
 
                <footer class="swarify-footer">
     <div class="swarify-footer-container">
@@ -1274,107 +789,137 @@
             </div>
 
 
-            <!-- Main Play Bar Container - Fixed at the bottom -->
-            <!-- Updated background with solid reddish-black color -->
-           <div id="main-play-bar" class="fixed bottom-0 left-0 right-0 rounded-t-xl shadow-lg p-4 z-50"
-                 style="background-color: #1A0303;">
-                <!-- Removed max-w-7xl mx-auto to allow full width within its parent -->
-                <!-- Added bg-black to make the inner bar opaque -->
-                <div class="main-play-bar-inner bg-black rounded-xl p-3 flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4 w-full">
-
-                    <!-- Album Art and Song Info (Left Section) -->
-                    <div class="flex items-center w-full md:w-auto flex-grow">
-                        <img id="current-album-art"
-                            src="https://placehold.co/64x64/4a4a4a/ffffff?text=Album"
-                            alt="Album Art"
-                            class="w-16 h-16 rounded-lg shadow-md flex-shrink-0"
-                        />
-                        <div class="ml-4 flex flex-col justify-center overflow-hidden flex-grow">
-                            <span id="current-song-title" class="text-lg font-bold truncate">Song Title Example</span>
-                            <span id="current-artist-name" class="text-sm text-gray-300 truncate">Artist Name</span>
-                        </div>
+           <div class="swarify-add-popup-overlay" id="add-popup-overlay">
+        <div class="swarify-add-popup">
+    <a href="#" class="swarify-add-popup-item" id="swarify-liked-songs-item">  
+    <div class="swarify-add-popup-item-left">  
+        <div class="swarify-add-popup-item-icon heart-bg">  
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#1DB954" width="24" height="24">  
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5A5.4 5.4 0 0 1 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3A5.4 5.4 0 0 1 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />  
+            </svg>  
+        </div>  
+        <span class="swarify-add-popup-item-text">Liked Songs</span>  
+    </div>  
+    
+    <div id="popup-right-heart" class="swarify-add-popup-item-right-icon">
+        <svg id="popup-heart-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" class="heart-icon">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+        </svg>
+    </div>
+</a>
+            <a href="#" class="swarify-add-popup-item">
+                <div class="swarify-add-popup-item-left">
+                    <div class="swarify-add-popup-item-icon plus-bg">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="24" height="24">
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                        </svg>
                     </div>
-
-                    <!-- Playback Controls (Center Section) -->
-                    <div id="player-controls-group" class="flex items-center justify-center space-x-4 w-full md:w-auto flex-shrink-0">
-                        <!-- Previous Track Button -->
-                        <button id="prev-track-btn" class="text-gray-300 hover:text-white transition-colors duration-200 p-2 rounded-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
-                                <path d="M11 6L5 12L11 18M19 6L13 12L19 18" />
-                            </svg>
-                        </button>
-                        
-                        <!-- Rewind Button -->
-                        <button id="rewind-btn" class="text-gray-300 hover:text-white transition-colors duration-200 p-2 rounded-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
-                                <path fillRule="evenodd" d="M13.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 0 1-1.06-1.06L11.69 12 4.72 5.03a.75.75 0 0 1 1.06-1.06l7.5 7.5ZM19.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 1 1-1.06-1.06L17.69 12l-6.97-6.97a.75.75 0 0 1 1.06-1.06l7.5 7.5Z" clipRule="evenodd" />
-                            </svg>
-                        </button>
-
-                        <button id="play-pause-btn"
-                            class="bg-green-500 text-white p-3 rounded-full shadow-lg hover:bg-green-600 transition-colors duration-200 flex items-center justify-center"
-                        >
-                            <!-- Play icon by default, sc2.js will toggle -->
-                            <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
-                                <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.38 2.872-1.667l11.55 6.416c1.427.79 1.427 2.893 0 3.683l-11.549 6.416c-1.344.713-2.872-.24-2.872-1.667V5.653Z" clipRule="evenodd" />
-                            </svg>
-                            <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 hidden">
-                                <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 0 1 .75-.75H9a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H7.5a.75.75 0 0 1-.75-.75V5.25Zm7.5 0A.75.75 0 0 1 15 4.5h1.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H15a.75.75 0 0 1-.75-.75V5.25Z" clipRule="evenodd" />
-                            </svg>
-                        </button>
-                        
-                        <!-- Fast Forward Button -->
-                        <button id="fast-forward-btn" class="text-gray-300 hover:text-white transition-colors duration-200 p-2 rounded-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
-                                <path fillRule="evenodd" d="M13.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 0 1-1.06-1.06L11.69 12 4.72 5.03a.75.75 0 0 1 1.06-1.06l7.5 7.5ZM19.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 1 1-1.06-1.06L17.69 12l-6.97-6.97a.75.75 0 0 1 1.06-1.06l7.5 7.5Z" clipRule="evenodd" />
-                            </svg>
-                        </button>
-
-                        <!-- Next Track Button -->
-                        <button id="next-track-btn" class="text-gray-300 hover:text-white transition-colors duration-200 p-2 rounded-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
-                                <path d="M13 6L19 12L13 18M5 6L11 12L5 18" />
-                            </svg>
-                        </button>
-                    </div>
-
-                    <!-- Progress Bar and Volume (Right Section) -->
-                    <div class="flex items-center space-x-4 w-full md:w-auto md:flex-shrink-0 justify-end">
-                        <!-- Progress Bar -->
-                        <div id="progress-time-group" class="flex items-center w-full md:w-48 lg:w-64">
-                            <!-- Styled time reflectors -->
-                            <span id="current-time" class="text-sm font-semibold text-gray-300 w-10 text-right">0:00</span>
-                            <input
-                                type="range"
-                                min="0"
-                                max="100"
-                                value="0"
-                                id="progress-bar"
-                                class="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-green-500"
-                            />
-                            <span id="total-time" class="text-sm font-semibold text-gray-300 w-10 text-left">0:00</span>
-                        </div>
-
-                        <!-- Removed Repeat and Shuffle Buttons -->
-                        <!-- <div id="repeat-shuffle-group" class="flex items-center space-x-2">
-                            <button id="repeat-btn" class="text-gray-300 hover:text-white transition-colors duration-200 p-2 rounded-full">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
-                                    <path fill-rule="evenodd" d="M11.78 11.78a.75.75 0 0 1 .968-.078l4.5 4.25a.75.75 0 0 1-.916 1.22l-3.293-2.356-.277.277a.75.75 0 0 1-1.06 0-.75.75 0 0 1 0-1.06l.277-.277ZM9.293 2.293a.75.75 0 0 1 1.06 0l.277.277 2.356-3.293a.75.75 0 0 1 1.22-.916l4.25 4.5a.75.75 0 0 1-.078.968l-1.5 1.5a.75.75 0 0 1-1.06-1.06l.72-.72-2.11-2.11a.75.75 0 0 1-.19-.854L12 6.75l-1.47-1.47a.75.75 0 0 1 0-1.06ZM.75 12a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5H1.5a.75.75 0 0 1-.75-.75ZM3 16.5a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75ZM3 7.5a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                            <button id="shuffle-btn" class="text-gray-300 hover:text-white transition-colors duration-200 p-2 rounded-full">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
-                                    <path fill-rule="evenodd" d="M12.97 3.97a.75.75 0 0 1 1.06 0l7.5 7.5a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 1 1-1.06-1.06l6.22-6.22H3a.75.75 0 0 1 0-1.5h16.19l-6.22-6.22a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
-                                    <path fill-rule="evenodd" d="M7.28 6.72a.75.75 0 0 1 0-1.06l.75-.75a.75.75 0 0 1 1.06 0l.75.75a.75.75 0 1 1-1.06 1.06L8.03 6.72l-.75.75a.75.75 0 0 1-1.06 0Z" clip-rule="evenodd" />
-                                    <path fill-rule="evenodd" d="M7.28 17.28a.75.75 0 0 1 0-1.06l.75-.75a.75.75 0 0 1 1.06 0l.75.75a.75.75 0 1 1-1.06 1.06l-.75-.75-.75.75a.75.75 0 0 1-1.06 0Z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                        </div> -->
-                    </div>
+                    <span class="swarify-add-popup-item-text">New playlist</span>
                 </div>
+            </a>
+        </div>
+    </div>
+
+
+    <!-- Main Play Bar Container - Fixed at the bottom -->
+    <div id="main-play-bar" class="fixed bottom-0 left-0 right-0 rounded-t-xl shadow-lg p-4 z-50">
+        <div class="main-play-bar-inner bg-black rounded-xl p-3 flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4 w-full">
+
+            <!-- Album Art and Song Info (Left Section) -->
+            <div class="flex items-center w-full md:w-auto flex-grow">
+                <img id="current-album-art"
+                    src="https://placehold.co/64x64/4a4a4a/ffffff?text=Album"
+                    alt="Album Art"
+                    class="w-16 h-16 rounded-lg shadow-md flex-shrink-0"
+                />
+                <div class="ml-4 flex flex-col justify-center overflow-hidden flex-grow">
+                    <span id="current-song-title" class="text-lg font-bold truncate">Song Title Example</span>
+                    <span id="current-artist-name" class="text-sm text-gray-300 truncate">Artist Name</span>
+                </div>
+
+                
             </div>
 
-        <div id="full-screen-player">
+            
+            <!-- Mobile Add (+) Button with Check State -->
+           <button id="mobile-add-btn" data-ignore-fullscreen class="md:hidden lg:hidden xl:hidden text-white playbar-add-btn">
+    <svg class="icon-plus" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14m-7-7h14" />
+    </svg>
+
+    <div class="icon-check-bg"></div>
+    <svg class="icon-check" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke="#000000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 6L9 17l-5-5" />
+    </svg>
+</button>
+
+            <!-- Playback Controls (Center Section) -->
+            <div id="player-controls-group" class="flex items-center justify-center space-x-4 w-full md:w-auto flex-shrink-0">
+                <!-- Previous Track Button -->
+                <button id="prev-track-btn" class="text-gray-300 hover:text-white transition-colors duration-200 p-2 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path d="M11 6L5 12L11 18M19 6L13 12L19 18" />
+                    </svg>
+                </button>
+                
+                <!-- Rewind Button -->
+                <button id="rewind-btn" class="text-gray-300 hover:text-white transition-colors duration-200 p-2 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path fillRule="evenodd" d="M13.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 0 1-1.06-1.06L11.69 12 4.72 5.03a.75.75 0 0 1 1.06-1.06l7.5 7.5ZM19.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 1 1-1.06-1.06L17.69 12l-6.97-6.97a.75.75 0 0 1 1.06-1.06l7.5 7.5Z" clipRule="evenodd" />
+                    </svg>
+                </button>
+
+                <button id="play-pause-btn"
+                    class="bg-green-500 text-white p-3 rounded-full shadow-lg hover:bg-green-600 transition-colors duration-200 flex items-center justify-center"
+                >
+                    <!-- Play icon by default, sc2.js will toggle -->
+                    <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.38 2.872-1.667l11.55 6.416c1.427.79 1.427 2.893 0 3.683l-11.549 6.416c-1.344.713-2.872-.24-2.872-1.667V5.653Z" clipRule="evenodd" />
+                    </svg>
+                    <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 hidden">
+                        <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 0 1 .75-.75H9a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H7.5a.75.75 0 0 1-.75-.75V5.25Zm7.5 0A.75.75 0 0 1 15 4.5h1.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H15a.75.75 0 0 1-.75-.75V5.25Z" clipRule="evenodd" />
+                    </svg>
+                </button>
+                
+                <!-- Fast Forward Button -->
+                <button id="fast-forward-btn" class="text-gray-300 hover:text-white transition-colors duration-200 p-2 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path fillRule="evenodd" d="M13.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 0 1-1.06-1.06L11.69 12 4.72 5.03a.75.75 0 0 1 1.06-1.06l7.5 7.5ZM19.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 1 1-1.06-1.06L17.69 12l-6.97-6.97a.75.75 0 0 1 1.06-1.06l7.5 7.5Z" clipRule="evenodd" />
+                    </svg>
+                </button>
+
+                <!-- Next Track Button -->
+                <button id="next-track-btn" class="text-gray-300 hover:text-white transition-colors duration-200 p-2 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path d="M13 6L19 12L13 18M5 6L11 12L5 18" />
+                    </svg>
+                </button>
+            </div>
+
+            
+
+            <!-- Progress Bar and Volume (Right Section) -->
+            <div class="flex items-center space-x-4 w-full md:w-auto md:flex-shrink-0 justify-end">
+                <!-- Progress Bar -->
+                <div id="progress-time-group" class="flex items-center w-full md:w-48 lg:w-64">
+                    <!-- Styled time reflectors -->
+                    <span id="current-time" class="text-sm font-semibold text-gray-300 w-10 text-right">0:00</span>
+                    <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value="0"
+                        id="progress-bar"
+                        class="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-green-500"
+                    />
+                    <span id="total-time" class="text-sm font-semibold text-gray-300 w-10 text-left">0:00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+         <!-- The main full-screen player container -->
+    <div id="full-screen-player" class="active">
+        <!-- Header with navigation and song info -->
         <div class="header">
             <button id="minimize-player-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
@@ -1382,8 +927,8 @@
                 </svg>
             </button>
             <div class="song-info">
-                <div class="title" id="full-screen-song-title">Dhun</div>
-                <div class="artist" id="full-screen-artist-name">Mithoon, Arijit Singh</div>
+                <div class="title" id="full-screen-song-title">Haal - E - Dil (Female)</div>
+                <div class="artist" id="full-screen-artist-name">Neeti Mohan</div>
             </div>
             <button class="more-options">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
@@ -1392,22 +937,39 @@
             </button>
         </div>
 
+        <!-- Main content area with album art and song details -->
         <div class="main-content">
-            <img id="full-screen-album-art" src="https://placehold.co/300x300/4a4a4a/ffffff?text=Album" alt="Album Art" class="album-art-large" />
-            <div class="song-details">
-                <div class="title" id="full-screen-song-title-large">Dhun</div>
-                <div class="artist" id="full-screen-artist-name-large">Mithoon, Arijit Singh</div>
+            <img id="full-screen-album-art" src="https://i.ibb.co/C004t0k/sanam-teri-kasam-album.jpg" alt="Sanam Teri Kasam Album Art" class="album-art-large" />
+
+            <div class="song-and-actions-container">
+                <div class="song-details">
+                    <div class="title" id="full-screen-song-title-large">Haal - E - Dil (Female)</div>
+                    <div class="artist" id="full-screen-artist-name-large">Neeti Mohan</div>
+                </div>
+                <!-- The "add to playlist" button with the checkmark icon visible -->
+                <button id="full-screen-add-btn" class="text-white playbar-add-btn">
+                    <!-- Plus icon (hidden) -->
+                    <svg class="icon-plus hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 5v14m-7-7h14" />
+                    </svg>
+                    <!-- Checkmark icon (visible) -->
+                    <svg class="icon-check" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke="#1ed760" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                </button>
             </div>
         </div>
 
+        <!-- Progress bar and time display section -->
         <div class="progress-section">
             <input type="range" min="0" max="100" value="0" id="full-screen-progress-bar" />
             <div class="time-display">
                 <span id="full-screen-current-time">0:00</span>
-                <span id="full-screen-total-time">0:00</span>
+                <span id="full-screen-total-time">5:24</span>
             </div>
         </div>
 
+        <!-- Player controls (previous, play/pause, next) -->
         <div class="controls-section">
             <button id="full-prev-track-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
@@ -1415,10 +977,12 @@
                 </svg>
             </button>
             <button id="full-play-pause-btn">
-                <svg id="full-play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8">
+                <!-- Play icon (hidden initially) -->
+                <svg id="full-play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 hidden">
                     <path fill-rule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.38 2.872-1.667l11.55 6.416c1.427.79 1.427 2.893 0 3.683l-11.549 6.416c-1.344.713-2.872-.24-2.872-1.667V5.653Z" clip-rule="evenodd" />
                 </svg>
-                <svg id="full-pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 hidden">
+                <!-- Pause icon (visible initially) -->
+                <svg id="full-pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8">
                     <path fill-rule="evenodd" d="M6.75 5.25a.75.75 0 0 1 .75-.75H9a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H7.5a.75.75 0 0 1-.75-.75V5.25Zm7.5 0A.75.75 0 0 1 15 4.5h1.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H15a.75.75 0 0 1-.75-.75V5.25Z" clip-rule="evenodd" />
                 </svg>
             </button>
@@ -1429,6 +993,7 @@
             </button>
         </div>
 
+        <!-- Bottom action buttons -->
         <div class="bottom-actions">
             <button>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
@@ -1443,6 +1008,7 @@
         </div>
     </div>
 
+        
     
     </div>
 
@@ -1810,7 +1376,7 @@
     <nav class="unique-nav-container">
         <ul class="unique-nav-list">
             <li class="unique-nav-item">
-                <a href="#" class="unique-nav-link unique-active">
+                <a href="#" class="unique-nav-link unique-active"  data-target="home">
                     <svg xmlns="http://www.w3.org/2000/svg" class="unique-nav-icon" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2zm0 2.293L18.707 9H17v8h-4v-6h-2v6H7V9H5.293L12 4.293z"/>
                     </svg>
@@ -1818,7 +1384,7 @@
                 </a>
             </li>
             <li class="unique-nav-item">
-                <a href="#" id="unique-search-icon-link" class="unique-nav-link">
+                <a href="#" id="unique-search-icon-link" class="unique-nav-link" data-target="search">
                     <svg xmlns="http://www.w3.org/2000/svg" class="unique-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -1827,7 +1393,7 @@
                 </a>
             </li>
             <li class="unique-nav-item">
-                <a href="#" class="unique-nav-link">
+                <a href="#"  id="your-library-link" class="unique-nav-link" data-target="library">
                     <svg xmlns="http://www.w3.org/2000/svg" class="unique-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
                         <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
@@ -1837,7 +1403,7 @@
                 </a>
             </li>
             <li class="unique-nav-item">
-                <a href="#" class="unique-nav-link">
+                <a href="#" class="unique-nav-link" data-target="premium">
                     <svg xmlns="http://www.w3.w3.org/2000/svg" class="unique-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
                         <path d="M2 17l10 5 10-5"></path>
@@ -1850,38 +1416,307 @@
     </nav>
 </footer>
 
- <script>
-            function setDynamicBackground() {
-                const albumArt = document.getElementById('full-screen-album-art');
-                if (albumArt) {
-                    albumArt.onload = () => {
-                        const colorThief = new ColorThief();
-                        const dominantColor = colorThief.getColor(albumArt);
-                        const rgbColor = `rgb(${dominantColor[0]}, ${dominantColor[1]}, ${dominantColor[2]})`;
-                        document.getElementById('full-screen-player').style.backgroundColor = rgbColor;
-                    };
-                }
-            }
-            setDynamicBackground();
-        </script>
+
+   
+    <audio id="voice-start-sound" src="" preload="auto"></audio>
+<audio id="voice-end-sound" src="path/to/your/end-listening.mp3" preload="auto"></audio>
+
+
+<!-- Your Library Popup -->
+<div id="library-popup" class="fixed inset-0 bg-[#121212] text-white hidden z-[9999] overflow-y-auto">
+  <div class="flex justify-between items-center p-4 border-b border-gray-700">
+    <h1 class="text-2xl font-bold">Your Library</h1>
+    <button id="close-library-popup" class="text-3xl leading-none">&times;</button>
+  </div>
+
+  <div class="p-4">
+    <!-- Example buttons -->
+    <div class="mb-4">
+      <button class="bg-[#2a2a2a] hover:bg-[#3e3e3e] text-white px-4 py-2 rounded-full text-sm font-medium">Playlists</button>
+    </div>
+
+    <!-- Recents -->
+    <div class="flex justify-between items-center mb-3">
+      <p class="text-gray-400 text-sm font-medium">Recents</p>
+      <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="7" height="7"></rect>
+        <rect x="14" y="3" width="7" height="7"></rect>
+        <rect x="14" y="14" width="7" height="7"></rect>
+        <rect x="3" y="14" width="7" height="7"></rect>
+      </svg>
+    </div>
+
+    <!-- Library Items -->
+    <div class="space-y-2">
+      <!-- Liked Songs -->
+      <div class="flex items-center p-2 rounded-lg hover:bg-[#282828] cursor-pointer">
+        <div class="w-12 h-12 rounded bg-gradient-to-br from-purple-900 to-purple-500 flex items-center justify-center mr-3">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#fff">
+            <path d="M12 21.35L10.55 20.03C5.4 15.36 2 12.28 2 8.5C2 5.42 4.42 3 7.5 3C9.24 3 10.91 3.81 12 5.09C13.09 3.81 14.76 3 16.5 3C19.58 3 22 5.42 22 8.5C22 12.28 18.6 15.36 13.45 20.03L12 21.35Z"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-base font-medium">Liked Songs</h3>
+          <p class="text-sm text-gray-400">Playlist • 1 song</p>
+        </div>
+      </div>
+
+       <div id="user-playlists-container" class="space-y-2">
+        </div>
+
+      <!-- Add Artists -->
+      <div class="flex items-center p-2 rounded-lg hover:bg-[#282828] cursor-pointer">
+        <div class="w-12 h-12 rounded border border-gray-600 flex items-center justify-center mr-3">
+          <svg width="24" height="24" viewBox="0 0 24 24" stroke="white" stroke-width="2" fill="none">
+            <path d="M12 4V20M4 12H20" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h3 class="text-base font-medium">Add artists</h3>
+      </div>
+
+      <!-- Add Podcasts -->
+      <div class="flex items-center p-2 rounded-lg hover:bg-[#282828] cursor-pointer">
+        <div class="w-12 h-12 rounded border border-gray-600 flex items-center justify-center mr-3">
+          <svg width="24" height="24" viewBox="0 0 24 24" stroke="white" stroke-width="2" fill="none">
+            <path d="M12 4V20M4 12H20" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h3 class="text-base font-medium">Add podcasts</h3>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div id="likedSongsOverlay" class="liked-songs-overlay" aria-hidden="true">
+    
+    <div class="liked-header-wrapper">
+        <div class="liked-header">
+            <div class="liked-header-top">
+                <button id="closeLikedSongs" class="back-arrow-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M19 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H19v-2z"></path></svg>
+                </button>
+                <div style="flex:1;">
+                    <h1>Liked Songs</h1>
+                    <p id="likedSongsCount">0 songs</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="likedSongsCompactHeader" class="liked-compact-header">
+            <button id="closeLikedSongsCompact" class="back-arrow-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M19 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H19v-2z"></path></svg>
+            </button>
+            <h1>Liked Songs</h1>
+        </div>
+
+        <div class="liked-play-btn-wrapper">
+    <div id="liked-songs-play-btn" class="liked-play-btn">
+        <svg class="play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M8 5v14l11-7z"></path></svg>
+        <svg class="pause-icon hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
+    </div>
+</div>
+
+        <div id="likedSongsSearchContainer" class="liked-search-container">
+            <button id="closeLikedSongsSearch" class="back-arrow-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M19 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H19v-2z"></path></svg>
+            </button>
+            <div class="search-input-wrapper">
+                 <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg>
+                <input type="text" id="likedSongsSearchInput" placeholder="Find in Liked Songs">
+                <button id="clearLikedSearch" class="clear-search-btn">&times;</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="likedContent" class="liked-content">
+        <div id="likedSongsList">
+            </div>
+        <div id="noResultsMessage" class="no-results-message">
+            <h3 id="noResultsQuery"></h3>
+            <p>Check the spelling or try different keywords.</p>
+        </div>
+    </div>
+</div>
+<div id="song-options-popup" class="song-options-popup-backdrop" aria-hidden="true">
+    <div class="song-options-panel">
+        <div class="popup-song-info">
+            <img id="popup-song-cover" src="" alt="Album Cover">
+            <div class="popup-text-content">
+                <div id="popup-song-title" class="popup-title"></div>
+                <div id="popup-song-artist" class="popup-artist"></div>
+            </div>
+        </div>
+        <button id="popup-share-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="18" cy="5" r="3"></circle>
+                <circle cx="6" cy="12" r="3"></circle>
+                <circle cx="18" cy="19" r="3"></circle>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+            <span>Share</span>
+        </button>
+        <button id="popup-add-to-other-playlist">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5v14M5 12h14"></path>
+            </svg>
+            <span>Add to other playlist</span>
+        </button>
+        <button id="popup-remove-from-liked">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+            </svg>
+            <span>Remove from this playlist</span>
+        </button>
+        <button id="popup-go-to-album">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"></path>
+                <circle cx="12" cy="12" r="5"></circle>
+            </svg>
+            <span>Go to album</span>
+        </button>
+    </div>
+</div>
+
+<div id="new-playlist-popup-overlay" class="fixed inset-0 bg-black bg-opacity-75 hidden z-[99999] justify-center items-center">
+  <div class="new-playlist-popup-container p-6 rounded-lg text-center" style="background-color: rgba(20,20,20,0.95);">
+    <h2 class="text-white text-xl font-bold mb-6">Give your playlist a name</h2>
+    <input type="text" id="new-playlist-name-input" placeholder="My playlist #1" class="w-full text-center bg-transparent border-b-2 border-white text-white text-3xl outline-none mb-8 pb-2" style="font-family: Inter, sans-serif;">
+    <div class="flex justify-around">
+      <button id="cancel-new-playlist" class="text-white px-6 py-2 rounded-full font-bold">Cancel</button>
+      <button id="create-new-playlist" class="bg-[#1ED760] text-black px-8 py-2 rounded-full font-bold">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- This is the updated content for your playlist-details-overlay div -->
+<div id="playlist-details-overlay" class="fixed inset-0 bg-[#121212] text-white hidden z-[9999]">
+
+    <!-- This div will hold the dynamic background gradient -->
+    <div id="playlist-background-gradient" class="absolute top-0 left-0 w-full h-full z-0"></div>
+
+    <!-- Main scrollable container -->
+    <div id="playlist-scroll-content" class="relative w-full h-full overflow-y-auto z-10">
+
+        <!-- 1. Compact Header (Sticky, appears on scroll) -->
+        <div id="playlist-compact-header" class="sticky top-0 z-20 flex items-center justify-between p-4 bg-transparent shadow-lg">
+            <!-- Back button for compact header -->
+            <button id="playlist-compact-back-btn" class="p-2 -ml-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            </button>
+            <h2 id="playlist-compact-title" class="text-lg font-bold truncate">Playlist Name</h2>
+            <button id="playlist-compact-play-btn" class="bg-[#1ED760] text-black w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
+                <svg viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7"><path d="M8 5v14l11-7z"></path></svg>
+            </button>
+        </div>
+
+        <!-- 2. Main Content (Scrollable part) -->
+        <div id="playlist-details-scroll-container" class="relative z-10">
+            <!-- Main back button (visible at the top) -->
+            <button id="playlist-main-back-btn" class="absolute top-4 left-4 p-2 z-20">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            </button>
+            
+            <!-- **FIX**: Reduced top padding from pt-20 to pt-16 -->
+            <div id="playlist-header-content" class="flex flex-row items-end gap-6 mb-6 pt-16 p-4">
+                <img id="playlist-cover-art" src="https://placehold.co/192x192/4a4a4a/ffffff?text=Playlist" alt="Playlist Cover" class="w-48 h-48 rounded-lg shadow-2xl object-cover flex-shrink-0">
+                <div class="text-left">
+                    <p class="text-sm font-bold">Playlist</p>
+                    <h1 id="playlist-title-h1" class="text-6xl font-extrabold mb-2 break-words">My Playlist</h1>
+                    <div class="flex items-center justify-start gap-2 text-sm text-gray-300">
+                        <div id="playlist-creator-avatar" class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center font-bold text-black text-xs">S</div>
+                        <span id="playlist-creator-name">Sonu</span>
+                    </div>
+                    <p id="playlist-duration-info" class="text-xs text-gray-400 mt-2">5 min</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4 mb-4 px-4">
+                <button class="action-icon-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+                <button class="action-icon-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg></button>
+                <button class="action-icon-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                <div class="flex-grow"></div>
+                <button id="playlist-play-btn" class="bg-[#1ED760] text-black w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-green-600 transition-colors">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+            </div>
+
+            <div class="px-4 mb-4">
+                <button id="playlist-search-trigger" class="w-full flex items-center gap-3 text-left p-3 bg-white/10 hover:bg-white/20 rounded-md text-gray-300 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
+                    Find in playlist
+                </button>
+            </div>
+
+            <div id="playlist-songs-container" class="space-y-2 px-4"></div>
+            <div class="recommended-songs-list mt-8 px-4 pb-24">
+                <h2 class="text-2xl font-bold mb-4">Recommended Songs</h2>
+                <p class="text-sm text-gray-400 mb-4">Based on the songs in this playlist</p>
+                <div id="recommended-songs-container" class="space-y-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search View (Covers everything when active) -->
+    <div id="playlist-search-view" class="absolute inset-0 bg-[#121212] z-30 hidden flex-col">
+        <!-- Search view content from previous step remains the same -->
+        <div class="flex items-center p-2 gap-2 border-b border-gray-800">
+            <button id="playlist-search-back-btn" class="p-2 text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            </button>
+            <input type="text" id="playlist-search-input" placeholder="Find in playlist" class="w-full bg-transparent text-white text-lg outline-none">
+            <button id="playlist-clear-search-btn" class="p-2 text-gray-400 hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+            </button>
+        </div>
+        <div id="playlist-search-results" class="flex-grow overflow-y-auto p-2"></div>
+        <div id="playlist-no-search-results" class="text-center p-8 hidden">
+            <h3 class="text-2xl font-bold text-white">No results found for "<span id="no-results-query"></span>"</h3>
+            <p class="text-gray-400 mt-2">Check the spelling or try different keywords.</p>
+        </div>
+    </div>
+</div>
+
+<div id="add-to-playlist-overlay" class="fixed inset-0 bg-[#0c0c0c] text-white hidden z-[10000] flex flex-col transition-transform duration-300 ease-in-out transform translate-y-full">
+    <div class="p-4 flex items-center border-b border-gray-800 flex-shrink-0">
+        <button id="close-add-to-playlist-btn" class="text-2xl p-2 -ml-2">&larr;</button>
+        <h1 class="text-xl font-bold text-center flex-grow">Add to playlist</h1>
+        <div class="w-8"></div> </div>
+
+    <div class="p-4 flex-shrink-0">
+        <button id="new-playlist-from-add-screen" class="w-full flex items-center justify-center gap-4 py-4 px-2 rounded-lg hover:bg-[#282828] transition-colors">
+            <div class="w-16 h-16 bg-gray-800 flex items-center justify-center rounded-md">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+            </div>
+            <span class="text-lg font-semibold">New playlist</span>
+        </button>
+    </div>
+
+    <div id="playlist-selection-container" class="flex-grow overflow-y-auto px-4 space-y-3 pb-4">
+        </div>
+
+    <div class="p-4 mt-auto border-t border-gray-800 bg-[#0c0c0c] shadow-lg">
+        <button id="done-adding-to-playlist-btn" class="w-full bg-[#1ED760] text-black py-3 rounded-full font-bold text-lg hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed" disabled>Done</button>
+    </div>
+</div>
 
 
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://www.youtube.com/iframe_api"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.2/color-thief.umd.js"></script>
 
+
+
+    
+
     <script src="script.js"></script>
    
-    <audio id="voice-start-sound" src="" preload="auto"></audio>
-<audio id="voice-end-sound" src="path/to/your/end-listening.mp3" preload="auto"></audio>
 
+
+  
+
+<div id="messageBox" class="message-box"></div>
 </body>
-
-
-
 </html>
-
-
-
-
-

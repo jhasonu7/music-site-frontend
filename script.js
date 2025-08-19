@@ -15,7 +15,7 @@
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual ngrok static domain if you are using ngrok for your backend.
 // If your backend is hosted directly (e.g., on Render, Heroku), use that URL.
-const BACKEND_BASE_URL = 'https://c63b3baf2ca0.ngrok-free.app'; // Example: 'https://your-ngrok-subdomain.ngrok-free.app' or 'https://your-backend-api.com'
+const BACKEND_BASE_URL = 'https://452e1283da6a.ngrok-free.app'; // Example: 'https://your-ngrok-subdomain.ngrok-free.app' or 'https://your-backend-api.com'
 
 // IMPORTANT: Replace this with your actual Netlify frontend domain for CORS setup on the backend.
 // This is crucial for your backend's CORS configuration (e.g., in Flask-CORS or Express CORS options)
@@ -178,24 +178,7 @@ const errorMessageDisplay = document.getElementById('error-message-display'); //
 // NEW: Reference for the "Explore More Albums" container
 const exploreMoreAlbumsCardsContainer = document.getElementById('explore-more-albums-cards');
 
-// Get references to the elements we need
-const uniqueSearchIconLink = document.getElementById('unique-search-icon-link');
-const uniqueSearchPopup = document.getElementById('unique-search-popup');
-const uniqueCloseSearchPopup = document.getElementById('unique-close-search-popup');
 
-// Add event listener to the search icon link
-uniqueSearchIconLink.addEventListener('click', (event) => {
-    // Prevent the default link behavior
-    event.preventDefault();
-    // Show the search pop-up
-    uniqueSearchPopup.classList.remove('unique-hidden');
-});
-
-// Add event listener to the close button in the pop-up
-uniqueCloseSearchPopup.addEventListener('click', () => {
-    // Hide the search pop-up
-    uniqueSearchPopup.classList.add('unique-hidden');
-});
 // --- Global Variables ---
 let currentAlbum = null; // Stores the currently loaded album data (for the overlay)
 let currentTrackIndex = 0; // Index of the currently playing track within currentAlbum.tracks
@@ -330,7 +313,36 @@ const SPOTIFY_CLIENT_ID = 'YOUR_SPOTIFY_CLIENT_ID'; // Replace with your Spotify
 const SPOTIFY_REDIRECT_URI = window.location.origin; // Your app's URL (e.g., http://localhost:8000)
 const SPOTIFY_SCOPES = 'user-read-playback-state user-modify-playback-state streaming user-read-email user-read-private';
 
+
+
+// script.js
+// ... (existing code)
+
+// --- New Global Variables for Playlists ---
+let currentUserPlaylists = []; // To store all the user's playlists
+let currentPlaylist = null; // To store the currently viewed playlist
+
+// --- New Element References for Playlists ---
+const newPlaylistPopupOverlay = document.getElementById('new-playlist-popup-overlay');
+const newPlaylistNameInput = document.getElementById('new-playlist-name-input');
+const createNewPlaylistBtn = document.getElementById('create-new-playlist');
+const cancelNewPlaylistBtn = document.getElementById('cancel-new-playlist');
+
+const playlistDetailsOverlay = document.getElementById('playlist-details-overlay');
+const closePlaylistDetailsBtn = document.getElementById('close-playlist-details');
+const playlistTitleH1 = document.getElementById('playlist-title-h1');
+const playlistInfoP = document.getElementById('playlist-info');
+const playlistSongsContainer = document.getElementById('playlist-songs-container');
+const recommendedSongsContainer = document.getElementById('recommended-songs-container');
+const playlistPlayBtn = document.getElementById('playlist-play-btn');
+
+let userPlaylistsContainer = document.getElementById('user-playlists-container');
+const addPopupOverlay = document.getElementById('add-popup-overlay');
+
+// ... (rest of your existing code)
 // --- Utility Functions ---
+
+
 
 /**
  * Formats time from seconds to MM:SS format.
@@ -472,6 +484,8 @@ function stopControllablePlayersOnly() {
 }
 
 
+
+
 /**
  * Function to reset the player UI elements and clear mini-player from the player bar.
  * It also attempts to stop actual audio/video playback from native audio, YouTube, and Spotify SDK.
@@ -567,6 +581,35 @@ function stopAllPlaybackUI() {
     // Hide the fixed top playing heading
     updateFixedTopHeadingVisibility(); // Call new function to manage visibility
     hideFullScreenPlayer(); // Ensure full screen player is hidden
+}
+
+function updateCompactPlayButtonIcons() {
+    const compactButtons = document.querySelectorAll('.playlist-compact-play-btn');
+    const isPlaying = (ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) || (audio && !audio.paused);
+    
+    compactButtons.forEach(button => {
+        const playIcon = button.querySelector('.play-icon');
+        const pauseIcon = button.querySelector('.pause-icon');
+        const songId = button.dataset.songId;
+
+        if (!playIcon || !pauseIcon) {
+            console.warn("Compact playlist play button is missing play/pause icons.");
+            return;
+        }
+
+        if (songId === currentlyPlayedCardId) {
+            if (isPlaying) {
+                playIcon.classList.add('hidden');
+                pauseIcon.classList.remove('hidden');
+            } else {
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+            }
+        } else {
+            playIcon.classList.remove('hidden');
+            pauseIcon.classList.add('hidden');
+        }
+    });
 }
 
 
@@ -889,12 +932,653 @@ async function updatePlayerUI() {
     if (shuffleBtn) shuffleBtn.classList.toggle('active', isShuffle);
     if (fullRepeatBtn) fullRepeatBtn.classList.toggle('active', isRepeat);
     if (fullShuffleBtn) fullShuffleBtn.classList.toggle('active', isShuffle);
+     updatePlaybarLikeState();
+      updatePopupLikeState();
+
+// NEW: Full-Screen Player Elements
+// ... other existing code
+const fullScreenAddBtn = document.getElementById('full-screen-add-btn');
+document.addEventListener('DOMContentLoaded', () => {
+    // ... existing code
+    
+    // Wire up the new full-screen like button
+    if (fullScreenAddBtn) {
+        fullScreenAddBtn.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            toggleLikeCurrentSong();
+        });
+    }
+});
+
+function updatePlaybarLikeState() {
+    const mainBtn = document.getElementById('mobile-add-btn') || document.querySelector('.playbar-add-btn');
+    const fullScreenBtn = document.getElementById('full-screen-add-btn');
+
+    const song = getCurrentSongForLike();
+    
+    // If no song is playing, hide both buttons
+    if (!song) {
+        if (mainBtn) mainBtn.classList.remove('liked');
+        if (fullScreenBtn) fullScreenBtn.classList.remove('liked');
+        return;
+    }
+
+    const liked = LikedStore.get().some(x => LikedStore.isSame(x, song));
+
+    // Update the main playbar button
+    if (mainBtn) {
+        mainBtn.classList.toggle('liked', !!liked);
+        const plusIcon = mainBtn.querySelector('.icon-plus');
+        const checkIcon = mainBtn.querySelector('.icon-check');
+        if (plusIcon && checkIcon) {
+            plusIcon.style.display = liked ? 'none' : 'block';
+            checkIcon.style.display = liked ? 'block' : 'none';
+        }
+    }
+
+    // Update the new full-screen button
+    if (fullScreenBtn) {
+        fullScreenBtn.classList.toggle('liked', !!liked);
+        const plusIcon = fullScreenBtn.querySelector('.icon-plus');
+        const checkIcon = fullScreenBtn.querySelector('.icon-check');
+        if (plusIcon && checkIcon) {
+            plusIcon.style.display = liked ? 'none' : 'block';
+            checkIcon.style.display = liked ? 'block' : 'none';
+        }
+    }
 }
 
+updateCompactPlayButtonIcons();
+
+}
+/**
+ * Updates the icons of all compact play buttons in the playlist.
+ */
+
+
+// A single function to close all overlays and popups
+function closeAllPopups() {
+    const mobileOverlay = document.getElementById('mobile-search-overlay');
+    const smallPopup = document.getElementById('unique-search-popup');
+    const libraryPopup = document.getElementById('library-popup');
+    const likedSongsOverlay = document.getElementById('likedSongsOverlay');
+    const albumOverlay = document.getElementById('albumOverlay');
+    const songOptionsPopup = document.getElementById('song-options-popup');
+    const mainAuthPopup = document.getElementById('popup-overlay');
+    const playlistDetailsOverlay = document.getElementById('playlist-details-overlay'); // NEW
+
+    if (mobileOverlay) mobileOverlay.classList.remove('open');
+    if (smallPopup) smallPopup.classList.add('unique-hidden');
+    if (libraryPopup) libraryPopup.classList.add('hidden');
+    if (likedSongsOverlay) likedSongsOverlay.classList.remove('open');
+    if (albumOverlay) closeAlbumOverlay(); // This relies on your existing function
+    if (songOptionsPopup) closeSongOptionsPopup(); // This relies on your existing function
+    if (mainAuthPopup) mainAuthPopup.classList.add('invisible', 'opacity-0');
+    if (playlistDetailsOverlay) playlistDetailsOverlay.classList.add('hidden');
+    // Restore default body overflow for mobile
+    document.body.style.overflow = 'auto';
+
+    // Remove the `unique-active` class from all footer links
+    const navLinks = document.querySelectorAll('.unique-footer-nav .unique-nav-link');
+    navLinks.forEach(link => link.classList.remove('unique-active'));
+}
+
+// A centralized navigation function
+function navigateTo(target) {
+    // Step 1: Always close everything first to ensure a clean state
+    closeAllPopups();
+
+    // Step 2: Based on the target, show the correct UI and highlight the footer button
+    switch(target) {
+        case 'home':
+            // The home view is the default, so no special popup needs to be opened.
+            // The main content is already visible.
+            document.querySelector('.unique-footer-nav .unique-nav-link:nth-child(1)').classList.add('unique-active');
+            break;
+        case 'search':
+            // The search button uses two different popups, one for mobile and one for desktop.
+            if (window.innerWidth <= 1024) {
+                document.getElementById('mobile-search-overlay').classList.add('open');
+            } else {
+                document.getElementById('unique-search-popup').classList.remove('unique-hidden');
+            }
+            document.querySelector('#unique-search-icon-link').classList.add('unique-active');
+            break;
+        case 'library':
+            document.getElementById('library-popup').classList.remove('hidden');
+            document.querySelector('#your-library-link').classList.add('unique-active');
+            break;
+        case 'premium':
+            // Since there's no UI for this, you can just show a message.
+            showMessageBox('Premium features are not yet implemented.', 'info');
+            document.querySelector('.unique-nav-link[href="#premium"]').classList.add('unique-active');
+            break;
+    }
+}
+
+// script.js
+// ... (your existing utility functions)
+
+/**
+ * Fetches all of the user's playlists from the backend.
+ */
+// --- START: REPLACEMENT for fetchUserPlaylists function ---
+async function fetchUserPlaylists() {
+    const token = localStorage.getItem('userToken');
+    if (!token) {
+        console.warn("User not logged in, cannot fetch playlists.");
+        return false; // Return a clear failure signal
+    }
+    try {
+        const response = await fetch(`${BACKEND_BASE_URL}/api/playlists`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        if (response.ok) {
+            currentUserPlaylists = await response.json();
+            renderUserPlaylistsInLibrary(); // This updates the main library view
+            return true; // Return a clear success signal
+        } else {
+            console.error("Failed to fetch user playlists:", await response.text());
+            return false; // Return failure
+        }
+    } catch (error) {
+        console.error("Network error fetching user playlists:", error);
+        return false; // Return failure
+    }
+}
+// --- END: REPLACEMENT for fetchUserPlaylists function ---
+
+/**
+ * Renders the user's playlists in the library sidebar.
+ */
+// in script.js
+// REPIACE the old renderUserPlaylistsInLibrary function with this one
+
+function renderUserPlaylistsInLibrary() {
+    // Find the container fresh every time to avoid issues with global variables
+    const container = document.getElementById('user-playlists-container');
+    if (!container) {
+        console.error("Playlist container not found in the DOM.");
+        return;
+    }
+
+    // Clear previous playlists
+    container.innerHTML = '';
+
+    // Attach the click listener to the container if it's not already there
+    if (!container.dataset.listenerAttached) {
+        container.addEventListener('click', (event) => {
+            const playlistItem = event.target.closest('.swarify-playlist-item');
+            if (playlistItem) {
+                const playlistId = playlistItem.dataset.playlistId;
+                // Find the clicked playlist from the global list of playlists
+                const clickedPlaylist = currentUserPlaylists.find(p => p._id === playlistId);
+                if (clickedPlaylist) {
+                    currentPlaylist = clickedPlaylist;
+                    // This function makes the playlist details view appear
+                    openPlaylistDetailsOverlay(clickedPlaylist);
+                }
+            }
+        });
+        container.dataset.listenerAttached = 'true'; // Mark that the listener has been added
+    }
+
+    const token = localStorage.getItem('userToken');
+    if (!token) {
+        container.innerHTML = '<div class="p-2 text-gray-500 text-sm text-center">Log in to view playlists.</div>';
+        return;
+    }
+
+    if (currentUserPlaylists.length === 0) {
+        container.innerHTML = '<div class="p-2 text-gray-500 text-sm text-center">You have no playlists yet.</div>';
+        return;
+    }
+
+    // Create and append each playlist item
+    currentUserPlaylists.forEach(playlist => {
+        const playlistItem = document.createElement('div');
+        playlistItem.className = 'swarify-playlist-item flex items-center p-2 rounded-lg hover:bg-[#282828] cursor-pointer';
+        playlistItem.dataset.playlistId = playlist._id;
+
+        const songCount = playlist.songs ? playlist.songs.length : 0;
+        const playlistCover = (playlist.coverArt && playlist.coverArt !== 'undefined')
+            ? playlist.coverArt
+            : 'https://placehold.co/48x48/333/ffffff?text=P';
+
+        playlistItem.innerHTML = `
+            <img src="${playlistCover}" alt="${playlist.name} cover" class="w-12 h-12 rounded-lg object-cover mr-3">
+            <div>
+                <h3 class="text-base font-medium">${escapeHtml(playlist.name)}</h3>
+                <p class="text-sm text-gray-400">Playlist • ${songCount} song${songCount === 1 ? '' : 's'}</p>
+            </div>
+        `;
+        container.appendChild(playlistItem);
+    });
+}
+
+/**
+ * Creates a new playlist with the given name and adds the current song if available.
+ */
+/**
+ * Creates a new playlist. If a song was selected to be added before creation,
+ * it adds that song to the new playlist. Otherwise, it adds the currently playing song.
+ */
+// in script.js, find and replace the entire createPlaylist function
+
+async function createPlaylist(name) {
+    const token = localStorage.getItem('userToken');
+    if (!token) {
+        showMessageBox("You must be logged in to create a playlist.", 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${BACKEND_BASE_URL}/api/playlists`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ name: name })
+        });
+
+        const responseData = await response.json();
+        
+        // --- DEBUGGING & FIX ---
+        // This log will show you the exact structure of what your backend is sending.
+        console.log("Backend response after creating playlist:", responseData);
+
+        // Defensively find the new playlist object and its ID.
+        // The backend might return the playlist directly, or nested under a key like 'playlist'.
+        const newPlaylist = responseData.playlist || responseData; 
+        const newPlaylistId = newPlaylist._id || newPlaylist.id; // Check for both _id and id
+        
+        // Proceed only if the request was OK AND we found a valid ID.
+        if (response.ok && newPlaylistId) {
+            showMessageBox(`Playlist "${name}" created successfully!`, 'success');
+            
+            // Add the new playlist to our local data model.
+            currentUserPlaylists.push(newPlaylist);
+
+            const songToAddString = localStorage.getItem('songToAddAfterCreatingPlaylist');
+            if (songToAddString) {
+                const songToAdd = JSON.parse(songToAddString);
+                
+                // Use the valid ID we found to add the song.
+                await addSongToPlaylist(newPlaylistId, songToAdd);
+                
+                localStorage.removeItem('songToAddAfterCreatingPlaylist');
+            }
+            
+            // Re-render the library from our updated local data.
+            renderUserPlaylistsInLibrary(); 
+        } else {
+            // Handle cases where the request failed or the response was missing an ID.
+            const errorMessage = responseData.message || 'Failed to create playlist or invalid response from server.';
+            showMessageBox(errorMessage, 'error');
+            console.error("Error: Failed to create playlist or missing '_id' in server response:", responseData);
+        }
+    } catch (error) {
+        showMessageBox('Network error creating playlist.', 'error');
+        console.error("Network error:", error);
+    }
+}
+/**
+ * Adds a song to a specific playlist on the backend.
+ */
+// START: Replace this function in script.js
+async function addSongToPlaylist(playlistId, song) {
+    const token = localStorage.getItem('userToken');
+    if (!token) return false; // Return false if not logged in
+
+    try {
+        const response = await fetch(`${BACKEND_BASE_URL}/api/playlists/${playlistId}/songs`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ song_details: song })
+        });
+
+        if (response.ok) {
+            console.log("Song added to playlist successfully.");
+            showMessageBox(`Added "${song.title}" to playlist.`, 'success');
+            return true; // Return true on success
+        } else {
+            const error = await response.json();
+            console.error("Failed to add song to playlist:", error);
+            showMessageBox('Failed to add song to playlist.', 'error');
+            return false; // Return false on failure
+        }
+    } catch (error) {
+        console.error("Network error adding song to playlist:", error);
+        showMessageBox('Network error. Could not add song to playlist.', 'error');
+        return false; // Return false on network error
+    }
+}
+// END: Replacement for addSongToPlaylist
+
+/**
+ * Opens the playlist details overlay and populates it.
+ */
+// START: Replace this function in script.js
+// --- START: NEW Helper function to darken an RGB color ---
+function darkenColor(rgbArray, factor) {
+    return rgbArray.map(color => Math.max(0, Math.floor(color * factor)));
+}
+// --- END: NEW Helper function ---
+
+
+// --- REPLACEMENT for openPlaylistDetailsOverlay function ---
+async function openPlaylistDetailsOverlay(playlist) {
+    console.log("Opening new playlist overlay for:", playlist.name);
+    currentPlaylistForView = playlist;
+
+    const overlay = document.getElementById('playlist-details-overlay');
+    const scrollContent = document.getElementById('playlist-scroll-content');
+    if (!overlay || !scrollContent) return;
+    
+    // Reset scroll position and state
+    scrollContent.scrollTop = 0;
+    overlay.classList.remove('is-scrolled');
+    
+    overlay.classList.remove('hidden');
+    setTimeout(() => {
+        overlay.classList.add('active');
+    }, 10);
+    
+    document.body.style.overflow = 'hidden';
+
+    // Get all necessary elements
+    const backgroundGradient = document.getElementById('playlist-background-gradient');
+    const coverArtImg = document.getElementById('playlist-cover-art');
+    const titleH1 = document.getElementById('playlist-title-h1');
+    const compactTitle = document.getElementById('playlist-compact-title');
+    const mainBackBtn = document.getElementById('playlist-main-back-btn');
+    const compactBackBtn = document.getElementById('playlist-compact-back-btn');
+
+    // --- Back Button Listeners ---
+    mainBackBtn.onclick = closePlaylistDetailsOverlay;
+    compactBackBtn.onclick = closePlaylistDetailsOverlay;
+
+    // --- Dynamic Background Logic ---
+    const coverArt = (playlist.songs && playlist.songs.length > 0) 
+        ? (playlist.songs[0].img || playlist.songs[0].coverArt)
+        : 'https://placehold.co/192x192/4a4a4a/ffffff?text=Playlist';
+    
+    if (coverArtImg) {
+        // **FIX**: Add the crossOrigin attribute to allow color analysis of images from other domains.
+        coverArtImg.crossOrigin = "Anonymous";
+
+        const extractAndSetColor = () => {
+            try {
+                const colorThief = new ColorThief();
+                const dominantColor = colorThief.getColor(coverArtImg);
+                const darkColorArray = darkenColor(dominantColor, 0.4); // Factor of 0.4 for a dark shade
+                const darkRgbColor = `rgb(${darkColorArray[0]}, ${darkColorArray[1]}, ${darkColorArray[2]})`;
+                overlay.style.setProperty('--playlist-bg-color', darkRgbColor);
+            } catch (e) {
+                console.error("ColorThief error:", e);
+                overlay.style.setProperty('--playlist-bg-color', '#2a2a2a'); // Fallback color
+            }
+        };
+
+        // Set up event listeners
+        coverArtImg.onload = extractAndSetColor;
+        coverArtImg.onerror = () => {
+             overlay.style.setProperty('--playlist-bg-color', '#2a2a2a');
+        };
+
+        // Set the image source *after* setting the crossOrigin attribute.
+        coverArtImg.src = coverArt;
+
+        // **FIX**: Handle cached images where the 'onload' event might not fire again.
+        if (coverArtImg.complete) {
+            extractAndSetColor();
+        }
+    }
+
+    // Set Titles and other info
+    if (titleH1) titleH1.textContent = playlist.name;
+    if (compactTitle) compactTitle.textContent = playlist.name;
+    
+    const creatorAvatar = document.getElementById('playlist-creator-avatar');
+    const creatorName = document.getElementById('playlist-creator-name');
+    const durationInfo = document.getElementById('playlist-duration-info');
+    const mainPlayBtn = document.getElementById('playlist-play-btn');
+    const compactPlayBtn = document.getElementById('playlist-compact-play-btn');
+
+    const userName = localStorage.getItem('loggedInUserName') || 'You';
+    if (creatorName) creatorName.textContent = userName;
+    if (creatorAvatar) creatorAvatar.textContent = userName.charAt(0).toUpperCase();
+
+    const totalSeconds = playlist.songs ? playlist.songs.reduce((acc, song) => acc + parseDurationToSeconds(song.duration), 0) : 0;
+    const totalMinutes = Math.round(totalSeconds / 60);
+    if (durationInfo) durationInfo.textContent = `${totalMinutes} min`;
+
+ const playPlaylist = () => {
+    if (playlist.songs && playlist.songs.length > 0) {
+        const firstSong = playlist.songs[0];
+        const currentTrack = playingAlbum && playingAlbum.tracks ? playingAlbum.tracks[currentTrackIndex] : null;
+
+        // Check if the current song is already the first song of this playlist
+        if (currentTrack && currentTrack.id === firstSong.id) {
+            togglePlayback();
+        } else {
+            // If it's a new song, find the album, open its details, and play the track
+            const album = allAlbumsData.find(a => a.id === firstSong.albumId);
+            if (album) {
+                openAlbumDetails(album);
+                playTrack(album.tracks[firstSong.trackIndex], firstSong.trackIndex);
+            }
+        }
+    } else {
+        // Optional: show a message if the playlist is empty
+        showMessageBox("This playlist is empty.", "info");
+    }
+};
+    if (mainPlayBtn) mainPlayBtn.onclick = playPlaylist;
+    if (compactPlayBtn) compactPlayBtn.onclick = playPlaylist;
+
+    // Render songs and setup listeners
+    renderPlaylistSongs(playlist);
+    setupPlaylistScrollListener();
+    setupPlaylistSearchListeners();
+    fetchAndRenderRecommendedSongs(playlist._id);
+}
+
+// END: Replacement for openPlaylistDetailsOverlay
+
+/**
+ * Renders the songs within the playlist details overlay.
+ */
+function renderPlaylistSongs(playlist) {
+    const playlistSongsContainer = document.getElementById('playlist-songs-container');
+    if (!playlistSongsContainer) return;
+
+    playlistSongsContainer.innerHTML = ''; // Clear existing songs
+
+    // Handle the case where the playlist is empty
+    if (!playlist.songs || playlist.songs.length === 0) {
+        playlistSongsContainer.innerHTML = '<p class="text-center text-gray-400 py-8">This playlist has no songs yet.</p>';
+        return;
+    }
+
+    // Loop through each song and create its row element
+    playlist.songs.forEach(song => {
+        const songRow = document.createElement('div');
+        songRow.className = 'flex items-center gap-4 p-2 rounded-lg hover:bg-[#282828] cursor-pointer';
+
+        // **Correction 1: Added the 3-dot button to the HTML structure**
+        songRow.innerHTML = `
+            <img src="${song.img || song.coverArt || 'https://placehold.co/44x44/333/fff?text=S'}" alt="${escapeHtml(song.title)} cover" class="w-11 h-11 rounded-md object-cover flex-shrink-0">
+            <div class="flex-1 min-w-0">
+                <div class="font-semibold text-white truncate">${escapeHtml(song.title)}</div>
+                <div class="text-sm text-gray-400 truncate">${escapeHtml(song.artist)}</div>
+            </div>
+            <div class="text-sm text-gray-400">${formatTimeDisplay(song.duration)}</div>
+            <button class="playlist-song-options-btn ml-auto p-2 rounded-full" aria-label="More options for ${escapeHtml(song.title)}">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+            </button>
+        `;
+        
+        // Main click listener for the row (to play the song)
+        songRow.addEventListener('click', (event) => {
+            // **Correction 2: Ensure clicking the button doesn't also play the song**
+            if (event.target.closest('.playlist-song-options-btn')) {
+                return; // Do nothing if the options button was clicked
+            }
+
+            const album = allAlbumsData.find(a => a.id === song.albumId);
+            if (album && album.tracks && album.tracks[song.trackIndex]) {
+                openAlbumDetails(album);
+                playTrack(album.tracks[song.trackIndex], song.trackIndex);
+            } else {
+                console.error(`Error: Could not find album or track for song:`, song);
+                showMessageBox('Could not load the album for this song.', 'error');
+            }
+        });
+        
+        // **Correction 3: Add a specific listener for the new options button**
+        const optionsBtn = songRow.querySelector('.playlist-song-options-btn');
+        if (optionsBtn) {
+            optionsBtn.addEventListener('click', (event) => {
+                event.stopPropagation(); // Stop the click from bubbling up to the row
+                // This function opens the popup with the correct song's details
+                openPlaylistSongOptionsPopup(song, playlist._id);
+            });
+        }
+        
+        playlistSongsContainer.appendChild(songRow);
+    });
+}
+
+/**
+ * Fetches and renders recommended songs for a playlist.
+ */
+// script.js
+
+// ... (your existing code) ...
+
+/**
+ * Fetches and renders recommended songs for a playlist.
+ */
+// START: Replace this function in script.js
+// START: Replace this function in script.js
+// START: Replace this function in script.js
+async function fetchAndRenderRecommendedSongs(playlistId) {
+    if (!recommendedSongsContainer) return;
+    recommendedSongsContainer.innerHTML = '<p class="text-center text-gray-400 py-4 col-span-full">Loading recommendations...</p>';
+    const token = localStorage.getItem('userToken');
+    if (!token) {
+        recommendedSongsContainer.innerHTML = '';
+        return;
+    }
+
+    try {
+        const response = await fetch(`${BACKEND_BASE_URL}/api/playlists/recommendations/${playlistId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const recommendations = await response.json();
+        
+        if (response.ok && recommendations.length > 0) {
+            recommendedSongsContainer.innerHTML = ''; 
+            
+            recommendations.forEach(album => {
+                if (album.tracks && album.tracks.length > 0) {
+                    const song = album.tracks[0]; 
+                    const songItem = document.createElement('div');
+                    songItem.className = 'flex items-center gap-4 p-2 rounded-lg hover:bg-[#282828]';
+                    
+                    songItem.innerHTML = `
+                        <img src="${song.img || album.coverArt}" alt="${song.title} cover" class="w-11 h-11 rounded-md object-cover">
+                        <div class="flex-1 min-w-0">
+                            <div class="font-semibold text-white truncate cursor-pointer">${escapeHtml(song.title)}</div>
+                            <div class="text-sm text-gray-400 truncate">${escapeHtml(song.artist || album.artist)}</div>
+                        </div>
+                        <button class="add-recommended-btn p-2 rounded-full hover:bg-gray-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                        </button>
+                    `;
+                    
+                    songItem.querySelector('.font-semibold').addEventListener('click', () => {
+                        openAlbumDetails(album);
+                        playTrack(song, 0);
+                    });
+
+                    const addButton = songItem.querySelector('.add-recommended-btn');
+                    addButton.addEventListener('click', async () => {
+                        // --- THIS IS THE FIX ---
+                        // Safely get the album ID, whether it's named 'id' or '_id'
+                        const currentAlbumId = album.id || album._id;
+
+                        // Add a check to prevent adding a song without an ID
+                        if (!currentAlbumId) {
+                            showMessageBox('Cannot add song: Album ID is missing.', 'error');
+                            return;
+                        }
+
+                        const songDetails = {
+                             ...song,
+                             albumId: currentAlbumId, // Use the safe ID
+                             trackIndex: 0,
+                             coverArt: album.coverArt
+                        };
+                        // --- END OF FIX ---
+                        
+                        const success = await addSongToPlaylist(playlistId, songDetails);
+
+                        if (success) {
+                            addButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>`;
+                            addButton.disabled = true;
+
+                            const playlistToUpdate = currentUserPlaylists.find(p => p._id === playlistId);
+                            if (playlistToUpdate) {
+                                playlistToUpdate.songs.push(songDetails);
+                                renderPlaylistSongs(playlistToUpdate);
+
+                                const songCount = playlistToUpdate.songs.length;
+                                const totalSeconds = playlistToUpdate.songs.reduce((acc, s) => acc + parseDurationToSeconds(s.duration), 0);
+                                const totalMinutes = Math.round(totalSeconds / 60);
+
+                                if (document.getElementById('playlist-duration-info')) {
+                                     document.getElementById('playlist-duration-info').textContent = `${totalMinutes} min`;
+                                }
+                            }
+                        }
+                    });
+
+                    recommendedSongsContainer.appendChild(songItem);
+                }
+            });
+        } else {
+            recommendedSongsContainer.innerHTML = '<p class="text-center text-gray-400 py-4 col-span-full">No recommendations available.</p>';
+        }
+    } catch (error) {
+        console.error("Network error fetching recommendations:", error);
+        recommendedSongsContainer.innerHTML = '<p class="text-center text-gray-400 py-4 col-span-full">Could not load recommendations.</p>';
+    }
+}
+// END: Replacement for fetchAndRenderRecommendedSongs
+// END: Replacement for fetchAndRenderRecommendedSongs
+// END: Replacement for fetchAndRenderRecommendedSongs
+
+// ... (rest of your existing code) ...
+
+// You can add this right after your existing utility functions.
 
 // Plays a specific track, handling different media types (YouTube, Spotify, SoundCloud, native audio).
 // It updates the player bar UI and manages the progress bar.
-async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added initialSeekTime parameter
+async function playTrack(track, indexInAlbum, initialSeekTime = 0) { 
+    
+    
+     // ADD THIS LINE AT THE TOP OF THE FUNCTION
+    if (!isPlayingFromLikedSongs) {
+        isPlayingFromLikedSongs = false;
+    }// Added initialSeekTime parameter
     // Show the main play bar when a song starts playing
     if (mainPlayBar) {
         mainPlayBar.style.display = 'flex'; // Ensure playbar is visible
@@ -946,6 +1630,9 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
 
     // Update player UI (compact and full-screen)
     updatePlayerUI();
+     // NEW: Update like state immediately after UI update
+    updatePlaybarLikeState();
+    updatePopupLikeState();
 
     // Update fixed top heading
     if (fixedTopAlbumArt) fixedTopAlbumArt.src = (playingAlbum ? (playingAlbum.coverArt || 'https://placehold.co/40x40/4a4a4a/ffffff?text=Album') : track.img || 'https://placehold.co/40x40/4a4a4a/ffffff?text=Album');
@@ -1214,7 +1901,12 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
             togglePlayerControls(true); // Re-enable controls if playback fails
         }
     } else {
-        // Play using the standard audio element
+        if (!track.src) {
+            console.error("playTrack Error: The selected track is missing a 'src' property and cannot be played.", track);
+            showMessageBox("Sorry, this song is currently unavailable.", 'error');
+            return; // Stop the function here
+        }
+
         audio.src = track.src;
         audio.currentTime = initialSeekTime;
         audio.play();
@@ -1307,9 +1999,10 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) { // Added in
     }
     // Call the new highlighting function after playback starts/changes
     updateTrackHighlightingInOverlay();
+    highlightPlayingLikedSong();
     // Update the main album play button icon
     updateAlbumPlayButtonIcon();
-
+updatePlaylistPlayButtons();
     // If on mobile/tablet, show the full-screen player after playing a track
     // This is now handled by the mainPlayBar click listener for controllable tracks.
     // For embedded tracks, the album overlay itself is the "full player".
@@ -1610,6 +2303,9 @@ function updateFixedTopHeadingVisibility() {
 
 
 function openAlbumDetails(albumData, highlightTrackTitle = null) {
+
+
+    
     console.log("openAlbumDetails called with albumData:", albumData);
     const isOpeningEmbeddedAlbum = (
         albumData.rawHtmlEmbed || albumData.fullSoundcloudEmbed || albumData.audiomackEmbed || albumData.iframeSrc
@@ -2440,26 +3136,34 @@ if (!isSwitchingEmbeddedToEmbedded) {
         closeOverlayBtn.removeEventListener('click', closeAlbumOverlay); // Prevent multiple listeners
         closeOverlayBtn.addEventListener('click', closeAlbumOverlay);
     }
-    if (albumOverlay && topBar && rightPanel && mainPlayBar) { // Changed from playerBar
-        // Log the current state before attempting to show
-        console.log(`openAlbumDetails: Album overlay state before update - hidden: ${albumOverlay.classList.contains('hidden')}, show: ${albumOverlay.classList.contains('show')}, active: ${albumOverlay.classList.contains('active')}`);
+    // Locate the section you want to correct within openAlbumDetails
+if (albumOverlay && topBar && rightPanel && mainPlayBar) {
+    // OLD CODE: You were removing 'hidden' and adding 'show' and 'active' separately.
+    // albumOverlay.classList.remove('hidden');
+    // albumOverlay.classList.add('show');
+    // albumOverlay.classList.add('active'); 
 
-        albumOverlay.classList.remove('hidden');
-        albumOverlay.classList.add('show');
-        albumOverlay.classList.add('active'); // Add the active class here
-        document.body.style.overflow = 'hidden';
-        console.log("albumOverlay classes updated: hidden removed, show added, active added. body overflow hidden.");
-        updateFixedTopHeadingVisibility(); // Update fixed top heading visibility
-    } else {
-        console.error("Error: One or more critical elements for albumOverlay visibility are missing. Overlay will not show.", {
-            albumOverlay,
-            topBar,
-            rightPanel,
-            mainPlayBar
-        }); // Changed from playerBar
-    }
-    // Call toggleMainPlaybarView to update playbar visibility based on overlay state
-    toggleMainPlaybarView();
+    // NEW CODE: This single line adds both 'show' and 'active' classes at once for a cleaner approach.
+    // It also assumes 'hidden' has been removed earlier in the process.
+    // The `classList.add()` method can take multiple arguments, each one a class to add.
+    albumOverlay.classList.remove('hidden'); // Ensure the element is not hidden first
+    albumOverlay.classList.add('show', 'active'); // Add both classes to trigger the transition
+
+    // Log the current state for debugging
+    console.log("albumOverlay classes updated: hidden removed, show added, active added. body overflow hidden.");
+
+    // The rest of the code is fine.
+    document.body.style.overflow = 'hidden';
+    updateFixedTopHeadingVisibility();
+} else {
+    console.error("Error: One or more critical elements for albumOverlay visibility are missing. Overlay will not show.", {
+        albumOverlay,
+        topBar,
+        rightPanel,
+        mainPlayBar
+    });
+}
+
 }
 
 /**
@@ -2652,6 +3356,59 @@ function closeAlbumOverlay() {
     toggleMainPlaybarView();
 }
 
+/**
+ * Closes all major app popups and overlays.
+ * This function ensures a single source of truth for managing popup state.
+ */
+/**
+ * Closes all major app popups and overlays, including the liked songs and library popups.
+ */
+function closeAllOverlays() {
+    console.log("closeAllOverlays: Initiating a full closure of all popups and overlays.");
+    
+    // Close the main login/signup popup
+    const authPopup = document.getElementById('popup-overlay');
+    if (authPopup) {
+        authPopup.classList.add('invisible', 'opacity-0');
+        document.body.classList.remove('no-scroll');
+    }
+    
+    // Close the search overlays
+    const searchOverlay = document.getElementById('mobile-search-overlay');
+    if (searchOverlay) {
+        searchOverlay.classList.remove('open');
+        document.body.style.overflow = 'auto';
+    }
+    const searchPopup = document.getElementById('unique-search-popup');
+    if (searchPopup) {
+        searchPopup.classList.add('unique-hidden');
+    }
+    
+    // Close the album details overlay
+    const albumOverlay = document.getElementById('albumOverlay');
+    if (albumOverlay) {
+        albumOverlay.classList.add('hidden', 'opacity-0');
+        albumOverlay.classList.remove('show', 'active');
+        document.body.style.overflow = 'auto';
+    }
+    
+    // Close the library popups
+    const libraryPopup = document.getElementById('library-popup');
+    if (libraryPopup) {
+        libraryPopup.classList.add('hidden');
+    }
+    const likedSongsOverlay = document.getElementById('likedSongsOverlay');
+    if (likedSongsOverlay) {
+        likedSongsOverlay.classList.remove('open');
+        likedSongsOverlay.setAttribute('aria-hidden', 'true');
+    }
+    
+    // Close any smaller popups
+    const smallPopups = document.querySelectorAll('.swarify-add-popup-overlay, .song-options-popup-backdrop');
+    smallPopups.forEach(p => p.classList.remove('active'));
+    
+    console.log("closeAllOverlays: All known overlays and popups are now closed.");
+}
 
 // --- Player Controls (Play/Pause, Next, Previous, Volume, Progress) ---
 
@@ -2740,6 +3497,9 @@ async function togglePlayback() {
     updateAlbumPlayButtonIcon(); // Sync album play button
     updateTrackHighlightingInOverlay(); // Update track highlighting in overlay
     updateFixedTopHeadingVisibility(); // Sync fixed top heading
+     highlightPlayingLikedSong();
+     updatePlaylistPlayButtons();
+    updateCompactPlayButtonIcons();
 }
 
 
@@ -3708,59 +4468,47 @@ function createSuggestionsContainer(inputElement) {
 
     attachLiveSearch(mobileOverlayInput, mobileOverlayResults, 'overlay');
 
-    // Attach the focus event to the small popup's input to trigger the mobile overlay
-    const smallPopup = document.getElementById('unique-search-popup');
-    const smallInput = smallPopup ? smallPopup.querySelector('.unique-search-input') : null;
-    if (smallInput) {
-        smallInput.addEventListener('focus', () => {
-            smallPopup.classList.add('unique-hidden');
-            openMobileOverlay(smallInput.value || '');
-        });
-    }
+   
 })();
 
 // ---------------------------
 // Small popup wiring (Corrected to open popup first)
 // ---------------------------
-(function wireSmallPopup() {
-    const bottomSearchLink = document.getElementById("unique-search-icon-link");
-    const searchPopup = document.getElementById("unique-search-popup");
-    const closeSearchPopupBtn = document.getElementById("unique-close-search-popup");
-    const popupSearchInput = document.querySelector(".unique-search-input");
-    const popupSearchResultsContainer = document.getElementById('unique-search-results-container');
+function openSearchPopup() {
+    const mobileOverlay = document.getElementById('mobile-search-overlay');
+    const smallPopup = document.getElementById('unique-search-popup');
+    const overlayBackdrop = document.getElementById('overlay');
 
-    if (bottomSearchLink && searchPopup) {
-        bottomSearchLink.addEventListener("click", (e) => {
-            e.preventDefault();
-            searchPopup.classList.remove("unique-hidden");
-            overlay.style.display = "block";
-            // Do not focus on mobile as that will open the overlay immediately
-            if (window.innerWidth > 1024 && popupSearchInput) {
-                popupSearchInput.focus();
-            }
-        });
-    }
-
-    if (closeSearchPopupBtn) {
-        closeSearchPopupBtn.addEventListener("click", () => {
-            closeAllSearchUi();
-        });
-    }
-
-    if (overlay) {
-        overlay.addEventListener("click", (event) => {
-            if (!searchPopup.classList.contains("unique-hidden") && event.target === overlay) {
-                closeAllSearchUi();
-            }
-        });
-    }
-
-    if (popupSearchInput) {
-        if (window.innerWidth > 1024) {
-            attachLiveSearch(popupSearchInput, popupSearchResultsContainer, 'popup');
+    if (window.innerWidth <= 1024) {
+        // For mobile/tablet, open the full-screen overlay directly.
+        if (mobileOverlay) {
+            mobileOverlay.classList.add('open');
+            mobileOverlay.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden'; // Disable background scrolling
+            window.renderMobileRecents(); // Display recent searches
+            setTimeout(() => {
+                const mobileInput = document.getElementById('mobile-overlay-input');
+                if (mobileInput) mobileInput.focus();
+            }, 80);
+        }
+    } else {
+        // For desktop, open the small search popup.
+        if (smallPopup) {
+            smallPopup.classList.remove('unique-hidden');
+            if (overlayBackdrop) overlayBackdrop.style.display = 'block';
+            const popupSearchInput = smallPopup.querySelector(".unique-search-input");
+            if (popupSearchInput) popupSearchInput.focus();
         }
     }
-})();
+}
+
+const bottomSearchLink = document.getElementById("unique-search-icon-link");
+if (bottomSearchLink) {
+    bottomSearchLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        openSearchPopup();
+    });
+}
 
 // ---------------------------
 // Initial data fetch on load
@@ -4911,6 +5659,97 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.warn("Web Speech API not supported in this browser.");
         showMessageBox("Your browser does not support voice search.", 'info', 5000);
     }
+
+  // --- New: Centralized Footer Navigation Listeners ---
+    const navLinks = document.querySelectorAll('.unique-footer-nav .unique-nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', (event) => {
+            event.preventDefault();
+            const target = link.dataset.target || link.getAttribute('href').substring(1);
+            if (target) {
+                navigateTo(target);
+            }
+        });
+    });
+    
+
+   navigateTo('home');
+
+   
+
+
+    // NEW: Add click listener to the "New playlist" item in the `add-popup-overlay`
+  // in script.js, inside the 'DOMContentLoaded' listener
+
+const newPlaylistPopupItem = document.querySelector('#add-popup-overlay .swarify-add-popup-item:last-child');
+if (newPlaylistPopupItem) {
+    newPlaylistPopupItem.addEventListener('click', (e) => {
+        e.preventDefault();
+        const song = getCurrentSongForLike();
+        if (!isLoggedIn()) {
+            showMessageBox("You need to log in to create a playlist.", 'error');
+            return;
+        }
+
+        // --- FIX: Add this line ---
+        if (song) {
+            localStorage.setItem('songToAddAfterCreatingPlaylist', JSON.stringify(song));
+        }
+        // --- End of Fix ---
+
+        // Close the main add popup first
+        addPopupOverlay.classList.remove('active');
+        // Show the new playlist name popup
+        if(newPlaylistPopupOverlay) {
+            newPlaylistPopupOverlay.classList.remove('hidden');
+            setTimeout(() => newPlaylistNameInput.focus(), 10);
+        }
+    });
+}
+
+    // NEW: Add listeners for the "Create Playlist" popup buttons
+    if (createNewPlaylistBtn) {
+        createNewPlaylistBtn.addEventListener('click', () => {
+            const playlistName = newPlaylistNameInput.value.trim() || 'My new playlist';
+            createPlaylist(playlistName);
+            newPlaylistPopupOverlay.classList.add('hidden');
+            newPlaylistNameInput.value = '';
+        });
+    }
+
+    if (cancelNewPlaylistBtn) {
+        cancelNewPlaylistBtn.addEventListener('click', () => {
+            newPlaylistPopupOverlay.classList.add('hidden');
+            newPlaylistNameInput.value = '';
+        });
+    }
+
+    // NEW: Add listener for the library link in the footer
+    const libraryLink = document.getElementById('your-library-link');
+    if(libraryLink) {
+        libraryLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            await fetchUserPlaylists(); // Fetch and render playlists when library is opened
+            document.getElementById('library-popup').classList.remove('hidden');
+        });
+    }
+    
+    // NEW: Add listener for the close button on the playlist details overlay
+    if (closePlaylistDetailsBtn) {
+        closePlaylistDetailsBtn.addEventListener('click', () => {
+            playlistDetailsOverlay.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        });
+    }
+
+
+
+
+
+
+
+
+
 });
 
 // Placeholder for loadYoutubeIframeAPI function
@@ -5036,8 +5875,6 @@ function initEmbeddedAlbumOverlay(overlayElement, albumId, player) {
         });
     }
 }
-
-
 
 
 // The BACKEND_URL constant is already defined at the very top of the script as BACKEND_BASE_URL.
@@ -6232,10 +7069,13 @@ document.addEventListener('DOMContentLoaded', async () => {
      * Closes the main authentication popup.
      */
     window.closePopup = () => {
-        if (popupOverlay) popupOverlay.classList.remove('active');
+    if (popupOverlay) {
+        popupOverlay.classList.remove('active');
         popupOverlay.classList.add('invisible', 'opacity-0');
-        document.body.classList.remove('no-scroll');
-        screenHistory.length = 0;
+        popupOverlay.classList.add('hidden'); // <-- ADD THIS LINE
+    }
+    document.body.classList.remove('no-scroll');
+    screenHistory.length = 0;
         console.log('closePopup: History cleared and popup closed.');
         for (const id in screens) {
             const screen = screens[id];
@@ -6689,4 +7529,1486 @@ document.addEventListener('DOMContentLoaded', async () => {
             await completeUserProfile(identifier, name, dob, completeProfileSubmitButton);
         });
     }
+
+
+     // Event listeners for UI components
+    const libraryLikedBtn = Array.from(document.querySelectorAll('h3.text-base.font-medium')).find(el => el.textContent.trim() === 'Liked Songs');
+    if (libraryLikedBtn) {
+        libraryLikedBtn.closest('div').addEventListener('click', () => {
+            const likedOverlay = document.getElementById('likedSongsOverlay');
+            if (likedOverlay) {
+                likedOverlay.classList.add('open');
+                likedOverlay.setAttribute('aria-hidden', 'false');
+                fetchAndRenderLikedSongs();
+            }
+        });
+    }
+
+    const closeLikedBtn = document.getElementById('closeLikedSongs');
+    if (closeLikedBtn) {
+        closeLikedBtn.addEventListener('click', () => {
+            const likedOverlay = document.getElementById('likedSongsOverlay');
+            if (likedOverlay) {
+                likedOverlay.classList.remove('open');
+                likedOverlay.setAttribute('aria-hidden', 'true');
+            }
+        });
+    }
+
+    // Wiring up the playbar like button
+    const playbarLikeBtn = document.getElementById('mobile-add-btn') || document.querySelector('.playbar-add-btn');
+    if (playbarLikeBtn && !playbarLikeBtn.dataset.swarifyLikeWired) {
+        playbarLikeBtn.dataset.swarifyLikeWired = 'true';
+        playbarLikeBtn.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            toggleLikeCurrentSong();
+        });
+    }
+    
+    // Wire up the add-to-playlist popup listener
+    const addPopupLikedItem = document.querySelector('#add-popup-overlay .swarify-add-popup-item');
+    if(addPopupLikedItem && addPopupLikedItem.textContent.toLowerCase().includes('liked songs')) {
+        addPopupLikedItem.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            
+            const song = getCurrentSongForLike();
+            if (song) {
+                const likedSong = LikedStore.get().find(x => LikedStore.isSame(x, song));
+                if (likedSong) {
+                    backendUnlikeSong(likedSong);
+                    LikedStore.remove(song);
+                } else {
+                    LikedStore.add(song);
+                    backendLikeSong(song);
+                }
+                updatePlaybarLikeState();
+                updatePopupLikeState();
+            }
+
+            const overlay = document.getElementById('add-popup-overlay');
+            if(overlay) {
+                overlay.classList.remove('active');
+                overlay.style.display = 'none';
+            }
+        });
+    }
+
+    // Call the function to initialize the UI state
+    initializeUIState();
+
+    // --- NEW: Event listeners for the song options popup ---
+    const popupBackdrop = document.getElementById('song-options-popup');
+    const removeBtn = document.getElementById('popup-remove-from-liked');
+    const goBtn = document.getElementById('popup-go-to-album');
+
+    // Listener for the backdrop to close the popup on outside click
+    if (popupBackdrop) {
+        popupBackdrop.addEventListener('click', (e) => {
+            if (e.target === popupBackdrop) {
+                closeSongOptionsPopup();
+            }
+        });
+    }
+    
+    // Listener for the "Remove from this playlist" button
+    if (removeBtn) {
+        removeBtn.addEventListener('click', (e) => {
+            const albumId = e.currentTarget.dataset.albumId;
+            const trackIndex = e.currentTarget.dataset.trackIndex;
+            const likeId = e.currentTarget.dataset.likeId;
+            const songTitle = e.currentTarget.dataset.songTitle;
+            
+            if (albumId && trackIndex) {
+                const songToRemove = { albumId, trackIndex: Number(trackIndex), likeId };
+                LikedStore.remove(songToRemove);
+                backendUnlikeSong(songToRemove);
+                showMessageBox(`Removed from Liked Songs: ${songTitle}`, 'success', 1800);
+            }
+            closeSongOptionsPopup();
+            renderLikedSongsOverlay(); // Re-render the liked songs list
+        });
+    }
+
+    // Listener for "Go to album" button
+    // Listener for "Go to album" button
+if (goBtn) {
+    goBtn.addEventListener('click', (e) => {
+        // Use e.currentTarget to get the button element itself
+        const albumId = e.currentTarget.dataset.albumId; 
+        const albumToOpen = allAlbumsData.find(a => a.id === albumId);
+        
+        if (albumToOpen) {
+            // First, close all other popups, including the song options and liked songs overlays.
+            // This is a more robust approach than calling individual close functions.
+            closeAllPopups();
+            
+            // Then, immediately open the album details.
+            openAlbumDetails(albumToOpen);
+        }
+    });
+}
+    
 });
+
+
+
+// NEW: inline js from html
+
+function setDynamicBackground() {
+                const albumArt = document.getElementById('full-screen-album-art');
+                if (albumArt) {
+                    albumArt.onload = () => {
+                        const colorThief = new ColorThief();
+                        const dominantColor = colorThief.getColor(albumArt);
+                        const rgbColor = `rgb(${dominantColor[0]}, ${dominantColor[1]}, ${dominantColor[2]})`;
+                        document.getElementById('full-screen-player').style.backgroundColor = rgbColor;
+                    };
+                }
+            }
+            setDynamicBackground();
+
+document.addEventListener('DOMContentLoaded', function() {
+  const libraryLink = document.querySelector('.unique-footer-nav .unique-nav-item:nth-child(3) a');
+  const popup = document.getElementById('library-popup');
+  const closeBtn = document.getElementById('close-library-popup');
+
+  if(libraryLink && popup && closeBtn) {
+    libraryLink.addEventListener('click', function(e) {
+      e.preventDefault();
+      popup.classList.remove('hidden');
+    });
+
+    closeBtn.addEventListener('click', function() {
+      popup.classList.add('hidden');
+    });
+  }
+});
+
+
+        // NEW: Event listener for the mobile add button to open the popup
+        document.getElementById('mobile-add-btn').addEventListener('click', function() {
+            const popupOverlay = document.getElementById('add-popup-overlay');
+            popupOverlay.classList.add('active');
+        });
+
+        // NEW: Event listener to close the popup when clicking outside
+        document.getElementById('add-popup-overlay').addEventListener('click', function(event) {
+            // Check if the click occurred on the overlay itself, not a child element
+            if (event.target === this) {
+                this.classList.remove('active');
+            }
+        });
+
+        // Intercept any click on + button before other scripts can react
+document.addEventListener("click", function(e) {
+    const plusBtn = e.target.closest("#mobile-add-btn");
+    if (plusBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        // Show only the liked popup
+        const likedPopup = document.querySelector(".swarify-add-popup-overlay");
+        if (likedPopup) {
+            likedPopup.classList.add("active");
+            likedPopup.style.display = "block";
+        }
+    }
+}, true);
+  
+
+// ======== Liked Songs: storage + UI + backend sync ========
+
+// ======== Liked Songs: storage + UI + backend sync ========
+
+const LIKED_STORAGE_KEY = 'swarify_liked_songs_v2';
+const API_BASE_URL = "https://452e1283da6a.ngrok-free.app"; // Backend server base URL
+
+const LIKED_API = {
+    getLikes: () => `${API_BASE_URL}/api/likes`,
+    likeSong: () => `${API_BASE_URL}/api/likes`,
+    unlikeSong: (likeId) => `${API_BASE_URL}/api/likes/${encodeURIComponent(likeId)}`,
+    // This is not used in the optimized fetch, but kept for other uses
+    getAlbum: (albumId) => `${API_BASE_URL}/api/albums?id=${encodeURIComponent(albumId)}`
+};
+
+const LikedStore = {
+    get() {
+        try {
+            return JSON.parse(localStorage.getItem(LIKED_STORAGE_KEY)) || [];
+        } catch (e) {
+            console.error("Failed to parse liked songs from localStorage.", e);
+            return [];
+        }
+    },
+    set(arr) {
+        localStorage.setItem(LIKED_STORAGE_KEY, JSON.stringify(arr));
+    },
+    isSame(a, b) {
+        return a.albumId === b.albumId && String(a.trackIndex) === String(b.trackIndex);
+    },
+    add(item) {
+        const list = this.get();
+        if (!list.some(x => this.isSame(x, item))) {
+            list.unshift({ ...item,
+                addedAt: Date.now()
+            });
+            this.set(list);
+        }
+        return list;
+    },
+    remove(item) {
+        const list = this.get().filter(x => !this.isSame(x, item));
+        this.set(list);
+        return list;
+    },
+    find(item) {
+        return this.get().find(x => this.isSame(x, item));
+    }
+};
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return ('' + str).replace(/[&<>"']/g, c => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[c]);
+}
+
+function formatTimeDisplay(val) {
+    if (!val) return '';
+    if (typeof val === 'string' && val.includes(':')) return val;
+    let sec = parseInt(val, 10);
+    if (isNaN(sec)) return '';
+    let m = Math.floor(sec / 60);
+    let s = sec % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function dispatchEventSafe(name) {
+    try {
+        document.dispatchEvent(new Event(name));
+    } catch (e) {}
+}
+
+function isLoggedIn() {
+    return !!localStorage.getItem('userToken');
+}
+
+function showMessageBox(message, type, duration = 2000) {
+    console.log(`[Message: ${type}] ${message}`);
+    // This is a placeholder for a UI function
+    // Example: show some toast message
+    // const msgBox = document.getElementById('message-box');
+    // msgBox.textContent = message;
+    // msgBox.className = `message-box ${type}`;
+    // setTimeout(() => msgBox.className = 'message-box', duration);
+}
+
+// Helper to get current song data from global variables
+function getCurrentSongForLike() {
+    try {
+        let album = (typeof currentAlbum !== 'undefined' && currentAlbum) ? currentAlbum : null;
+        let idx = (typeof currentTrackIndex === 'number') ? currentTrackIndex : (typeof window.currentTrackIndex === 'number' ? window.currentTrackIndex : 0);
+        if ((!album || !album.id) && typeof playingAlbum !== 'undefined' && playingAlbum) {
+            album = playingAlbum;
+        }
+        if (!album || !album.id) return null;
+
+        if (Array.isArray(album.tracks) && album.tracks.length > 0) {
+            if (!(idx >= 0 && idx < album.tracks.length)) idx = 0;
+            const t = album.tracks[idx];
+            if (!t) return null;
+            return {
+                albumId: album.id,
+                albumTitle: album.title || album.name || 'Album',
+                trackIndex: idx,
+                title: t.title || `Track ${idx + 1}`,
+                artist: t.artist || album.artist || '',
+                img: t.img || album.coverArt || '',
+                duration: t.duration,
+                src: t.src || t.streamUrl || t.url || ''
+            };
+        }
+        return {
+            albumId: album.id,
+            albumTitle: album.title || album.name || 'Album',
+            trackIndex: 0,
+            title: album.currentTrackTitle || album.title || 'Unknown Track',
+            artist: album.artist || '',
+            img: album.coverArt || '',
+            duration: album.currentTrackDuration || '',
+            src: album.embedUrl || album.url || ''
+        };
+    } catch (e) {
+        console.warn('getCurrentSongForLike error', e);
+        return null;
+    }
+}
+
+
+
+// Function to send a like request to the backend with full song details
+async function backendLikeSong(item) {
+    const token = localStorage.getItem('userToken');
+    if (!token) {
+        console.warn('Cannot like song: user not authenticated.');
+        return;
+    }
+    try {
+        const res = await fetch(LIKED_API.likeSong(), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            // The key change: send the full item object
+            body: JSON.stringify(item)
+        });
+
+    if (res.ok) {
+    const data = await res.json().catch(() => null);
+    if (data && data.id) {
+        // Update the item being liked with the new 'likeId' from the backend response
+        item.likeId = data.id;
+        // Find the song in the local list and update its 'likeId'
+        const list = LikedStore.get();
+        const existingSong = list.find(x => LikedStore.isSame(x, item));
+        if (existingSong) {
+            existingSong.likeId = item.likeId;
+            LikedStore.set(list); // Re-save the list with the updated item
+        }
+    }
+    showMessageBox(`Added to Liked Songs: ${item.title}`, 'success', 1800);
+} else {
+            console.warn('Failed to like song:', await res.text());
+            showMessageBox('Failed to add to Liked Songs.', 'error');
+        }
+    } catch (e) {
+        console.error('Network error in like:', e);
+        showMessageBox('Network error. Could not add song.', 'error');
+    }
+}
+
+async function backendUnlikeSong(item) {
+    const token = localStorage.getItem('userToken');
+    if (!token) {
+        console.warn('Cannot unlike song: user not authenticated.');
+        return;
+    }
+    try {
+        const song = LikedStore.find(item);
+        if (!song || !song.likeId) {
+            console.warn('Cannot unlike song: likeId not found for item.', item);
+            return;
+        }
+        const res = await fetch(LIKED_API.unlikeSong(song.likeId), {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        if (!res.ok) {
+            console.warn('Failed to unlike song from backend:', await res.text());
+        } else {
+            console.log('Song unliked successfully on backend.');
+        }
+    } catch (e) {
+        console.error('Network error in unlike:', e);
+    }
+}
+
+/**
+ * Updates the state of the playbar like button (plus/tick icons).
+ */
+function updatePlaybarLikeState() {
+    const btn = document.getElementById('mobile-add-btn') || document.querySelector('.playbar-add-btn');
+    if (!btn) return;
+    const song = getCurrentSongForLike();
+    if (!song) {
+        btn.classList.remove('liked');
+        return;
+    }
+    const liked = LikedStore.get().some(x => LikedStore.isSame(x, song));
+    btn.classList.toggle('liked', !!liked);
+
+    const plusIcon = btn.querySelector('.icon-plus');
+    const checkIcon = btn.querySelector('.icon-check');
+    if (plusIcon && checkIcon) {
+        plusIcon.style.display = liked ? 'none' : 'block';
+        checkIcon.style.display = liked ? 'block' : 'none';
+    }
+}
+
+/**
+ * Updates the visual state of the heart icon in the popup.
+ */
+function updatePopupLikeState() {
+    const heartIcon = document.getElementById('popup-heart-icon');
+    if (!heartIcon) return;
+    
+    const song = getCurrentSongForLike();
+    if (!song) {
+        heartIcon.style.fill = 'white'; // Default color
+        return;
+    }
+
+    const liked = LikedStore.get().some(x => LikedStore.isSame(x, song));
+    if (liked) {
+        heartIcon.style.fill = '#E3342F'; // Red fill
+    } else {
+        heartIcon.style.fill = 'white'; // Unfilled color
+    }
+}
+
+// NEW: Function to open the song options popup
+// --- START: REPLACEMENT for openSongOptionsPopup function ---
+// --- START: REPLACEMENT for openSongOptionsPopup function ---
+
+function openSongOptionsPopup(song) {
+    const popupBackdrop = document.getElementById('song-options-popup');
+    const popupPanel = document.querySelector('.song-options-panel');
+    const popupSongCover = document.getElementById('popup-song-cover');
+    const popupSongTitle = document.getElementById('popup-song-title');
+    const popupSongArtist = document.getElementById('popup-song-artist');
+    
+    if (!popupBackdrop || !popupPanel) {
+        console.error("Could not find the song options popup panel.");
+        return;
+    }
+
+    // Store the entire song object as a stringified JSON on the panel.
+    // This is the most important step.
+    popupPanel.dataset.song = JSON.stringify(song);
+
+    // Populate the popup's UI with song details
+    if (popupSongCover) popupSongCover.src = song.img || song.coverArt || '';
+    if (popupSongTitle) popupSongTitle.textContent = song.title;
+    if (popupSongArtist) popupSongArtist.textContent = song.artist;
+    
+    // Show the popup
+    popupBackdrop.style.display = 'flex';
+    setTimeout(() => popupBackdrop.classList.add('active'), 10);
+}
+
+// --- END: REPLACEMENT for openSongOptionsPopup function ---
+// --- END: REPLACEMENT for openSongOptionsPopup function ---
+
+// NEW: Function to close the song options popup
+function closeSongOptionsPopup() {
+    const popupBackdrop = document.getElementById('song-options-popup');
+    if (!popupBackdrop) return;
+    
+    popupBackdrop.classList.remove('active');
+    setTimeout(() => {
+        popupBackdrop.style.display = 'none';
+    }, 300); // Wait for the transition to finish
+}
+
+
+
+
+// in script.js
+function renderLikedSongsOverlay() {
+    const listEl = document.getElementById('likedSongsList');
+    const countEl = document.getElementById('likedSongsCount');
+    if (!listEl) return;
+
+    const list = LikedStore.get();
+    listEl.innerHTML = '';
+
+    if (list.length === 0) {
+        listEl.innerHTML = '<p style="text-align: center; color: #b3b3b3; padding: 20px;">You haven\'t liked any songs yet.</p>';
+    } else {
+        list.forEach((s, i) => {
+            const row = document.createElement('div');
+            row.className = 'swarify-liked-row';
+            row.setAttribute('data-album-id', s.albumId);
+            row.setAttribute('data-track-index', s.trackIndex);
+            if (s.likeId) row.setAttribute('data-like-id', s.likeId);
+            row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:8px;cursor:pointer;';
+
+            // START OF FIX: Added class="song-title" and class="song-artist" to the divs below
+            row.innerHTML = `
+                <div style="width:24px;text-align:right;color:#aaa;font-size:0.95rem">${i + 1}</div>
+                <img src="${s.img || s.coverArt || ''}" onerror="this.style.display='none'" style="width:44px;height:44px;border-radius:6px;object-fit:cover;">
+                <div style="flex:1;min-width:0">
+                    <div class="song-title" style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(s.title)}</div>
+                    <div class="song-artist" style="font-size:.85rem;color:#bbb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(s.artist)}</div>
+                </div>
+                <div style="font-size:.85rem;color:#aaa">${formatTimeDisplay(s.duration)}</div>
+                <button class="swarify-options-btn" title="More options" style="background:none;border:0;cursor:pointer;padding:6px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="1" />
+                        <circle cx="12" cy="5" r="1" />
+                        <circle cx="12" cy="19" r="1" />
+                    </svg>
+                </button>
+            `;
+            // END OF FIX
+
+            const optionsBtn = row.querySelector('.swarify-options-btn');
+            if (optionsBtn) {
+                optionsBtn.addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    openSongOptionsPopup(s);
+                });
+            }
+
+            row.addEventListener('click', (ev) => {
+                if (ev.target && ev.target.closest && ev.target.closest('.swarify-options-btn')) {
+                    return;
+                }
+                openAlbumAndPlayLikedSong(s.albumId, Number(s.trackIndex));
+            });
+
+            listEl.appendChild(row);
+        });
+    }
+
+
+    if (countEl) countEl.textContent = `${list.length} song${list.length === 1 ? '' : 's'}`;
+    dispatchEventSafe('likedSongsRendered');
+}
+
+// Function to fetch liked songs from the backend and update the UI.
+async function fetchAndRenderLikedSongs() {
+    const listEl = document.getElementById('likedSongsList');
+    if (!listEl) return;
+    listEl.innerHTML = '<p style="text-align: center; color: #bbb;">Loading your liked songs...</p>';
+
+    const token = localStorage.getItem('userToken');
+    if (!token) {
+        LikedStore.set([]);
+        renderLikedSongsOverlay();
+        console.warn('No authentication token found. Cannot fetch liked songs from backend.');
+        listEl.innerHTML = '<p style="text-align: center; color: #bbb;">Please log in to see your liked songs.</p>';
+        return;
+    }
+
+    try {
+        const res = await fetch(LIKED_API.getLikes(), {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!res.ok) {
+            if (res.status === 401) {
+                console.error('Authentication failed. Please log in again.');
+                listEl.innerHTML = '<p style="text-align: center; color: #bbb;">Please log in to see your liked songs.</p>';
+            } else {
+                throw new Error('Failed to fetch liked songs from backend.');
+            }
+            return;
+        }
+
+      const likedSongs = await res.json();
+// Ensure each song object contains the unique 'id' from the backend, and store it as 'likeId'
+const updatedSongs = likedSongs.map(song => ({ ...song, likeId: song.id || song._id }));
+LikedStore.set(updatedSongs);
+    
+
+
+        renderLikedSongsOverlay();
+
+    } catch (e) {
+        console.error('Error fetching liked songs from backend:', e);
+        renderLikedSongsOverlay();
+        listEl.innerHTML = '<p style="text-align: center; color: #bbb;">Could not load liked songs. Please try again.</p>';
+    }
+}
+
+// Function to handle the toggle of a like
+function toggleLikeCurrentSong() {
+    if (!isLoggedIn()) {
+        window.location.href = '/login.html';
+        return;
+    }
+    const song = getCurrentSongForLike();
+    if (!song) {
+        showMessageBox('Nothing playing to like right now.', 'error');
+        return;
+    }
+
+    const exists = LikedStore.find(song);
+    if (exists) {
+        const likedSong = LikedStore.get().find(x => LikedStore.isSame(x, song));
+        if (likedSong && likedSong.likeId) {
+            backendUnlikeSong(likedSong);
+        }
+        
+        LikedStore.remove(song);
+        
+        dispatchEventSafe('songUnliked');
+        showMessageBox(`Removed from Liked Songs: ${song.title}`, 'success', 1800);
+    } else {
+        LikedStore.add(song);
+        backendLikeSong(song);
+        dispatchEventSafe('songLiked');
+        showMessageBox(`Added to Liked Songs: ${song.title}`, 'success', 1800);
+    }
+    // Update the UI after the local state has been changed.
+    updatePlaybarLikeState();
+    updatePopupLikeState();
+    renderLikedSongsOverlay();
+}
+
+// A new function to properly initialize the UI state on page load.
+function initializeUIState() {
+    // We fetch the liked songs first, and after that's done, we update the UI.
+    fetchAndRenderLikedSongs().then(() => {
+        // Once the liked songs are loaded, check the current song and update the UI.
+        updatePlaybarLikeState();
+        updatePopupLikeState();
+    });
+}
+
+// Listen for custom events to keep the UI in sync
+document.addEventListener('trackChanged', () => {
+    // When the track changes, update the UI state.
+    updatePlaybarLikeState();
+    updatePopupLikeState();
+});
+document.addEventListener('songLiked', updatePlaybarLikeState);
+document.addEventListener('songUnliked', updatePlaybarLikeState);
+
+
+
+
+// --- Core Functions for "Add to Playlist" Overlay ---
+// By defining these in the global scope (outside of any event listener),
+// they are guaranteed to be available when needed.
+
+window.openAddToPlaylistOverlay = async (song) => {
+    const addToPlaylistOverlay = document.getElementById('add-to-playlist-overlay');
+    if (!addToPlaylistOverlay || !song) return;
+
+    addToPlaylistOverlay.dataset.song = JSON.stringify(song);
+    await fetchUserPlaylists(); // Assumes fetchUserPlaylists is globally available
+    
+    // Find the container and render the list inside this function
+    const playlistSelectionContainer = document.getElementById('playlist-selection-container');
+    if (!playlistSelectionContainer) return;
+    playlistSelectionContainer.innerHTML = ''; // Clear previous items
+
+    if (!currentUserPlaylists || currentUserPlaylists.length === 0) {
+        playlistSelectionContainer.innerHTML = '<p class="text-center text-gray-400 py-4">You have no playlists yet.</p>';
+    } else {
+        currentUserPlaylists.forEach(playlist => {
+            const item = document.createElement('div');
+            item.className = 'flex items-center gap-4 p-2 rounded-lg';
+            const isAlreadyInPlaylist = playlist.songs && playlist.songs.some(s => s.albumId === song.albumId && String(s.trackIndex) === String(song.trackIndex));
+            const coverArt = (playlist.coverArt && playlist.coverArt !== 'undefined') ? playlist.coverArt : 'https://placehold.co/64x64/333/fff?text=♫';
+            item.innerHTML = `
+                <img src="${coverArt}" alt="${escapeHtml(playlist.name)}" class="w-16 h-16 rounded-md object-cover">
+                <div class="flex-grow min-w-0">
+                    <p class="text-white font-semibold truncate">${escapeHtml(playlist.name)}</p>
+                    <p class="text-gray-400 text-sm">${playlist.songs ? playlist.songs.length : 0} song${(playlist.songs && playlist.songs.length === 1) ? '' : 's'}</p>
+                </div>
+                <input type="checkbox" class="playlist-select-checkbox" data-playlist-id="${playlist._id}" ${isAlreadyInPlaylist ? 'checked' : ''}>
+            `;
+            playlistSelectionContainer.appendChild(item);
+        });
+    }
+      addToPlaylistOverlay.classList.remove('hidden'); // <-- ADD THIS LINE    
+    addToPlaylistOverlay.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+};
+
+window.closeAddToPlaylistOverlay = () => {
+    const addToPlaylistOverlay = document.getElementById('add-to-playlist-overlay');
+    const playlistSelectionContainer = document.getElementById('playlist-selection-container');
+    const doneAddingToPlaylistBtn = document.getElementById('done-adding-to-playlist-btn');
+
+    if (!addToPlaylistOverlay) return;
+    addToPlaylistOverlay.classList.remove('visible');
+    document.body.style.overflow = 'auto';
+    setTimeout(() => {
+        addToPlaylistOverlay.dataset.song = '';
+        if (playlistSelectionContainer) playlistSelectionContainer.innerHTML = '';
+        if (doneAddingToPlaylistBtn) doneAddingToPlaylistBtn.disabled = true;
+    }, 300);
+};
+
+
+// This listener now ONLY handles attaching other listeners and injecting CSS
+document.addEventListener('DOMContentLoaded', () => {
+    // --- CSS Injection ---
+    const addToPlaylistStyle = document.createElement('style');
+    addToPlaylistStyle.innerHTML = `
+        #add-to-playlist-overlay {
+            display: flex; visibility: hidden; opacity: 0;
+            transform: translateY(100%);
+            transition: visibility 0.3s, opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            z-index:10001;
+        }
+        #add-to-playlist-overlay.visible { visibility: visible; opacity: 1; transform: translateY(0); }
+        .playlist-select-checkbox {
+            appearance: none; -webkit-appearance: none; width: 28px; height: 28px; border: 2px solid #727272;
+            border-radius: 50%; outline: none; cursor: pointer; transition: background-color 0.2s, border-color 0.2s;
+            position: relative; flex-shrink: 0;
+        }
+        .playlist-select-checkbox:checked { background-color: #1ED760; border-color: #1ED760; }
+        .playlist-select-checkbox:checked::after {
+            content: '✔'; font-weight: bold; font-size: 16px; color: black; position: absolute;
+            top: 50%; left: 50%; transform: translate(-50%, -51%);
+        }
+    `;
+    document.head.appendChild(addToPlaylistStyle);
+
+    // --- Element References ---
+    const addToPlaylistOverlay = document.getElementById('add-to-playlist-overlay');
+    const closeAddToPlaylistBtn = document.getElementById('close-add-to-playlist-btn');
+    const newPlaylistFromAddScreenBtn = document.getElementById('new-playlist-from-add-screen');
+    const playlistSelectionContainer = document.getElementById('playlist-selection-container');
+    const doneAddingToPlaylistBtn = document.getElementById('done-adding-to-playlist-btn');
+    const popupAddToOtherPlaylistBtn = document.getElementById('popup-add-to-other-playlist');
+    const newPlaylistPopupOverlay = document.getElementById('new-playlist-popup-overlay');
+    const newPlaylistNameInput = document.getElementById('new-playlist-name-input');
+    
+    // --- Event Listeners Setup ---
+    if (popupAddToOtherPlaylistBtn) {
+        popupAddToOtherPlaylistBtn.addEventListener('click', () => {
+            const popupPanel = document.querySelector('.song-options-panel');
+            const songDataString = popupPanel ? popupPanel.dataset.song : null;
+
+            if (songDataString) {
+                const songData = JSON.parse(songDataString);
+                closeSongOptionsPopup();
+                setTimeout(() => window.openAddToPlaylistOverlay(songData), 350);
+            } else { 
+                showMessageBox('Could not find song details to add.', 'error'); 
+                closeSongOptionsPopup();
+            }
+        });
+    }
+
+    if (playlistSelectionContainer) {
+        playlistSelectionContainer.addEventListener('change', () => {
+            if (doneAddingToPlaylistBtn) {
+                doneAddingToPlaylistBtn.disabled = !playlistSelectionContainer.querySelector('input:checked');
+            }
+        });
+    }
+
+    if (doneAddingToPlaylistBtn) {
+        doneAddingToPlaylistBtn.addEventListener('click', async () => {
+            const songDataString = addToPlaylistOverlay.dataset.song;
+            if (!songDataString) return;
+            const song = JSON.parse(songDataString);
+            const checkboxes = playlistSelectionContainer.querySelectorAll('input:checked');
+            if (checkboxes.length === 0) return;
+            doneAddingToPlaylistBtn.disabled = true;
+            doneAddingToPlaylistBtn.textContent = 'Adding...';
+            const promises = Array.from(checkboxes).map(cb => addSongToPlaylist(cb.dataset.playlistId, song));
+            const results = await Promise.all(promises);
+            if (results.some(Boolean)) {
+                showMessageBox(`Added to ${results.filter(Boolean).length} playlist(s).`, 'success');
+                await fetchUserPlaylists();
+            }
+            doneAddingToPlaylistBtn.textContent = 'Done';
+            window.closeAddToPlaylistOverlay();
+        });
+    }
+
+    if (closeAddToPlaylistBtn) {
+        closeAddToPlaylistBtn.addEventListener('click', window.closeAddToPlaylistOverlay);
+    }
+    
+    if (newPlaylistFromAddScreenBtn) {
+        newPlaylistFromAddScreenBtn.addEventListener('click', () => {
+            const songDataString = addToPlaylistOverlay.dataset.song;
+            if (songDataString) {
+                localStorage.setItem('songToAddAfterCreatingPlaylist', songDataString);
+                window.closeAddToPlaylistOverlay();
+                setTimeout(() => {
+                    if (newPlaylistPopupOverlay) {
+                        newPlaylistPopupOverlay.classList.remove('hidden');
+                        newPlaylistPopupOverlay.style.display = 'flex';
+                        newPlaylistPopupOverlay.style.visibility = 'visible';
+                        newPlaylistPopupOverlay.style.opacity = '1';
+                        if (newPlaylistNameInput) {
+                            setTimeout(() => newPlaylistNameInput.focus(), 50);
+                        }
+                    }
+                }, 350);
+            }
+        });
+    }
+});
+
+// --- END: REPLACEMENT CODE ---
+
+// --- START: JavaScript for Liked Songs Search Functionality (Version 3) ---
+document.addEventListener('DOMContentLoaded', () => {
+    const likedSongsOverlay = document.getElementById('likedSongsOverlay');
+    const likedContent = document.getElementById('likedContent');
+    const searchInput = document.getElementById('likedSongsSearchInput');
+    const noResultsMessage = document.getElementById('noResultsMessage');
+    const noResultsQuery = document.getElementById('noResultsQuery');
+    const closeSearchBtn = document.getElementById('closeLikedSongsSearch');
+    const clearSearchBtn = document.getElementById('clearLikedSearch');
+    const compactHeader = document.getElementById('likedSongsCompactHeader');
+    const compactCloseBtn = document.getElementById('closeLikedSongsCompact');
+
+    if (!likedContent || !likedSongsOverlay) return;
+
+    // --- Main Scroll Listener ---
+    // This now toggles a class that shows the compact header instead of the search bar.
+    likedContent.addEventListener('scroll', () => {
+        if (likedContent.scrollTop > 60) { // Threshold to switch to compact header
+            likedSongsOverlay.classList.add('is-scrolled');
+        } else {
+            likedSongsOverlay.classList.remove('is-scrolled');
+        }
+    }, false);
+
+    // --- Search Activation & Filtering ---
+    // We add a listener to the document because the search trigger is inside the rendered list.
+    document.body.addEventListener('focusin', (e) => {
+        if (e.target && e.target.id === 'find-in-liked-songs-trigger') {
+            likedSongsOverlay.classList.add('search-active');
+            searchInput.focus();
+        }
+    });
+
+    closeSearchBtn.addEventListener('click', () => {
+        likedSongsOverlay.classList.remove('search-active');
+        searchInput.value = '';
+        searchInput.blur();
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    
+    // Attach the main close functionality to BOTH close buttons
+    const closeLikedSongs = () => {
+        const likedOverlay = document.getElementById('likedSongsOverlay');
+        if (likedOverlay) {
+            likedOverlay.classList.remove('open');
+            likedOverlay.setAttribute('aria-hidden', 'true');
+        }
+    };
+    document.getElementById('closeLikedSongs').addEventListener('click', closeLikedSongs);
+    if(compactCloseBtn) compactCloseBtn.addEventListener('click', closeLikedSongs);
+
+
+    searchInput.addEventListener('input', () => {
+        const query = searchInput.value.toLowerCase().trim();
+        const songs = document.querySelectorAll('#likedSongsList .swarify-liked-row');
+        let found = false;
+
+        songs.forEach(song => {
+            const titleEl = song.querySelector('.song-title');
+            const artistEl = song.querySelector('.song-artist');
+            const title = titleEl ? titleEl.textContent.toLowerCase() : '';
+            const artist = artistEl ? artistEl.textContent.toLowerCase() : '';
+
+            if (title.includes(query) || artist.includes(query)) {
+                song.style.display = 'flex';
+                found = true;
+            } else {
+                song.style.display = 'none';
+            }
+        });
+
+        clearSearchBtn.style.display = (query.length > 0) ? 'block' : 'none';
+
+        if (!found && query.length > 0) {
+            noResultsMessage.style.display = 'block';
+            noResultsQuery.textContent = `No results found for "${searchInput.value}"`;
+        } else {
+            noResultsMessage.style.display = 'none';
+        }
+    });
+
+    clearSearchBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        searchInput.focus();
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    const likedSongsPlayBtn = document.getElementById('liked-songs-play-btn');
+    if (likedSongsPlayBtn) {
+        likedSongsPlayBtn.addEventListener('click', () => {
+            handleLikedSongsPlayButtonClick();
+        });
+    }
+
+    // Also, ensure the highlight and icon update when playback is toggled globally.
+    document.addEventListener('trackChanged', () => {
+        highlightPlayingLikedSong();
+        updateLikedSongsPlayButtonIcon();
+    });
+
+    // It is crucial to update the liked songs UI state whenever any track ends
+    // or playback is toggled.
+    const audioPlayer = document.getElementById('audio-player');
+    if(audioPlayer) {
+        audioPlayer.addEventListener('play', () => {
+             highlightPlayingLikedSong();
+             updateLikedSongsPlayButtonIcon();
+        });
+        audioPlayer.addEventListener('pause', () => {
+             highlightPlayingLikedSong();
+             updateLikedSongsPlayButtonIcon();
+        });
+        audioPlayer.addEventListener('ended', () => {
+            isPlayingFromLikedSongs = false; // Reset context when a song ends
+            highlightPlayingLikedSong();
+            updateLikedSongsPlayButtonIcon();
+        });
+    }
+
+
+});
+
+// --- Update renderLikedSongsOverlay to include the search trigger ---
+// Replace your existing 'renderLikedSongsOverlay' function with this one.
+// --- Update renderLikedSongsOverlay to include the search trigger ---
+// Replace your existing 'renderLikedSongsOverlay' function with this one.
+function renderLikedSongsOverlay() {
+    const listEl = document.getElementById('likedSongsList');
+    const countEl = document.getElementById('likedSongsCount');
+    if (!listEl) return;
+
+    // --- FIX START ---
+    // Find and remove any existing search trigger to prevent duplicates.
+    // The search trigger is a sibling of the list, within the same parent.
+    const parentContainer = listEl.parentElement;
+    if (parentContainer) {
+        const existingSearchTrigger = parentContainer.querySelector('.search-trigger-container');
+        if (existingSearchTrigger) {
+            existingSearchTrigger.remove();
+        }
+    }
+    // --- FIX END ---
+
+    const list = LikedStore.get();
+    listEl.innerHTML = ''; // Clear previous song content
+
+    // Add the "Find in Liked Songs" input trigger at the top of the list
+    const searchTriggerHTML = `
+        <div class="search-trigger-container">
+            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg>
+            <input type="text" id="find-in-liked-songs-trigger" readonly placeholder="Find in Liked Songs">
+        </div>
+    `;
+    listEl.insertAdjacentHTML('beforebegin', searchTriggerHTML);
+
+    if (list.length === 0) {
+        listEl.innerHTML = '<p style="text-align: center; color: #b3b3b3; padding: 20px;">You haven\'t liked any songs yet.</p>';
+    } else {
+        list.forEach((s, i) => {
+            const row = document.createElement('div');
+            row.className = 'swarify-liked-row';
+            row.setAttribute('data-album-id', s.albumId);
+            row.setAttribute('data-track-index', s.trackIndex);
+            if (s.likeId) row.setAttribute('data-like-id', s.likeId);
+            row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:8px;cursor:pointer;';
+
+            row.innerHTML = `
+                <div style="width:24px;text-align:right;color:#aaa;font-size:0.95rem">${i + 1}</div>
+                <img src="${s.img || s.coverArt || ''}" onerror="this.style.display='none'" style="width:44px;height:44px;border-radius:6px;object-fit:cover;">
+                <div style="flex:1;min-width:0">
+                    <div class="song-title" style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(s.title)}</div>
+                    <div class="song-artist" style="font-size:.85rem;color:#bbb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(s.artist)}</div>
+                </div>
+                <div style="font-size:.85rem;color:#aaa">${formatTimeDisplay(s.duration)}</div>
+                <button class="swarify-options-btn" title="More options" style="background:none;border:0;cursor:pointer;padding:6px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="12" cy="19" r="1" />
+                    </svg>
+                </button>
+            `;
+            const optionsBtn = row.querySelector('.swarify-options-btn');
+            if (optionsBtn) {
+                optionsBtn.addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    openSongOptionsPopup(s);
+                });
+            }
+            row.addEventListener('click', (ev) => {
+                if (ev.target && ev.target.closest && ev.target.closest('.swarify-options-btn')) { return; }
+                openAlbumAndPlayLikedSong(s.albumId, Number(s.trackIndex));
+            });
+            listEl.appendChild(row);
+        });
+    }
+
+    if (countEl) countEl.textContent = `${list.length} song${list.length === 1 ? '' : 's'}`;
+    dispatchEventSafe('likedSongsRendered');
+}
+// --- END: JavaScript for Liked Songs Search Functionality (Version 3) ---
+/**
+ * Opens the album details for a liked song and plays the specific track.
+ * This function ensures that when a user clicks a song in the "Liked Songs" list,
+ * the player starts playing that track immediately.
+ * @param {string} albumId - The ID of the album containing the liked song.
+ * @param {number} trackIndex - The index of the liked song within its album's tracklist.
+ */
+function openAlbumAndPlayLikedSong(albumId, trackIndex) {
+
+
+    isPlayingFromLikedSongs = true;
+    // Find the full album details from the globally stored `allAlbumsData` array.
+    const album = allAlbumsData.find(a => a.id === albumId);
+
+    if (album) {
+        // Find the specific track within the album's tracklist.
+        const track = album.tracks[trackIndex];
+        if (track) {
+            // Set the current album context to the album of the played track.
+            // This is important for next/previous track functionality to work correctly.
+            currentAlbum = album;
+            
+            // Call the main playTrack function to start playback.
+            // This function handles all the logic for showing the playbar, updating UI, etc.
+            playTrack(track, trackIndex);
+        } else {
+            console.error(`Track with index ${trackIndex} not found in album ${albumId}`);
+            showMessageBox('Could not find the selected track.', 'error');
+        }
+    } else {
+        console.error(`Album with ID ${albumId} not found.`);
+        showMessageBox('Could not find the album for this song.', 'error');
+    }
+}
+
+/**
+ * Highlights the currently playing song within the "Liked Songs" overlay.
+ * It iterates through the list, resets any previous highlighting, and applies a 'playing'
+ * style to the title of the song that is currently active.
+ */
+function highlightPlayingLikedSong() {
+    const likedSongsList = document.getElementById('likedSongsList');
+    if (!likedSongsList) return;
+
+    const rows = likedSongsList.querySelectorAll('.swarify-liked-row');
+    let playingAlbumId = null;
+    let playingTrackIndex = -1;
+
+    // Determine which song is currently playing from global state variables.
+    if (playingAlbum && typeof currentTrackIndex !== 'undefined') {
+        playingAlbumId = playingAlbum.id;
+        playingTrackIndex = currentTrackIndex;
+    }
+
+    // Loop through each song row in the liked songs list.
+    rows.forEach(row => {
+        const rowAlbumId = row.dataset.albumId;
+        const rowTrackIndex = parseInt(row.dataset.trackIndex, 10);
+        const titleEl = row.querySelector('.song-title');
+
+        if (titleEl) {
+            // Reset styles for all rows first.
+            row.classList.remove('playing');
+            titleEl.style.color = ''; // Revert to default text color.
+        }
+
+        // If the row matches the currently playing song, apply the highlight.
+        if (rowAlbumId === playingAlbumId && rowTrackIndex === playingTrackIndex) {
+             if (titleEl) {
+                row.classList.add('playing');
+                titleEl.style.color = '#1ED760'; // Apply Spotify green color to the title.
+             }
+        }
+    });
+}
+
+
+// NEW: Global variable to track if playback started from the Liked Songs playlist
+let isPlayingFromLikedSongs = false;
+
+/**
+ * Updates the icon of the main play button in the "Liked Songs" overlay.
+ * Toggles between a play and pause icon based on the current playback state.
+ */
+function updateLikedSongsPlayButtonIcon() {
+    const btn = document.getElementById('liked-songs-play-btn');
+    if (!btn) return;
+    const playIcon = btn.querySelector('.play-icon');
+    const pauseIcon = btn.querySelector('.pause-icon');
+
+    // Check if any audio is currently playing.
+    const isAnySongPlaying = (ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) || (audio && !audio.paused);
+
+    // Show pause icon only if a song is playing AND it was started from the liked songs list.
+    if (isAnySongPlaying && isPlayingFromLikedSongs) {
+        playIcon.classList.add('hidden');
+        pauseIcon.classList.remove('hidden');
+    } else {
+        playIcon.classList.remove('hidden');
+        pauseIcon.classList.add('hidden');
+    }
+}
+
+/**
+ * Handles clicks on the main green play button in the Liked Songs overlay.
+ * It will either play the first liked song or toggle the play/pause state.
+ */
+function handleLikedSongsPlayButtonClick() {
+    const likedSongs = LikedStore.get();
+    if (likedSongs.length === 0) {
+        showMessageBox("You have no liked songs to play.", "info");
+        return;
+    }
+
+    const isAnySongPlaying = (ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) || (audio && !audio.paused);
+
+    // If the currently playing context is the liked songs list, just toggle play/pause.
+    if (isPlayingFromLikedSongs) {
+        togglePlayback();
+    } else {
+        // If a different song is playing, or nothing is playing, start the liked songs list from the top.
+        const firstSongInfo = likedSongs[0];
+        // This function will set the context and start playback.
+        openAlbumAndPlayLikedSong(firstSongInfo.albumId, firstSongInfo.trackIndex);
+    }
+}
+
+// --- REPLACEMENT for handlePlaylistScroll and its setup function ---
+// --- REPLACEMENT for handlePlaylistScroll and its setup function ---
+function setupPlaylistScrollListener() {
+    // Target the new scrollable container
+    const scrollContent = document.getElementById('playlist-scroll-content');
+    if (!scrollContent) return;
+    
+    // Always remove the old listener before adding a new one
+    scrollContent.removeEventListener('scroll', handlePlaylistScroll);
+    scrollContent.addEventListener('scroll', handlePlaylistScroll);
+}
+
+function handlePlaylistScroll() {
+    const overlay = document.getElementById('playlist-details-overlay');
+    const scrollContent = document.getElementById('playlist-scroll-content');
+    const mainHeader = document.getElementById('playlist-header-content');
+    if (!overlay || !mainHeader || !scrollContent) return;
+
+    // The threshold is when the main header is about to scroll out of view
+    const scrollThreshold = mainHeader.offsetHeight - -20; // 80px is a buffer
+
+    if (scrollContent.scrollTop > scrollThreshold) {
+        overlay.classList.add('is-scrolled');
+    } else {
+        overlay.classList.remove('is-scrolled');
+    }
+}
+
+
+
+
+// --- END: NEW FUNCTION for Playlist Scrolling Header ---
+// --- START: NEW FUNCTIONS for Playlist Search ---
+
+function setupPlaylistSearchListeners() {
+    const searchTrigger = document.getElementById('playlist-search-trigger');
+    const searchView = document.getElementById('playlist-search-view');
+    const searchBackBtn = document.getElementById('playlist-search-back-btn');
+    const searchInput = document.getElementById('playlist-search-input');
+    const clearSearchBtn = document.getElementById('playlist-clear-search-btn');
+
+    if (!searchTrigger || !searchView || !searchBackBtn || !searchInput || !clearSearchBtn) return;
+
+    searchTrigger.addEventListener('click', () => {
+        searchView.classList.remove('hidden');
+        searchView.classList.add('flex'); // Use flex to show it
+        renderFullPlaylistForSearch(); // Show all songs initially
+        setTimeout(() => searchInput.focus(), 50);
+    });
+
+    searchBackBtn.addEventListener('click', () => {
+        searchView.classList.remove('flex');
+        searchView.classList.add('hidden');
+        searchInput.value = '';
+    });
+
+    clearSearchBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        searchInput.focus();
+        filterPlaylistSongs();
+    });
+
+    searchInput.addEventListener('input', () => {
+        filterPlaylistSongs();
+        clearSearchBtn.classList.toggle('hidden', searchInput.value.length === 0);
+    });
+}
+
+function renderFullPlaylistForSearch() {
+    const resultsContainer = document.getElementById('playlist-search-results');
+    resultsContainer.innerHTML = '';
+    
+    if (currentPlaylistForView && currentPlaylistForView.songs) {
+        currentPlaylistForView.songs.forEach(song => {
+            resultsContainer.appendChild(createPlaylistSongRow(song, currentPlaylistForView._id));
+        });
+    }
+}
+
+function filterPlaylistSongs() {
+    const query = document.getElementById('playlist-search-input').value.toLowerCase().trim();
+    const resultsContainer = document.getElementById('playlist-search-results');
+    const noResultsView = document.getElementById('playlist-no-search-results');
+    const noResultsQuerySpan = document.getElementById('no-results-query');
+    
+    resultsContainer.innerHTML = '';
+    let found = false;
+
+    if (currentPlaylistForView && currentPlaylistForView.songs) {
+        currentPlaylistForView.songs.forEach(song => {
+            const title = (song.title || '').toLowerCase();
+            const artist = (song.artist || '').toLowerCase();
+
+            if (title.includes(query) || artist.includes(query)) {
+                resultsContainer.appendChild(createPlaylistSongRow(song, currentPlaylistForView._id));
+                found = true;
+            }
+        });
+    }
+
+    if (!found && query) {
+        resultsContainer.classList.add('hidden');
+        noResultsView.classList.remove('hidden');
+        noResultsQuerySpan.textContent = query;
+    } else {
+        resultsContainer.classList.remove('hidden');
+        noResultsView.classList.add('hidden');
+    }
+}
+// --- END: NEW FUNCTIONS for Playlist Search ---
+// --- START: NEW HELPER FUNCTION for Creating Song Rows ---
+function createPlaylistSongRow(song, playlistId) {
+    const songRow = document.createElement('div');
+    songRow.className = 'playlist-song-row';
+
+    songRow.innerHTML = `
+        <img src="${song.img || song.coverArt || 'https://placehold.co/44x44/333/fff?text=S'}" alt="${escapeHtml(song.title)} cover" class="w-11 h-11 rounded-md object-cover flex-shrink-0">
+        <div class="song-details">
+            <div class="song-title">${escapeHtml(song.title)}</div>
+            <div class="song-artist">${escapeHtml(song.artist)}</div>
+        </div>
+        <button class="playlist-song-options-btn" aria-label="More options for ${escapeHtml(song.title)}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+        </button>
+    `;
+
+    // Click on the row plays the song
+    songRow.addEventListener('click', (e) => {
+        // Prevent playing if the options button was the click target
+        if (e.target.closest('.playlist-song-options-btn')) return;
+        
+        const album = allAlbumsData.find(a => a.id === song.albumId);
+        if (album) {
+            openAlbumDetails(album);
+            playTrack(album.tracks[song.trackIndex], song.trackIndex);
+        } else {
+            showMessageBox('Could not load the album for this song.', 'error');
+        }
+    });
+
+    // Click on the options button opens the popup
+    const optionsBtn = songRow.querySelector('.playlist-song-options-btn');
+    optionsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openPlaylistSongOptionsPopup(song, playlistId);
+    });
+
+    return songRow;
+}
+// --- END: NEW HELPER FUNCTION ---
+// --- START: NEW FUNCTION to Open Song Options for Playlist Songs ---
+function openPlaylistSongOptionsPopup(song, playlistId) {
+    // This reuses your existing song options popup
+    const popupBackdrop = document.getElementById('song-options-popup');
+    const popupPanel = document.querySelector('.song-options-panel');
+    const popupSongCover = document.getElementById('popup-song-cover');
+    const popupSongTitle = document.getElementById('popup-song-title');
+    const popupSongArtist = document.getElementById('popup-song-artist');
+    
+    const removeFromPlaylistBtn = document.getElementById('popup-remove-from-liked');
+    const goToAlbumBtn = document.getElementById('popup-go-to-album');
+
+    if (!popupBackdrop || !removeFromPlaylistBtn || !goToAlbumBtn) return;
+
+    // 1. Populate UI
+    popupSongCover.src = song.img || song.coverArt || '';
+    popupSongTitle.textContent = song.title;
+    popupSongArtist.textContent = song.artist;
+
+    // 2. Configure the "Remove" button
+    removeFromPlaylistBtn.querySelector('span').textContent = 'Remove from this playlist';
+    
+    // Use a one-time event listener for the remove action
+    const removeHandler = async () => {
+        await removeSongFromPlaylist(playlistId, song);
+        closeSongOptionsPopup();
+    };
+    removeFromPlaylistBtn.replaceWith(removeFromPlaylistBtn.cloneNode(true)); // Clones the button to remove old listeners
+    document.getElementById('popup-remove-from-liked').addEventListener('click', removeHandler, { once: true });
+
+
+    // 3. Configure the "Go to album" button
+    const albumHandler = () => {
+        const album = allAlbumsData.find(a => a.id === song.albumId);
+        if (album) {
+            closeSongOptionsPopup();
+            // We might need a small delay to prevent click-through issues
+            setTimeout(() => {
+                openAlbumDetails(album);
+            }, 50);
+        }
+    };
+    goToAlbumBtn.replaceWith(goToAlbumBtn.cloneNode(true));
+    document.getElementById('popup-go-to-album').addEventListener('click', albumHandler, { once: true });
+
+
+    // 4. Show the popup
+    popupBackdrop.style.display = 'flex';
+    setTimeout(() => popupBackdrop.classList.add('active'), 10);
+}
+// --- END: NEW FUNCTION ---
+// --- START: NEW FUNCTION to Remove Song from a Playlist ---
+async function removeSongFromPlaylist(playlistId, songToRemove) {
+    const token = localStorage.getItem('userToken');
+    if (!token) {
+        showMessageBox("You must be logged in to modify playlists.", 'error');
+        return;
+    }
+
+    // You need to create this endpoint on your backend.
+    // It should accept a DELETE request to /api/playlists/:playlistId/songs
+    // with the song details in the body.
+    try {
+        const response = await fetch(`${BACKEND_BASE_URL}/api/playlists/${playlistId}/songs`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                albumId: songToRemove.albumId,
+                trackIndex: songToRemove.trackIndex
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showMessageBox(`Removed "${songToRemove.title}" from the playlist.`, 'success');
+            
+            // Update local state and re-render
+            const playlist = currentUserPlaylists.find(p => p._id === playlistId);
+            if (playlist) {
+                playlist.songs = playlist.songs.filter(s => 
+                    !(s.albumId === songToRemove.albumId && s.trackIndex === songToRemove.trackIndex)
+                );
+            }
+            // If the currently viewed playlist is the one we modified, re-render its songs
+            if (currentPlaylistForView && currentPlaylistForView._id === playlistId) {
+                renderPlaylistSongs(playlist);
+            }
+            
+        } else {
+            showMessageBox(data.message || "Failed to remove song.", 'error');
+        }
+    } catch (error) {
+        console.error("Error removing song from playlist:", error);
+        showMessageBox("A network error occurred.", 'error');
+    }
+}
+// --- END: NEW FUNCTION ---
+// --- START: NEW FUNCTION to close the playlist details ---
+function closePlaylistDetailsOverlay() {
+    const overlay = document.getElementById('playlist-details-overlay');
+    if (!overlay) return;
+
+    overlay.classList.remove('active');
+    // Add hidden class after transition to ensure it's removed from the accessibility tree
+    setTimeout(() => {
+        overlay.classList.add('hidden');
+    }, 300); // Should match your CSS transition duration
+
+    document.body.style.overflow = 'auto'; // Restore scrolling on the body
+}
+// --- END: NEW FUNCTION ---
+/**
+ * Updates the play/pause icon for all playlist play buttons
+ * to reflect the current playback state.
+ */
+/**
+ * Updates the play/pause icon for all playlist play buttons
+ * to reflect the current playback state.
+ * 
+ * 
+ */
+
+function updatePlaylistPlayButton(isPlaying) {
+    const playlistPlayBtn = document.getElementById('playlist-play-btn');
+    if (!playlistPlayBtn) return;
+
+    if (isPlaying) {
+        // Change the icon to a pause icon
+        playlistPlayBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+            </svg>
+        `;
+    } else {
+        // Change the icon back to a play icon
+        playlistPlayBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+        `;
+    }
+}
+
+function updatePlaylistPlayButtons() {
+    // Get all play buttons on the page that belong to a playlist/card
+    const allPlayButtons = document.querySelectorAll('.card-play-button');
+
+    // Get the main playlist play button if it exists
+    const playlistPlayBtn = document.getElementById('playlist-play-btn');
+
+    // Check the current playback state from the main player
+    const isPlaying = !audio.paused || (ytPlayer && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING);
+    
+    // Iterate over all buttons and update their icons
+    allPlayButtons.forEach(button => {
+        const playIcon = button.querySelector('.play-icon');
+        const pauseIcon = button.querySelector('.pause-icon');
+        
+        // Add a check to ensure the icons exist before trying to modify them
+        if (playIcon && pauseIcon) {
+            if (isPlaying) {
+                playIcon.classList.add('hidden');
+                pauseIcon.classList.remove('hidden');
+            } else {
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+            }
+        }
+    });
+
+    // Handle the specific playlist play button in the overlay
+    if (playlistPlayBtn) {
+        const playIcon = playlistPlayBtn.querySelector('.play-icon');
+        const pauseIcon = playlistPlayBtn.querySelector('.pause-icon');
+        // Add a check to ensure the icons exist before trying to modify them
+        if (playIcon && pauseIcon) {
+            if (isPlaying) {
+                playIcon.classList.add('hidden');
+                pauseIcon.classList.remove('hidden');
+            } else {
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+            }
+        }
+    }
+
+    updatePlaylistPlayButton(isPlaying);
+}
+

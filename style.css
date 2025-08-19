@@ -1417,7 +1417,7 @@ body.popup-active .player-bar {
     /* Album overlay for mobile */
     .album-overlay {
         top: var(--top-bar-height-mobile);
-        height: calc(92vh - var(--top-bar-height-mobile) - var(--player-bar-height-mobile));
+        height: calc(95vh - var(--top-bar-height-mobile) - var(--player-bar-height-mobile));
     }
 
     .album-overlay-content {
@@ -3601,11 +3601,8 @@ html {
 .right{
     height:95vh;
 }
-  
-    .search-box {
-        top:-1px
-    }
 }
+
 /* General Body Styles */
 body {
     font-family: 'Inter', sans-serif;
@@ -3859,5 +3856,1900 @@ body {
     z-index: 40; /* Lower than the footer's z-index but higher than other content */
     display: none; /* Initially hide the overlay */
 }
+.like-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+      position: relative;
+    }
+    .like-btn:active { transform: scale(0.96); }
+    .like-btn svg { width: 24px; height: 24px; }
+
+    /* default (outline heart) */
+    .like-btn .icon-heart { display: block; }
+    .like-btn .icon-tick { display: none; }
+
+    /* when liked -> show green tick like Spotify */
+    .like-btn.liked .icon-heart { display: none; }
+    .like-btn.liked .icon-tick { display: block; }
+
+    /* keep it visually tight with play/pause on mobile */
+    @media (max-width: 768px) {
+      .like-btn { width: 38px; height: 38px; }
+      .like-btn svg { width: 22px; height: 22px; }
+    }
+
+    /* ---------- NEW: Liked view (Library -> Liked) ---------- */
+    .library-liked-wrapper {
+      display: none; /* hidden by default; show when user taps "Liked" in Library */
+      padding: 16px;
+      color: #fff;
+    }
+    .library-liked-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .library-liked-header h2 {
+      font-size: 22px;
+      margin: 0;
+    }
+    .liked-empty {
+      opacity: 0.7;
+      padding: 24px 8px;
+      text-align: center;
+    }
+    .liked-list {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+    @media (max-width: 1024px) {
+      .liked-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 768px) {
+      .liked-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 480px) {
+      .liked-list { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+    }
+    .liked-card {
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      gap: 12px;
+      align-items: center;
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.06);
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.1s ease;
+    }
+    .liked-card:hover { background: rgba(255,255,255,0.09); }
+    .liked-card:active { transform: translateY(1px); }
+    .liked-cover {
+      width: 64px;
+      height: 64px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: #333;
+    }
+    .liked-meta {
+      overflow: hidden;
+    }
+    .liked-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0 0 2px 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .liked-sub {
+      font-size: 13px;
+      opacity: 0.8;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ---------- NEW: Small “Liked” entry for Library sidebar/top ---------- */
+    .open-liked-link {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.08);
+      cursor: pointer;
+      text-decoration: none;
+      color: #fff;
+      font-size: 14px;
+    }
+    .open-liked-link:hover { background: rgba(255,255,255,0.12); }
+
+    /* Hide helper class */
+    .hidden { display: none !important; }
 
 
+
+ .swarify-add-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            /* Darker background */
+            z-index: 100009;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0.3s, opacity 0.3s;
+        }
+
+        .swarify-add-popup-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* UPDATED: Styles for the refined popup */
+        .swarify-add-popup {
+            width: 100%;
+            position: fixed;
+            bottom:0;
+            /* Now full width */
+            background-color: #121212;
+            /* Black background */
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            padding: 1rem;
+            transform: translateY(100%);
+            transition: transform 0.3s ease-out;
+            max-height: 80vh;
+            /* Limit height */
+            overflow-y: auto;
+            /* Enable scrolling */
+            color: #ffffff;
+            /* White text for the dark background */
+        }
+
+        .swarify-add-popup-overlay.active .swarify-add-popup {
+            transform: translateY(0);
+        }
+        
+        .swarify-add-popup-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 0.5rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .swarify-add-popup-item:hover {
+            background-color: #282828;
+            /* Darker hover effect */
+        }
+
+        .swarify-add-popup-item-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .swarify-add-popup-item-icon {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+        .swarify-add-popup-item-icon.heart-bg {
+            background-color: #8b5cf6;
+            /* Purple background for heart icon */
+        }
+
+        .swarify-add-popup-item-icon.plus-bg {
+            background-color: #f0f0f0;
+            /* Light gray background for plus icon */
+        }
+        
+        .swarify-add-popup-item-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        /* SVG styles within the popup */
+        .swarify-add-popup-item-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .swarify-add-popup-item-icon.heart-bg svg {
+            fill: #ffffff;
+            /* White heart icon */
+        }
+        
+        .swarify-add-popup-item-icon.plus-bg svg {
+            fill: #121212;
+            /* Dark plus icon */
+        }
+        
+        .swarify-add-popup-checkmark svg {
+            width: 24px;
+            height: 24px;
+            fill: #1ED760;
+            /* Green checkmark */
+        }
+ .liked-songs-overlay {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 999999;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+    opacity: 0;
+    font-family: 'Inter', sans-serif;
+  }
+  .liked-songs-overlay.open {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  .liked-header {
+    height: 180px;
+    background: linear-gradient(to bottom, #2b3a73, #121212 70%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 16px;
+  }
+  .liked-header-top {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  .liked-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+  }
+  .liked-header p {
+    font-size: 0.9rem;
+    color: #b3b3b3;
+    margin: 0;
+  }
+  .liked-play-btn {
+    background: #1ed760;
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(30, 215, 96, 0.4);
+    cursor: pointer;
+    font-size: 1.5rem;
+    color: #000;
+  }
+  .liked-content {
+    flex: 1;
+    overflow-y: auto;
+    background: #121212;
+    padding: 12px;
+  }
+  .add-to-playlist {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .add-to-playlist div:first-child {
+    background: rgba(255, 255, 255, 0.1);
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    border-radius: 4px;
+    color: #fff;
+  }
+  .song-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+  }
+  .song-item img {
+    width: 52px;
+    height: 52px;
+    border-radius: 4px;
+    object-fit: cover;
+  }
+  .song-info {
+    flex: 1;
+  }
+  .song-title {
+    color: #fff;
+    font-weight: 500;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .song-artist {
+    color: #b3b3b3;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .song-menu {
+    color: #b3b3b3;
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+
+    body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Equivalent to bg-gray-900 */
+            color: white;
+            font-family: 'Inter', sans-serif;
+      background-color: #121212; /* A dark background color to match the Spotify theme */
+      color: #b3b3b3; /* Light gray text color */
+      margin: 0;
+      padding: 0;
+      padding-bottom: 80px;
+        }
+        /* Custom styles for the range input (progress and volume bars) */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px; /* Even larger thumb */
+            height: 24px; /* Even larger thumb */
+            border-radius: 50%;
+            /* Radial gradient for a more refined look */
+            background: radial-gradient(circle, #1ED760 0%, #17A34A 100%);
+            border: 2px solid rgba(255, 255, 255, 0.7); /* Subtle white border */
+            cursor: grab; /* Indicate draggable */
+            box-shadow: 0 0 0 6px rgba(30, 215, 96, 0.3), /* Inner glow */
+                        0 0 15px 5px rgba(30, 215, 96, 0.7); /* Stronger outer glow */
+            transition: background .3s ease-in-out, box-shadow .3s ease-in-out, transform .15s ease-in-out, border-color .3s ease-in-out;
+            /* Centering the thumb vertically on the track */
+            margin-top: calc((8px - 24px) / 2); /* (track height - thumb height) / 2 */
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.05); /* Slight scale on hover */
+            box-shadow: 0 0 0 7px rgba(30, 215, 96, 0.4),
+                        0 0 20px 8px rgba(30, 215, 96, 0.8); /* More intense glow on hover */
+        }
+        input[type="range"]::-webkit-slider-thumb:active {
+            cursor: grabbing; /* Indicate grabbing */
+            transform: scale(1.15); /* More pronounced scale on active */
+            background: radial-gradient(circle, #17A34A 0%, #1ED760 100%); /* Invert gradient on active */
+            border-color: rgba(255, 255, 255, 0.9); /* Brighter border on active */
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 24px; /* Even larger thumb */
+            height: 24px; /* Even larger thumb */
+            border-radius: 50%;
+            /* Radial gradient for a more refined look */
+            background: radial-gradient(circle, #1ED760 0%, #17A34A 100%);
+            border: 2px solid rgba(255, 255, 255, 0.7); /* Subtle white border */
+            cursor: grab; /* Indicate draggable */
+            box-shadow: 0 0 0 6px rgba(30, 215, 96, 0.3), /* Inner glow */
+                        0 0 15px 5px rgba(30, 215, 96, 0.7); /* Stronger outer glow */
+            transition: background .3s ease-in-out, box-shadow .3s ease-in-out, transform .15s ease-in-out, border-color .3s ease-in-out;
+            /* Centering the thumb vertically on the track */
+            margin-top: calc((8px - 24px) / 2); /* (track height - thumb height) / 2 */
+        }
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.05); /* Slight scale on hover */
+            box-shadow: 0 0 0 7px rgba(30, 215, 96, 0.4),
+                        0 0 20px 8px rgba(30, 215, 96, 0.8); /* More intense glow on hover */
+        }
+        input[type="range"]::-moz-range-thumb:active {
+            cursor: grabbing; /* Indicate grabbing */
+            transform: scale(1.15); /* More pronounced scale on active */
+            background: radial-gradient(circle, #17A34A 0%, #1ED760 100%); /* Invert gradient on active */
+            border-color: rgba(255, 255, 255, 0.9); /* Brighter border on active */
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 8px; /* Even thicker track */
+            background: linear-gradient(to right, #1ED760 var(--progress, 0%), #4A5568 var(--progress, 0%)); /* Dynamic progress fill */
+            border-radius: 4px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3); /* Subtle inner shadow for depth */
+        }
+        input[type="range"]::-moz-range-track {
+            height: 8px; /* Even thicker track */
+            background: linear-gradient(to right, #1ED760 var(--progress, 0%), #4A5568 var(--progress, 0%)); /* Dynamic progress fill */
+            border-radius: 4px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3); /* Subtle inner shadow for depth */
+        }
+
+        /* Styles for the fixed top heading */
+        .fixed-top-heading {
+            position: fixed;
+            top: 62px;
+            left: 25%;
+            width:75%;
+            right: 0;
+            background-color: #1a202c; /* Match body background */
+            color: white;
+            padding: 1rem 2rem;
+            z-index: 40; /* Below playbar (z-50), above other content */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 1rem;
+            transform: translateY(-100%); /* Start off-screen */
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            opacity: 0;
+        }
+        @media (max-width: 768px) {
+            .fixed-top-heading {
+                left:0;
+                width: 100%;
+            }
+
+        }
+
+        .fixed-top-heading.visible {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .fixed-top-heading .album-art-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            object-fit: cover;
+        }
+
+        .fixed-top-heading .album-title-small {
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 700; /* font-bold */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Mobile Playbar Styles (Image 2 - mini album and play button) */
+        @media (max-width: 768px) {
+            #main-play-bar {
+                /* Ensure it's fixed at the bottom, full width */
+                position: fixed;
+                bottom: 73px;
+                left: 0;
+                right: 0;
+                z-index: 10001;
+                background-color: #282828; /* Darker background for the mobile bar */
+                padding: 0.5rem 1rem; /* Smaller padding */
+                border-radius: 0; /* No rounded corners at the top for full width */
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: space-between; /* Space between left content and play button */
+                height: 70px; /* Fixed height for the compact bar */
+            }
+
+            #main-play-bar .main-play-bar-inner {
+                flex-direction: row; /* Keep content in a row */
+                justify-content: space-between; /* Distribute content */
+                align-items: center;
+                padding: 0; /* Remove inner padding */
+                background-color: transparent; /* No inner black background */
+                width: 100%;
+            }
+
+            /* Hide the progress bar and time on mobile */
+            #main-play-bar #progress-time-group {
+                display: none;
+            }
+
+            /* Hide individual control buttons within player-controls-group except play/pause */
+            #main-play-bar #player-controls-group #prev-track-btn,
+            #main-play-bar #player-controls-group #rewind-btn,
+            #main-play-bar #player-controls-group #fast-forward-btn,
+            #main-play-bar #player-controls-group #next-track-btn {
+                display: none;
+            }
+
+            /* Ensure the player-controls-group itself is visible and contains only play/pause */
+            #main-play-bar #player-controls-group {
+                display: flex; /* Ensure it's a flex container */
+                justify-content: flex-end; /* Push play/pause to the right */
+                align-items: center;
+                flex-grow: 0; /* Don't let it grow */
+                flex-shrink: 0; /* Don't let it shrink */
+                width: auto; /* Auto width */
+                margin-left: auto; /* Push to the right */
+            }
+
+            #main-play-bar #play-pause-btn {
+                display: flex; /* Ensure play/pause button is visible */
+                background-color: transparent; /* No background for the play button */
+                color: #1ED760; /* Green color for the play button */
+                padding: 0;
+                box-shadow: none;
+            }
+
+            #main-play-bar #play-pause-btn svg {
+                width: 40px; /* Larger icon for mobile, as per image 2 */
+                height: 40px;
+            }
+
+            #main-play-bar #current-album-art {
+                width: 50px; /* Smaller album art for compact bar, as per image 2 */
+                height: 50px;
+                border-radius: 4px; /* Slightly less rounded */
+                margin-right: 10px; /* Add some space to the right of the album art */
+            }
+
+            #main-play-bar #current-song-title {
+                font-size: 0.9rem; /* Smaller font size */
+            }
+
+            #main-play-bar #current-artist-name {
+                font-size: 0.75rem; /* Smaller font size */
+                color: #b3b3b3; /* Lighter gray for artist name */
+            }
+
+            /* The volume control group is the last flex item in main-play-bar-inner */
+            /* This needs to be hidden for mobile/tablet */
+            #main-play-bar .flex.items-center.space-x-4.w-full.md\:w-auto.md\:flex-shrink-0.justify-end {
+                display: none;
+            }
+
+            /* Ensure the left section (album art + text) takes available space */
+            #main-play-bar .flex.items-center.w-full.md\:w-auto.flex-grow {
+                flex-grow: 1;
+                overflow: hidden; /* Ensure text truncates */
+            }
+
+ /* Album Overlay Styles */
+        .album-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            /* Adjusted height to account for the fixed playbar */
+            height: calc(100% - 143px); /* Subtract playbar height (70px) */
+            background-color: #1a202c; /* Dark background */
+            z-index: 900; /* Below full-screen player (1000), above playbar (50) */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            transform: translateY(100%); /* Start off-screen (bottom) */
+            opacity: 0;
+            visibility: hidden;
+            overflow-y: auto; /* Enable scrolling for content within the overlay */
+        }
+
+        .album-overlay.active {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+    
+
+
+        .album-overlay .close-overlay {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 901; /* Above other overlay content */
+        }
+
+        .album-overlay-content {
+            width: 100%;
+            max-width: 900px; /* Limit content width */
+            padding-top: 3rem; /* Space for close button */
+        }
+
+
+
+        }
+  #full-screen-player {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #282828; /* Default background, will be overridden by JS */
+            z-index: 10003;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            transform: translateY(100%);
+            opacity: 0;
+            visibility: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* This class makes the player visible and slides it into view */
+        #full-screen-player.active {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Header styling for the top bar with minimize, song info, and more options */
+        #full-screen-player .header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Styling for the buttons in the header */
+        #full-screen-player .header button {
+            background: none;
+            border: none;
+            color: #b3b3b3;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        /* Song information section in the header */
+        #full-screen-player .header .song-info {
+            text-align: center;
+            flex-grow: 1;
+            padding: 0 1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Song title in the header */
+        #full-screen-player .header .song-info .title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Artist name in the header */
+        #full-screen-player .header .song-info .artist {
+            font-size: 0.8rem;
+            color: #b3b3b3;
+        }
+
+        /* Main content area containing the album art and song details */
+        #full-screen-player .main-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            width: 100%;
+            max-width: 400px;
+            margin-top: 60px;
+        }
+
+        /* Styling for the large album art image */
+        #full-screen-player .album-art-large {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Container for song details and the add button */
+        #full-screen-player .song-and-actions-container {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1rem;
+            margin-top: 1rem;
+        }
+
+        /* Left-aligned song details */
+        #full-screen-player .song-details {
+            text-align: left;
+            margin-bottom: 0;
+            flex-grow: 1;
+        }
+
+        /* Styling for the large song title */
+        #full-screen-player .song-details .title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 0.25rem;
+        }
+
+        /* Styling for the large artist name */
+        #full-screen-player .song-details .artist {
+            font-size: 1rem;
+            color: #b3b3b3;
+        }
+
+        /* The add/check button */
+        #full-screen-add-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: transparent;
+            border: none;
+            color: #1ed760; /* Green color for the icon */
+            padding: 0;
+        }
+
+        /* Icon styling for the plus and checkmark */
+        #full-screen-add-btn .icon-plus,
+        #full-screen-add-btn .icon-check {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Progress bar section */
+        #full-screen-player .progress-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Styling for the progress bar input range element */
+        #full-screen-player .progress-section input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: #535353;
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+            margin: 0;
+            /* Use a gradient to color the filled and unfilled parts */
+            background: linear-gradient(to right, #ffffff 0%, #ffffff var(--progress-percent), #535353 var(--progress-percent), #535353 100%);
+        }
+
+        /* Styling for the progress bar thumb (the draggable circle) */
+        #full-screen-player .progress-section input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #ffffff;
+            border-radius: 50%;
+            cursor: pointer;
+            margin-top: -4px;
+            box-shadow: 0 0 5px 3px rgba(255, 255, 255, 0.4);
+        }
+
+        /* Time display (current time and total time) */
+        #full-screen-player .progress-section .time-display {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #b3b3b3;
+            margin-top: 0.5rem;
+        }
+
+        /* Controls section (previous, play/pause, next) */
+        #full-screen-player .controls-section {
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Styling for the control buttons */
+        #full-screen-player .controls-section button {
+            background: none;
+            border: none;
+            color: #b3b3b3;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        /* Play/pause button is larger and green */
+        #full-screen-player .controls-section #full-play-pause-btn {
+            color: #1ed760;
+            font-size: 2rem;
+        }
+
+        /* Bottom actions (shuffle, repeat, etc.) */
+        #full-screen-player .bottom-actions {
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 1rem 1rem;
+        }
+
+        /* Styling for the bottom action buttons */
+        #full-screen-player .bottom-actions button {
+            background: none;
+            border: none;
+            color: #b3b3b3;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        /* Media query for dark color schemes */
+        @media (prefers-color-scheme: dark) {
+            #full-screen-player {
+                background-color: #282828;
+            }
+        }
+
+        /* NEW: Styles for Explore More Albums to display vertically */
+        #explore-more-albums-cards {
+            display: grid;
+            /* Responsive columns: auto-fit will fit as many columns as possible,
+               minmax ensures cards are at least 180px wide but can grow up to 1fr */
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px; /* Space between cards */
+            padding: 20px; /* Padding inside the container */
+            overflow-x: hidden; /* Ensure no horizontal scrollbar */
+            justify-items: center; /* Center cards within their grid cells */
+            /* Remove any flex or whitespace properties inherited from .cardcontainer that cause horizontal scroll */
+            flex-wrap: wrap; /* Ensure items wrap */
+            white-space: normal; /* Allow content to wrap normally */
+        }
+
+        /* Adjustments for smaller screens */
+        @media (max-width: 768px) {
+            #explore-more-albums-cards {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Smaller cards on mobile */
+                gap: 15px;
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #explore-more-albums-cards {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Even smaller cards for very small screens */
+                gap: 10px;
+                padding: 10px;
+            }
+        }
+
+        /* Ensure individual cards within this grid also respond well */
+        #explore-more-albums-cards .card {
+            width: 100%; /* Make cards fill their grid cell */
+            max-width: 200px; /* Optional: limit max width of individual cards */
+            /* Inherit existing card styles, but ensure they don't break grid layout */
+            flex-shrink: 0; /* Prevent shrinking if it's still a flex item */
+        }
+
+        #liked-song-message {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+#liked-song-message.show {
+  opacity: 1;
+}
+
+.playbar-add-btn.liked {
+  color: #1DB954; /* Spotify green */
+}
+.playbar-add-btn.liked svg {
+  fill: #1DB954;
+}
+
+.playbar-add-btn.liked .icon-check {
+  display: inline;
+}
+
+ /* This is the heart icon, we'll use a single icon that changes fill */
+        .swarify-add-popup-item-icon.heart-bg svg path {
+            transition: fill 0.3s ease-in-out;
+        }
+
+        /* The plus icon on the playbar */
+        .playbar-add-btn .icon-plus {
+            display: block;
+        }
+
+        /* The green tick icon on the playbar, hidden by default */
+        .playbar-add-btn .icon-check {
+            display: none;
+        }
+
+        /* The state when the song is liked. The button will have a 'liked' class. */
+        .playbar-add-btn.liked .icon-plus {
+            display: none;
+        }
+
+        .playbar-add-btn.liked .icon-check {
+            display: block;
+            fill: #1ED760; /* Spotify Green */
+        }
+        
+        /* Playbar styling from the user's request */
+        #main-play-bar {
+            background-color: #1A0303;
+        }
+
+        .swarify-add-popup-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#popup-right-heart .heart-icon {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    transition: fill 0.3s ease-in-out;
+}
+
+#popup-right-heart .heart-icon.liked {
+    fill: #E3342F; /* Red fill for liked state */
+    stroke: none;
+}
+
+#popup-right-heart .heart-icon:not(.liked) {
+    fill: none; /* No fill */
+    stroke: #fff; /* White stroke for unliked state */
+}
+/* Container for the icons */
+.playbar-add-btn {
+    position: relative;
+    width: 24px;
+    height: 24px;
+    display: flex; /* Ensures icons are positioned within */
+    align-items: center;
+    justify-content: center;
+}
+
+/* Style for the green circle background */
+.playbar-add-btn .icon-check-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #1ED760; /* A vibrant green color */
+    border-radius: 50%;
+    transform: scale(0); /* Initially hidden */
+    transition: transform 0.2s ease-in-out;
+}
+
+/* Style for the tick mark */
+.playbar-add-btn .icon-check {
+    z-index: 1; /* Ensure tick is above the background */
+    display: none; /* Initially hidden */
+}
+
+/* State when a song is liked */
+.playbar-add-btn.liked .icon-check-bg {
+    transform: scale(1); /* Show the background */
+}
+
+.playbar-add-btn.liked .icon-check {
+    display: block; /* Show the tick */
+    stroke: #000000; /* Darker stroke for better contrast */
+}
+
+.playbar-add-btn.liked .icon-plus {
+    display: none; /* Hide the plus icon */
+}
+
+/* Styling for the new song options popup */
+.song-options-popup-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.75); /* Dark overlay */
+    z-index: 10009;
+    display: none; /* Hidden by default */
+    justify-content: center;
+    align-items: flex-end; /* Aligns popup to the bottom */
+}
+
+/* The actual sliding panel */
+.song-options-panel {
+    background: #121212; /* Darker background color to match the image */
+    width: 100%;
+    /* Remove max-width to allow it to take full screen width */
+    border-radius: 12px 12px 0 0; /* Rounded top corners */
+    padding-top: 20px;
+    padding-bottom: 20px;
+    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
+    transform: translateY(100%);
+    transition: transform 0.3s ease-out;
+}
+
+/* Class to trigger the slide-up animation */
+.song-options-popup-backdrop.active .song-options-panel {
+    transform: translateY(0);
+}
+
+.popup-song-info {
+    display: flex;
+    align-items: center;
+    padding: 0 16px 16px 16px; /* Add padding to match the image's spacing */
+}
+
+.popup-song-info img {
+    width: 60px;
+    height: 60px;
+    border-radius: 6px;
+    margin-right: 15px;
+}
+
+.popup-text-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.popup-title {
+    font-size: 1rem; /* Adjust font size to match the image */
+    font-weight: bold;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.popup-artist {
+    font-size: 0.9rem; /* Adjust font size to match the image */
+    color: #b3b3b3;
+}
+
+/* Styling for the popup buttons */
+.song-options-panel button {
+    display: block;
+    width: 100%;
+    padding: 12px 16px; /* Adjust padding to match the image's button height */
+    margin-bottom: 0; /* Remove bottom margin between buttons */
+    background: none;
+    border: none;
+    text-align: left;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.song-options-panel button:hover {
+    background-color: #333;
+}
+
+/* Styling for the popup buttons */
+.song-options-panel button {
+    display: flex; /* Changed to 'flex' to align the icon and text */
+    align-items: center; /* Vertically align the icon and text */
+    width: 100%;
+    padding: 12px 16px;
+    margin-bottom: 8px; /* A small margin to separate buttons visually */
+    background: none;
+    border: none;
+    text-align: left;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.song-options-panel button span {
+    margin-left: 12px; /* Add space between the icon and the text */
+}
+
+.song-options-panel button:hover {
+    background-color: #333;
+}
+
+.song-options-panel button svg {
+    color: #fff;
+    stroke: #fff;
+}
+#likedSongsOverlay {
+    z-index: 10000;
+}
+.unique-footer-nav{
+    z-index: 10001;
+}
+
+.library-popup{
+   z-index:9997;
+}
+
+#albumOverlay {
+    z-index: 9999; /* This is the key change */
+    /* Add a transition for a smooth fade-in and scale effect */
+    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+#albumOverlay.show {
+    opacity: 1;
+    transform: scale(1);
+}
+
+ @media (max-width: 1024px) {
+        .main-content-scrollable {
+          padding-bottom: 80px; /* Add padding to the bottom of the main content */
+        }
+        .unique-search-popup{
+
+       padding-bottom: 120px;
+        }
+        .liked-songs-overlay .liked-content {
+          padding-bottom: 150px; /* Add padding to the liked songs content */
+        }
+        .album-overlay-content {
+          padding-bottom: 80px; /* Add padding to the album overlay content */
+        }
+      }
+
+      /* For the Search Popup */
+.unique-search-popup {
+    /* Existing styles... */
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    transform: translateY(100%); /* Position off-screen by default */
+    opacity: 0;
+    pointer-events: none; /* Make it unclickable when hidden */
+}
+
+/* This class will make it visible */
+.unique-search-popup.active {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto; /* Make it clickable when visible */
+}
+
+/* For the Library Popup */
+#library-popup {
+    /* Existing styles... */
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    transform: translateY(100%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* This class will make it visible */
+#library-popup:not(.hidden) {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* --- New Playlist Creation Popup Styles --- */
+#new-playlist-popup-overlay {
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+#new-playlist-popup-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+#new-playlist-name-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* --- Playlist Details Overlay Styles --- */
+#playlist-details-overlay {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    transform: translateY(100%);
+    opacity: 0;
+}
+#playlist-details-overlay.active {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+#playlist-details-overlay::-webkit-scrollbar {
+    width: 8px;
+}
+#playlist-details-overlay::-webkit-scrollbar-track {
+    background: #1e1e1e;
+}
+#playlist-details-overlay::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+#playlist-details-overlay::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+#playlist-details-content .playlist-header {
+    background: linear-gradient(to bottom, #1db954 0%, #121212 100%);
+}
+
+#playlist-details-content .playlist-songs-list div {
+    /* Styles for the dynamically added song rows */
+    transition: background-color 0.2s ease;
+}
+#playlist-details-content .playlist-songs-list div:hover {
+    background-color: #282828;
+}
+
+#playlist-details-content .recommended-songs-list {
+    margin-top: 2rem;
+}
+
+/* Add this CSS to your stylesheet */
+
+#playlist-details-overlay .playlist-details-container {
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+#playlist-header-content h1 {
+    line-height: 1.1;
+}
+
+#playlist-details-overlay .action-icon-btn {
+    background-color: transparent;
+    color: #a7a7a7;
+    padding: 4px;
+    border-radius: 50%;
+    transition: color 0.2s ease;
+}
+
+#playlist-details-overlay .action-icon-btn:hover {
+    color: #ffffff;
+}
+
+#playlist-details-overlay .secondary-action-btn {
+    display: inline-flex;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.07);
+    color: #ffffff;
+    padding: 6px 12px;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+
+#playlist-details-overlay .secondary-action-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.recommended-songs-list .add-recommended-btn {
+    color: #a7a7a7;
+    transition: color 0.2s ease;
+}
+
+.recommended-songs-list .add-recommended-btn:hover {
+    color: #ffffff;
+}
+
+.add-to-playlist-overlay {
+    z-index: 10001;
+}
+
+/* --- START: CSS for Liked Songs Search Functionality --- */
+
+/* ==========================================================================
+   Liked Songs Overlay - Refactored & Consolidated Styles
+   ========================================================================== */
+
+/* --- Base Layout --- */
+
+#likedSongsOverlay {
+  display: flex;
+  flex-direction: column;
+  background-color: #121212;
+}
+
+.liked-content {
+  flex: 1;
+  overflow-y: auto;
+  background-color: #121212;
+  padding: 12px;
+  padding-top: 0 !important; /* CRITICAL: Ensures list scrolls under the sticky header */
+  box-sizing: border-box;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.liked-content::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, and Opera */
+}
+
+/* --- Sticky Header System --- */
+
+.liked-header-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #121212;
+  height: 220px; /* Initial height for the large header */
+  flex-shrink: 0;
+  /* MODIFIED: Smoother timing function and performance hint */
+  transition: height 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+  will-change: height; /* ADDED: Performance optimization hint */
+}
+
+/* Shared properties for containers inside the wrapper */
+.liked-header,
+.liked-compact-header,
+.liked-search-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  /* MODIFIED: Smoother timing function and performance hint */
+  transition: opacity 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+  will-change: transform, opacity; /* ADDED: Performance optimization hint */
+}
+
+/* Add visibility transition only to the search container where it's needed */
+.liked-search-container {
+    transition: opacity 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), visibility 0.4s;
+}
+
+
+/* --- Header Variations --- */
+
+/* 1. Main Header (Visible by default) */
+.liked-header {
+  display: flex;
+  flex-direction: column;
+  background: #2a223a;
+  padding: 50px 16px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  min-height: 210px;
+}
+
+.liked-header-top {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.liked-header-top h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+}
+
+/* 2. Compact Header (Visible on scroll) */
+.liked-compact-header {
+  display: flex;
+  align-items: center;
+  padding: 50px 16px 12px;
+  background-color: #2a223a;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  z-index: 1;
+  opacity: 0;
+  transform: translateY(-20px);
+  pointer-events: none;
+}
+
+.liked-compact-header h1 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+/* 3. Search Header (Visible when search is active) */
+.liked-search-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 60px 16px 12px;
+  background-color: #121212;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+  transform: translateY(-100%);
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* --- Common Header Elements --- */
+
+.back-arrow-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  padding: 8px;
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+.liked-play-btn-wrapper {
+  position: absolute;
+  top: 145px;
+  right: 24px;
+  z-index: 11;
+  /* MODIFIED: Smoother timing function and performance hint */
+  transition: top 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+  will-change: top, opacity; /* ADDED: Performance optimization hint */
+}
+
+.liked-play-btn {
+  width: 60px;
+  height: 60px;
+  background: #1fdf64;
+  box-shadow: 0 8px 24px rgba(31, 223, 100, 0.4);
+}
+
+.liked-play-btn:hover {
+  transform: scale(1.05);
+}
+
+.liked-play-btn svg {
+  width: 32px;
+  height: 32px;
+}
+
+/* --- Search Input Styles --- */
+
+#closeLikedSongsSearch {
+  display: none; /* Hidden by default, shown when search is active */
+}
+
+.search-input-wrapper {
+  position: relative;
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  background-color: #333;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.search-input-wrapper:focus-within {
+  background-color: #444;
+}
+
+#likedSongsSearchInput {
+  width: 100%;
+  padding: 14px 40px;
+  border-radius: 6px;
+  border: none;
+  background-color: transparent;
+  color: #fff;
+  font-size: 1rem;
+  outline: none;
+}
+
+#likedSongsSearchInput:focus {
+  box-shadow: none; /* Focus is handled by the wrapper */
+}
+
+.search-input-wrapper .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #b3b3b3;
+  pointer-events: none;
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #b3b3b3;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: none; /* Made visible via JavaScript */
+}
+
+/* --- List-Level Search & No Results --- */
+
+.search-trigger-container {
+  position: relative;
+  margin: 0 12px 16px 12px;
+  height: 48px;
+  opacity: 1;
+  overflow: hidden;
+  /* MODIFIED: Smoother timing function and performance hint */
+  transition: height 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.3s cubic-bezier(0.25, 0.1, 0.25, 1), margin-bottom 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+  will-change: height, opacity, margin-bottom; /* ADDED: Performance optimization hint */
+}
+
+#find-in-liked-songs-trigger {
+  width: 100%;
+  padding: 12px 12px 12px 40px;
+  border-radius: 6px;
+  border: none;
+  background-color: #282828;
+  color: #b3b3b3;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.search-trigger-container .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #b3b3b3;
+  pointer-events: none;
+}
+
+.no-results-message {
+  display: none; /* Shown via JavaScript */
+  text-align: center;
+  padding: 40px 20px;
+  color: #fff;
+}
+
+.no-results-message h3 {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+}
+
+.no-results-message p {
+  color: #b3b3b3;
+}
+
+
+/* ==========================================================================
+   State-Based Transitions (via JavaScript classes on #likedSongsOverlay)
+   ========================================================================== */
+
+/* --- State 1: When Scrolled (.is-scrolled) --- */
+
+#likedSongsOverlay.is-scrolled .liked-header-wrapper {
+  height: 120px; /* Shrink the wrapper */
+}
+
+#likedSongsOverlay.is-scrolled .liked-header {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#likedSongsOverlay.is-scrolled .liked-compact-header {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+#likedSongsOverlay.is-scrolled .liked-play-btn-wrapper {
+  top: 70px; /* Move play button up */
+}
+
+#likedSongsOverlay.is-scrolled .search-trigger-container {
+  height: 0; /* Collapse the in-list search box */
+  opacity: 0;
+  margin-bottom: 0;
+  pointer-events: none;
+}
+
+/* --- State 2: When Search is Active (.search-active) --- */
+
+#likedSongsOverlay.search-active .liked-header-wrapper {
+  height: 110px; /* Shrink wrapper to fit the main search bar */
+}
+
+#likedSongsOverlay.search-active .liked-header,
+#likedSongsOverlay.search-active .liked-compact-header,
+#likedSongsOverlay.search-active .liked-play-btn-wrapper,
+#likedSongsOverlay.search-active .search-trigger-container {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#likedSongsOverlay.search-active #closeLikedSongsSearch {
+  display: block;
+}
+
+#likedSongsOverlay.search-active .liked-search-container {
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+}
+
+/* --- START: Playlist Overlay Enhancements --- */
+
+/* This allows the main overlay to be the scroll container */
+#playlist-details-overlay {
+    overflow-y: auto;
+}
+/* Hide the scrollbar for a cleaner look */
+#playlist-details-overlay::-webkit-scrollbar {
+    display: none;
+}
+#playlist-details-overlay {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+/* 1. Compact Header Styling */
+#playlist-compact-header {
+    /* Initially hidden and out of view */
+    opacity: 0;
+    transform: translateY(-100%);
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    /* Make sure it's sticky to the top of its scrolling parent */
+    position: sticky;
+    top: 0;
+}
+
+/* The state when the user has scrolled down */
+#playlist-details-overlay.is-scrolled #playlist-compact-header {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* Smoothly hide the main header when scrolling */
+#playlist-details-overlay.is-scrolled #playlist-header-content {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+/* 2. Search View Styling */
+#playlist-search-view {
+    /* Uses 'hidden' and 'flex' classes, but we can add transitions */
+    transition: opacity 0.2s ease-in-out;
+}
+#playlist-search-view.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+#playlist-search-view.flex {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* 3. Playlist Song Row Enhancements */
+.playlist-song-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.playlist-song-row:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+.playlist-song-row .song-details {
+    flex-grow: 1;
+    min-width: 0; /* Important for text truncation */
+}
+.playlist-song-row .song-title {
+    color: white;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.playlist-song-row .song-artist {
+    color: #b3b3b3;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 4. More Options (3-dot) Button */
+.playlist-song-options-btn {
+    background: none;
+    border: none;
+    color: #b3b3b3;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    margin-left: auto; /* Pushes it to the right */
+}
+.playlist-song-options-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* --- START: Playlist Overlay Enhancements v2 --- */
+
+/* The main overlay now just acts as a container */
+#playlist-details-overlay {
+    overflow: hidden; /* The container itself doesn't scroll */
+}
+
+/* The gradient background layer */
+#playlist-background-gradient {
+    transition: background 0.5s ease-in-out;
+}
+
+/* The new main scrolling container */
+#playlist-scroll-content {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+#playlist-scroll-content::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, and Opera */
+}
+
+
+/* 1. Compact Header Styling */
+#playlist-compact-header {
+    opacity: 0;
+    transform: translateY(-100%);
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
+    background-color: transparent; /* Starts transparent */
+}
+
+/* The state when the user has scrolled down */
+#playlist-details-overlay.is-scrolled #playlist-compact-header {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+    /* When visible, it gets a solid, slightly darker color */
+    background-color: #1a1a1a; 
+}
+
+/* Smoothly hide the main header when scrolling */
+#playlist-header-content {
+    transition: opacity 0.3s ease;
+}
+#playlist-details-overlay.is-scrolled #playlist-header-content {
+    opacity: 0;
+    pointer-events: none;
+}
+/* --- START: Playlist Overlay Enhancements v2 --- */
+
+/* The main overlay now just acts as a container */
+#playlist-details-overlay {
+    overflow: hidden; /* The container itself doesn't scroll */
+}
+
+/* The gradient background layer */
+#playlist-background-gradient {
+    /* Use the CSS variable set by JS. It holds the solid color at the top, then fades to black. */
+    background: linear-gradient(to bottom, 
+        var(--playlist-bg-color, #2a2a2a) 0%, 
+        var(--playlist-bg-color, #2a2a2a) 200px, 
+        #121212 450px);
+    transition: background 0.5s ease-in-out;
+}
+
+/* The new main scrolling container */
+#playlist-scroll-content {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+#playlist-scroll-content::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, and Opera */
+}
+
+
+/* 1. Compact Header Styling */
+#playlist-compact-header {
+    opacity: 0;
+    transform: translateY(-100%);
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
+    background-color: transparent; /* Starts transparent */
+}
+
+/* The state when the user has scrolled down */
+#playlist-details-overlay.is-scrolled #playlist-compact-header {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+    /* Also use the CSS variable for a seamless transition */
+    background-color: var(--playlist-bg-color, #1a1a1a); 
+}
+
+/* Smoothly hide the main header when scrolling */
+#playlist-header-content {
+    transition: opacity 0.3s ease;
+}
+#playlist-details-overlay.is-scrolled #playlist-header-content {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* --- END: Playlist Overlay Enhancements v2 --- */
+/* --- START: Playlist Overlay Enhancements v3 --- */
+
+/* The main overlay now just acts as a container */
+#playlist-details-overlay {
+    overflow: hidden; /* The container itself doesn't scroll */
+}
+
+/* The gradient background layer */
+#playlist-background-gradient {
+    background: linear-gradient(to bottom, 
+        var(--playlist-bg-color, #2a2a2a) 0%, 
+        var(--playlist-bg-color, #2a2a2a) 200px, 
+        #121212 450px);
+    transition: background 0.5s ease-in-out;
+}
+
+/* The new main scrolling container */
+#playlist-scroll-content {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+#playlist-scroll-content::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, and Opera */
+}
+
+
+/* 1. Compact Header Styling */
+#playlist-compact-header {
+    opacity: 0;
+    transform: translateY(-100%);
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
+    background-color: transparent; /* Starts transparent */
+}
+
+/* The state when the user has scrolled down */
+#playlist-details-overlay.is-scrolled #playlist-compact-header {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+    
+    /* **FIX**: Attractive "glassmorphism" style for the scrolled header */
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px); /* For Safari */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Smoothly hide the main header when scrolling */
+#playlist-header-content {
+    transition: opacity 0.3s ease;
+}
+#playlist-details-overlay.is-scrolled #playlist-header-content {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* --- END: Playlist Overlay Enhancements v3 --- */
+#playlist-scroll-content{
+    top:-71px;
+}
+#playlist-compact-header{
+    top:71px;
+
+}

@@ -15,12 +15,12 @@
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual ngrok static domain if you are using ngrok for your backend.
 // If your backend is hosted directly (e.g., on Render, Heroku), use that URL.
-const BACKEND_BASE_URL = 'https://452e1283da6a.ngrok-free.app'; // Example: 'https://your-ngrok-subdomain.ngrok-free.app' or 'https://your-backend-api.com'
+const BACKEND_BASE_URL = 'https://e34ae6b44ff9.ngrok-free.app'; // Example: 'https://your-ngrok-subdomain.ngrok-free.app' or 'https://your-backend-api.com'
 
 // IMPORTANT: Replace this with your actual Netlify frontend domain for CORS setup on the backend.
 // This is crucial for your backend's CORS configuration (e.g., in Flask-CORS or Express CORS options)
 // It tells your backend which frontend domains are allowed to access its resources.
-const NETLIFY_FRONTEND_DOMAIN = 'https://swarify-play.netlify.app'; // e.g., https://my-music-site.netlify.app'
+const NETLIFY_FRONTEND_DOMAIN = 'https://swarify.com'; // e.g., https://my-music-site.netlify.app'
 
 // --- Heart Icon Styles ---
 // Inject styles for the new heart icons and related elements into the document's head.
@@ -7722,7 +7722,7 @@ document.addEventListener("click", function(e) {
 // ======== Liked Songs: storage + UI + backend sync ========
 
 const LIKED_STORAGE_KEY = 'swarify_liked_songs_v2';
-const API_BASE_URL = "https://452e1283da6a.ngrok-free.app"; // Backend server base URL
+const API_BASE_URL = "https://e34ae6b44ff9.ngrok-free.app"; // Backend server base URL
 
 const LIKED_API = {
     getLikes: () => `${API_BASE_URL}/api/likes`,

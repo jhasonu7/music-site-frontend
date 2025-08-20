@@ -5809,6 +5809,7 @@ body {
 }
 
 .liked-header{
+    padding: 43px 0px 38px;
    top:-74px;
 }
 .liked-play-btn-wrapper {
@@ -5830,5 +5831,19 @@ body {
 .liked-search-container {
     background: linear-gradient(to bottom, #235179, #131a2a);
 }
+
+.liked-search-container {
+    background: linear-gradient(to bottom, #235179, #131a2a);
+}
+.liked-compact-header{
+    padding: 22px 16px 12px;
+}
+#likedSongsOverlay.is-scrolled .liked-header-wrapper {
+    height: 77px;
+}
+#likedSongsOverlay.is-scrolled .liked-play-btn-wrapper {
+    top: 44px;
+}
+
 
 /* --- END: Playlist Overlay - FINAL Mobile Layout --- */

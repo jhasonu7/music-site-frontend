@@ -5756,3 +5756,56 @@ body {
 .popup-overlay {
     z-index: 10002;
 }
+/* --- START: Playlist Overlay - FINAL Mobile Layout (Side-by-Side) --- */
+
+/* Ensure the main overlay container does not allow horizontal scroll */
+#playlist-details-overlay {
+    overflow-x: hidden;
+}
+
+/* Media query for tablets and mobile phones */
+@media (max-width: 768px) {
+
+    /* This is the main block containing the image and the text info */
+    #playlist-header-content {
+        flex-direction: row;      /* KEY: Set layout back to horizontal */
+        align-items: flex-end;    /* KEY: Align items along the bottom edge */
+        text-align: left;         /* KEY: Align text to the left */
+        padding-top: 4.5rem;      /* Space from the top for the back button */
+        padding-bottom: 1rem;     /* Space below the header */
+        gap: 1rem;                /* Space between the image and the text block */
+    }
+
+    /* Target the text block to allow it to shrink without overflowing */
+    #playlist-header-content .text-left {
+        min-width: 0; /* CRITICAL: Allows the text block to shrink and wrap its content */
+    }
+    
+    /* Ensure the creator info (avatar, name) is left-aligned again */
+    #playlist-header-content .flex.items-center.justify-start {
+        justify-content: flex-start; /* Restore default left alignment */
+    }
+
+    /* Resize the cover art for the side-by-side mobile layout */
+    #playlist-details-overlay #playlist-cover-art {
+        width: 128px;   /* A smaller size to fit next to the text */
+        height: 128px;
+        flex-shrink: 0; /* Prevents the image from being squished */
+    }
+
+    /* Adjust the main playlist title to wrap correctly */
+    #playlist-details-overlay #playlist-title-h1 {
+        font-size: clamp(1.5rem, 6vw, 2.2rem); /* Responsive font size for the title */
+        word-break: break-word; /* Allows long titles to wrap to the next line */
+        line-height: 1.2;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Adjust the action buttons container to be closer to the header */
+     #playlist-scroll-content .flex.items-center.space-x-4 {
+        margin-top: 0rem;
+        margin-bottom: 1.5rem; 
+    }
+}
+
+/* --- END: Playlist Overlay - FINAL Mobile Layout --- */

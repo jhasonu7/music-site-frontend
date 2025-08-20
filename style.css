@@ -5808,6 +5808,7 @@ body {
     }
 }
 
+
 .liked-header{
     padding: 43px 0px 38px;
    top:-74px;
@@ -5826,12 +5827,15 @@ body {
     height: 17px;
 }
 .search-input-wrapper{
-    left:-11px;
-}
-.liked-search-container {
-    background: linear-gradient(to bottom, #235179, #131a2a);
+    left:-12px;
 }
 
+
+/* --- Custom Styles for Liked Songs Header --- */
+
+
+
+/* This targets the header that specifically contains the search box */
 .liked-search-container {
     background: linear-gradient(to bottom, #235179, #131a2a);
 }
@@ -5845,5 +5849,284 @@ body {
     top: 44px;
 }
 
-
 /* --- END: Playlist Overlay - FINAL Mobile Layout --- */
+
+            
+/* --- END: Playlist Overlay Enhancements v2 --- */
+
+/* --- END: Playlist Overlay Enhancements --- */
+/* START: Add these styles to the end of your style.css file */
+
+/* --- Revamped Full-Screen Player --- */
+#full-screen-player {
+    background-image: linear-gradient(to bottom, var(--dominant-color, #4a4a4a), #121212 50%);
+    justify-content: space-between;
+    transition: background-image 0.7s ease-in-out;
+}
+
+#full-screen-player .full-screen-header,
+#full-screen-player .full-screen-controls,
+#full-screen-player .full-screen-bottom-actions {
+    flex-shrink: 0;
+}
+
+#full-screen-player .header-context-text {
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: #b3b3b3;
+}
+
+#full-screen-player .header-source-text {
+    font-weight: 700;
+    color: #ffffff;
+}
+
+#full-screen-player #full-screen-album-art {
+    max-width: calc(100vw - 4rem);
+    max-height: calc(100vw - 4rem);
+}
+
+@media (min-width: 768px) {
+    #full-screen-player #full-screen-album-art {
+        max-width: 400px;
+        max-height: 400px;
+    }
+}
+
+/* --- Progress Bar Styling --- */
+input[type="range"]#full-screen-progress-bar {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+
+input[type="range"]#full-screen-progress-bar::-webkit-slider-runnable-track {
+    background: linear-gradient(to right, #fff var(--progress-percent, 0%), rgba(255, 255, 255, 0.3) var(--progress-percent, 0%));
+    height: 4px;
+    border-radius: 2px;
+}
+
+input[type="range"]#full-screen-progress-bar::-moz-range-track {
+    height: 4px;
+    border-radius: 2px;
+}
+
+input[type="range"]#full-screen-progress-bar::-moz-range-progress {
+    background-color: #fff;
+    height: 4px;
+    border-radius: 2px;
+}
+
+input[type="range"]#full-screen-progress-bar::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    margin-top: -5px; /* (track_height - thumb_height) / 2 */
+}
+
+input[type="range"]#full-screen-progress-bar::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    border: none;
+}
+
+/* --- Controls Styling --- */
+#full-play-pause-btn {
+    background-color: #fff;
+    color: #000;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s ease;
+}
+#full-play-pause-btn:active {
+    transform: scale(0.95);
+}
+
+.full-screen-controls button,
+.full-screen-bottom-actions button {
+    color: #e0e0e0;
+    transition: color 0.2s ease;
+}
+
+.full-screen-controls button:hover,
+.full-screen-bottom-actions button:hover {
+    color: #fff;
+}
+
+.full-screen-controls button.active {
+    color: #1ed760;
+    position: relative;
+}
+
+/* Dot for active shuffle/repeat */
+.full-screen-controls button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background-color: #1ed760;
+    border-radius: 50%;
+}
+/* END: New styles */
+
+#main-play-bar {
+    /* Use a CSS variable for the background, with the original color as a fallback */
+    background-color: var(--dominant-color-main, #1A0303);
+    /* Add a smooth transition for the color change */
+    transition: background-color 0.7s ease-in-out;
+}
+
+
+/* --- START: Full-Screen Player Layout Fixes --- */
+
+/* Base styles for all screen sizes (Primarily fixes mobile layout) */
+#full-screen-player {
+    /*
+     * CHANGE 1: Use 'space-evenly' for vertical justification.
+     * This distributes the empty space more evenly between the header, album art, 
+     * and controls, removing the large gap on mobile screens.
+    */
+    justify-content: space-evenly;
+
+    /*
+     * CHANGE 2: Add more padding at the bottom and top.
+     * This gives the controls some breathing room from the screen edges.
+    */
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+}
+
+/* This container holds the song title, progress bar, and buttons. */
+#full-screen-player > .max-w-sm {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* --- Tablet & Wider Screen Layout Fixes (iPad Mini and larger) --- */
+@media (min-width: 768px) {
+
+    #full-screen-player {
+        /*
+         * CHANGE 3: Center content vertically on tablets for a balanced look
+         * and add a 'gap' for consistent spacing between elements.
+        */
+        justify-content: center;
+        gap: 2rem;
+    }
+
+    /*
+     * CHANGE 4: Widen the main content area for the album art on tablets.
+     * This makes better use of the available horizontal space.
+    */
+    #full-screen-player .full-screen-main-content {
+        width: 80%;
+        /* Set a max-width to prevent the art from becoming too large on wide screens */
+        max-width: 500px;
+    }
+
+    /*
+     * CHANGE 5: Widen the container for the controls on tablets.
+     * The original 'max-w-sm' class was too narrow. This makes the
+     * progress bar and buttons span a more appropriate width.
+    */
+    #full-screen-player > .w-full.max-w-sm {
+        width: 100%;
+        /* Use a percentage that's responsive but capped by a max-width */
+        max-width: 80%;
+        /* Match the album art's max-width for a clean, aligned look */
+        max-width: 500px;
+    }
+}
+/* --- START: WIDER Tablet Full-Screen Player Fix --- */
+
+/* --- START: Final WIDE Tablet Player Fix --- */
+
+/* This targets tablet screens (768px) and wider */
+@media (min-width: 768px) {
+
+    /*
+     * Set the album art container to take up 90% of the screen width.
+     * We remove any pixel-based max-width to allow it to be fully responsive.
+    */
+    #full-screen-player .full-screen-main-content {
+        width: 90%;
+        max-width: none; /* Remove previous pixel-based limit */
+    }
+
+    /*
+     * Do the same for the controls container to ensure it matches the album art width,
+     * creating a clean, unified, and wide layout.
+    */
+    #full-screen-player > .w-full.max-w-sm {
+        width: 90%;
+        max-width: none; /* Remove previous pixel-based limit */
+    }
+}
+/* --- START: Final Responsive Player Width Fix --- */
+
+/*
+ * This media query targets devices wider than typical mobile phones,
+ * including small tablets like the one in your screenshot (656px wide).
+ * The breakpoint is now correctly set to 600px.
+*/
+@media (min-width: 600px) {
+
+    /*
+     * We are selecting BOTH the album art container and the controls container
+     * to apply the same widening effect for a unified look.
+    */
+    #full-screen-player .full-screen-main-content,
+    #full-screen-player > .w-full.max-w-sm {
+        /*
+         * This forces the content to take up 90% of the screen width,
+         * leaving small, clean margins on the sides. The '!important' flag
+         * ensures this style overrides any conflicting utility classes.
+        */
+        width: 90% !important;
+
+        /*
+         * This removes any previous pixel-based width limits (like max-w-sm).
+        */
+        max-width: none !important;
+    }
+}
+
+/* --- START: Mobile Full-Screen Player Vertical Spacing Fix --- */
+
+#full-screen-player {
+    /*
+     * PROBLEM: 'justify-content: space-between' was creating a large empty
+     * gap in the middle of the screen on tall mobile devices.
+     *
+     * SOLUTION: Change to 'space-evenly'. This distributes the vertical
+     * space evenly between the header, album art, and controls, resulting
+     * in a much more balanced and modern layout.
+    */
+    justify-content: space-evenly;
+
+    /*
+     * Add some extra padding at the bottom for better spacing from the
+     * edge of the screen.
+    */
+    padding-bottom: 2rem;
+}
+

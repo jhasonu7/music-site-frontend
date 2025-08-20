@@ -5827,5 +5827,8 @@ body {
 .search-input-wrapper{
     left:-11px;
 }
+.liked-search-container {
+    background: linear-gradient(to bottom, #235179, #131a2a);
+}
 
 /* --- END: Playlist Overlay - FINAL Mobile Layout --- */

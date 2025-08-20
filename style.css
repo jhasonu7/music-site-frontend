@@ -5824,5 +5824,8 @@ body {
 #likedSongsOverlay.search-active .liked-header-wrapper {
     height: 17px;
 }
+.search-input-wrapper{
+    left:-10;
+}
 
 /* --- END: Playlist Overlay - FINAL Mobile Layout --- */

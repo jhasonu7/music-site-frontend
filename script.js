@@ -190,7 +190,100 @@ let allAlbumsData = []; // This will store albums fetched from the backend for s
 
 const PLAYER_STATE_KEY = 'swarify_player_state'; // KEY FOR STORING PLAYER STATE
 
+/**
+ * Adjusts an RGB color to be darker.
+ * @param {number[]} rgb - An array of [r, g, b] values from ColorThief.
+ * @param {number} factor - A value between 0 and 1 to darken the color (e.g., 0.5 for 50% darker).
+ * @returns {number[]} The adjusted [r, g, b] array.
+ */
+function adjustColor(rgb, factor = 0.5) {
+    const darkFactor = Math.max(0, Math.min(1, factor));
 
+    const newR = Math.floor(rgb[0] * darkFactor);
+    const newG = Math.floor(rgb[1] * darkFactor);
+    const newB = Math.floor(rgb[2] * darkFactor);
+
+    return [newR, newG, newB];
+}
+
+// START: Add these three new functions to your script.js file
+
+/**
+ * Converts an RGB color value to HSL.
+ * @param {number} r - The red color value
+ * @param {number} g - The green color value
+ * @param {number} b - The blue color value
+ * @returns {number[]} The HSL representation
+ */
+function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h, s, l = (max + min) / 2;
+    if (max === min) {
+        h = s = 0; // achromatic
+    } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+    return [h, s, l];
+}
+
+/**
+ * Converts an HSL color value to RGB.
+ * @param {number} h - The hue
+ * @param {number} s - The saturation
+ * @param {number} l - The lightness
+ * @returns {number[]} The RGB representation
+ */
+function hslToRgb(h, s, l) {
+    let r, g, b;
+    if (s === 0) {
+        r = g = b = l; // achromatic
+    } else {
+        const hue2rgb = (p, q, t) => {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1 / 6) return p + (q - p) * 6 * t;
+            if (t < 1 / 2) return q;
+            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+            return p;
+        };
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1 / 3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1 / 3);
+    }
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+/**
+ * Creates an advanced, aesthetically pleasing background color from a source color.
+ * This function ensures the color is always dark and tastefully desaturated.
+ * @param {number[]} rgb - The input [r, g, b] array from ColorThief.
+ * @returns {number[]} The final, adjusted [r, g, b] array.
+ */
+function createAdvancedBackgroundColor(rgb) {
+    // 1. Convert the dominant RGB color to HSL
+    let [h, s, l] = rgbToHsl(rgb[0], rgb[1], rgb[2]);
+
+    // 2. Intelligently adjust Saturation and Lightness
+    // Clamp saturation to a tasteful maximum of 50%
+    s = Math.min(s, 0.50); 
+    // Force the lightness to be in a consistent, dark range (15%)
+    l = 0.15;
+
+    // 3. Convert the adjusted HSL color back to RGB
+    return hslToRgb(h, s, l);
+}
+
+// END: New functions
 
 
 let ytPlayer = null; // Global variable to hold the YouTube player instance
@@ -274,6 +367,11 @@ const fullShuffleBtn = document.getElementById('full-shuffle-btn');
 const fullRepeatBtn = document.getElementById('full-repeat-btn');
 const fullAddToPlaylistBtn = document.getElementById('full-add-to-playlist-btn');
 const fullShareBtn = document.getElementById('full-share-btn');
+// NEW: Add references for the dynamic header text
+const fullScreenContextText = document.getElementById('full-screen-context-text');
+const fullScreenSourceText = document.getElementById('full-screen-source-text');
+
+// NEW: Fixed Top Heading Elements
 
 
 // NEW: Fixed Top Heading Elements
@@ -824,6 +922,10 @@ async function updatePlayerUI() {
             fullPauseIcon.classList.add('hidden');
         }
 
+        // CORRECTED PART: Clear header text when nothing is playing
+        if (typeof fullScreenContextText !== 'undefined' && fullScreenContextText) fullScreenContextText.textContent = '';
+        if (typeof fullScreenSourceText !== 'undefined' && fullScreenSourceText) fullScreenSourceText.textContent = '';
+        
         togglePlayerControls(true); // Re-enable controls, as nothing is playing (or it's a non-embed state)
         if (progressBarInterval) {
             clearInterval(progressBarInterval);
@@ -836,6 +938,17 @@ async function updatePlayerUI() {
     }
 
     mainPlayBar.style.display = 'flex'; // Ensure compact playbar is visible if something is playing
+
+    // CORRECTED PART: Logic to dynamically update the full-screen header text
+    if (typeof fullScreenContextText !== 'undefined' && fullScreenContextText && typeof fullScreenSourceText !== 'undefined' && fullScreenSourceText) {
+        if (isPlayingFromLikedSongs) {
+            fullScreenContextText.textContent = "PLAYING FROM YOUR LIBRARY";
+            fullScreenSourceText.textContent = "Liked Songs";
+        } else {
+            fullScreenContextText.textContent = "PLAYING FROM ALBUM";
+            fullScreenSourceText.textContent = playingAlbum.title || "Unknown Album";
+        }
+    }
 
     const isEmbeddedAlbum = playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc;
 
@@ -852,7 +965,6 @@ async function updatePlayerUI() {
         displayCoverArtLarge = playingAlbum.coverArt || 'https://placehold.co/300x300/4a4a4a/ffffff?text=Embed';
         console.log(`updatePlayerUI: Detected embedded album. Using album data: ${displayTitle} by ${displayArtist}`);
 
-        // For embedded content, progress bar and controls are generally disabled
         if (progressBar) { progressBar.value = 0; progressBar.max = 0; progressBar.disabled = true; }
         if (currentTimeSpan) currentTimeSpan.textContent = '0:00';
         if (totalTimeSpan) totalTimeSpan.textContent = 'N/A';
@@ -861,8 +973,8 @@ async function updatePlayerUI() {
         if (fullScreenCurrentTime) fullScreenCurrentTime.textContent = '0:00';
         if (fullScreenTotalTime) fullScreenTotalTime.textContent = 'N/A';
 
-        togglePlayerControls(false); // Disable controls
-        if (progressBarInterval) { // Clear interval for continuous updates as we can't get live progress
+        togglePlayerControls(false);
+        if (progressBarInterval) {
             clearInterval(progressBarInterval);
             progressBarInterval = null;
         }
@@ -881,7 +993,6 @@ async function updatePlayerUI() {
                 let duration = 0;
                 let currentTime = 0;
 
-                // Determine current playback state and time from the active player
                 if (audio.src === currentTrack.src) {
                     isPlaying = !audio.paused && !audio.ended;
                     duration = audio.duration;
@@ -915,10 +1026,9 @@ async function updatePlayerUI() {
                 }
 
                 if (isNaN(duration) || duration <= 0) {
-                    duration = currentTrack.duration || 0;
+                    duration = parseDurationToSeconds(currentTrack.duration) || 0;
                 }
 
-                // Update compact playbar progress
                 if (progressBar) {
                     progressBar.max = duration;
                     progressBar.value = currentTime;
@@ -927,7 +1037,6 @@ async function updatePlayerUI() {
                 if (currentTimeSpan) currentTimeSpan.textContent = formatTime(currentTime);
                 if (totalTimeSpan) totalTimeSpan.textContent = formatTime(duration);
 
-                // Update full-screen player progress
                 if (fullScreenProgressBar) {
                     fullScreenProgressBar.max = duration;
                     fullScreenProgressBar.value = currentTime;
@@ -936,9 +1045,8 @@ async function updatePlayerUI() {
                 if (fullScreenCurrentTime) fullScreenCurrentTime.textContent = formatTime(currentTime);
                 if (fullScreenTotalTime) fullScreenTotalTime.textContent = formatTime(duration);
 
-                togglePlayerControls(true); // Enable controls for controllable tracks
+                togglePlayerControls(true);
 
-                // Clear and restart the progress bar interval
                 if (progressBarInterval) clearInterval(progressBarInterval);
                 let saveStateCounter = 0;
                 progressBarInterval = setInterval(async () => {
@@ -957,7 +1065,7 @@ async function updatePlayerUI() {
                     } else if (spotifyPlayer && currentTrack.spotifyUri) {
                         try {
                             const state = await spotifyPlayer.getCurrentState();
-                            if (state && !state.paused) { // Only update if state is available and not paused
+                            if (state && !state.paused) {
                                 currentProgress = state.position / 1000;
                                 currentDuration = state.duration / 1000;
                                 playerIsPlaying = !state.paused;
@@ -965,21 +1073,20 @@ async function updatePlayerUI() {
                         } catch (e) { /* ignore */ }
                     }
 
-                    // Update compact playbar
                     if (currentTimeSpan) currentTimeSpan.textContent = formatTime(currentProgress);
                     if (progressBar) {
                         progressBar.max = currentDuration;
                         progressBar.value = currentProgress;
                     }
 
-                    // Update full-screen player
                     if (fullScreenCurrentTime) fullScreenCurrentTime.textContent = formatTime(currentProgress);
                     if (fullScreenProgressBar) {
                         fullScreenProgressBar.max = currentDuration;
                         fullScreenProgressBar.value = currentProgress;
+                         const progressPercent = (currentDuration > 0) ? (currentProgress / currentDuration) * 100 : 0;
+                        fullScreenProgressBar.style.setProperty('--progress-percent', `${progressPercent}%`);
                     }
 
-                    // Update play/pause icons for both playbars
                     if (playPauseBtn) {
                         if (playerIsPlaying) {
                             playIcon.classList.add('hidden');
@@ -1002,7 +1109,6 @@ async function updatePlayerUI() {
                     if (!playerIsPlaying && currentProgress >= currentDuration && currentDuration > 0) {
                         clearInterval(progressBarInterval);
                         progressBarInterval = null;
-                        // Reset UI if track truly ended
                         if (currentTimeSpan) currentTimeSpan.textContent = '0:00';
                         if (progressBar) progressBar.value = 0;
                         if (playPauseBtn) {
@@ -1016,20 +1122,16 @@ async function updatePlayerUI() {
                             fullPauseIcon.classList.add('hidden');
                         }
                     }
-            if (playerIsPlaying) {
-        saveStateCounter++;
-        // Save state every 5 seconds of active playback
-        if (saveStateCounter >= 5) {
-            savePlayerState();
-            saveStateCounter = 0;
-        }
-    }
-
-
+                    if (playerIsPlaying) {
+                        saveStateCounter++;
+                        if (saveStateCounter >= 5) {
+                            savePlayerState();
+                            saveStateCounter = 0;
+                        }
+                    }
                 }, 1000);
             }
         } else {
-            console.log("updatePlayerUI: currentTrack is null/undefined for tracklist album.");
             displayTitle = playingAlbum.title || 'Unknown Title';
             displayArtist = playingAlbum.artist || 'Unknown Artist';
             displayCoverArt = playingAlbum.coverArt || 'https://placehold.co/64x64/4a4a4a/ffffff?text=Album';
@@ -1049,7 +1151,6 @@ async function updatePlayerUI() {
         }
     }
 
-    // Apply the determined display info to the compact playbar UI
     if (currentAlbumArt) currentAlbumArt.src = displayCoverArt;
     if (currentSongTitle) {
         currentSongTitle.textContent = displayTitle;
@@ -1064,14 +1165,45 @@ async function updatePlayerUI() {
         currentArtistName.style.textOverflow = 'ellipsis';
     }
 
-    // Apply the determined display info to the full-screen player UI
     if (fullScreenAlbumArt) fullScreenAlbumArt.src = displayCoverArtLarge;
+    const setBackgroundColor = () => {
+        try {
+            if (!fullScreenAlbumArt.complete || typeof fullScreenAlbumArt.naturalWidth === "undefined" || fullScreenAlbumArt.naturalWidth === 0) {
+                console.warn("ColorThief: Image not ready, skipping color extraction.");
+                return;
+            }
+            const colorThief = new ColorThief();
+            const dominantColor = colorThief.getColor(fullScreenAlbumArt);
+            const finalColor = createAdvancedBackgroundColor(dominantColor);
+            const rgbColor = `rgb(${finalColor[0]}, ${finalColor[1]}, ${finalColor[2]})`;
+            
+            fullScreenPlayer.style.setProperty('--dominant-color', rgbColor);
+            mainPlayBar.style.setProperty('--dominant-color-main', rgbColor);
+        } catch (e) {
+            console.error("ColorThief error:", e);
+            fullScreenPlayer.style.setProperty('--dominant-color', '#4a4a4a');
+            mainPlayBar.style.setProperty('--dominant-color-main', '#1A0303');
+        }
+    };
+    
+    if (fullScreenAlbumArt) {
+        if (fullScreenAlbumArt.complete) {
+            setBackgroundColor();
+        } else {
+            fullScreenAlbumArt.onload = setBackgroundColor;
+            fullScreenAlbumArt.onerror = () => {
+                console.error("Image failed to load, cannot extract color.");
+                fullScreenPlayer.style.setProperty('--dominant-color', '#4a4a4a');
+                mainPlayBar.style.setProperty('--dominant-color-main', '#1A0303');
+            };
+        }
+    }
+    
     if (fullScreenSongTitle) fullScreenSongTitle.textContent = displayTitle;
     if (fullScreenArtistName) fullScreenArtistName.textContent = displayArtist;
     if (fullScreenSongTitleLarge) fullScreenSongTitleLarge.textContent = displayTitle;
     if (fullScreenArtistNameLarge) fullScreenArtistNameLarge.textContent = displayArtist;
 
-    // Update play/pause icon in both play bars (always reflect current player state if controllable)
     let isPlaying = false;
     if (currentTrack && currentTrack.src && !audio.paused && audio.src === currentTrack.src) {
         isPlaying = true;
@@ -1106,7 +1238,6 @@ async function updatePlayerUI() {
             fullPauseIcon.classList.add('hidden');
         }
     }
-    // Update repeat/shuffle button states
     if (repeatBtn) repeatBtn.classList.toggle('active', isRepeat);
     if (shuffleBtn) shuffleBtn.classList.toggle('active', isShuffle);
     if (fullRepeatBtn) fullRepeatBtn.classList.toggle('active', isRepeat);
@@ -1114,63 +1245,16 @@ async function updatePlayerUI() {
      updatePlaybarLikeState();
       updatePopupLikeState();
 
-// NEW: Full-Screen Player Elements
-// ... other existing code
-const fullScreenAddBtn = document.getElementById('full-screen-add-btn');
-document.addEventListener('DOMContentLoaded', () => {
-    // ... existing code
-    
-    // Wire up the new full-screen like button
+    const fullScreenAddBtn = document.getElementById('full-screen-add-btn');
     if (fullScreenAddBtn) {
         fullScreenAddBtn.addEventListener('click', (ev) => {
             ev.preventDefault();
             toggleLikeCurrentSong();
         });
     }
-});
 
-function updatePlaybarLikeState() {
-    const mainBtn = document.getElementById('mobile-add-btn') || document.querySelector('.playbar-add-btn');
-    const fullScreenBtn = document.getElementById('full-screen-add-btn');
-
-    const song = getCurrentSongForLike();
-    
-    // If no song is playing, hide both buttons
-    if (!song) {
-        if (mainBtn) mainBtn.classList.remove('liked');
-        if (fullScreenBtn) fullScreenBtn.classList.remove('liked');
-        return;
-    }
-
-    const liked = LikedStore.get().some(x => LikedStore.isSame(x, song));
-
-    // Update the main playbar button
-    if (mainBtn) {
-        mainBtn.classList.toggle('liked', !!liked);
-        const plusIcon = mainBtn.querySelector('.icon-plus');
-        const checkIcon = mainBtn.querySelector('.icon-check');
-        if (plusIcon && checkIcon) {
-            plusIcon.style.display = liked ? 'none' : 'block';
-            checkIcon.style.display = liked ? 'block' : 'none';
-        }
-    }
-
-    // Update the new full-screen button
-    if (fullScreenBtn) {
-        fullScreenBtn.classList.toggle('liked', !!liked);
-        const plusIcon = fullScreenBtn.querySelector('.icon-plus');
-        const checkIcon = fullScreenBtn.querySelector('.icon-check');
-        if (plusIcon && checkIcon) {
-            plusIcon.style.display = liked ? 'none' : 'block';
-            checkIcon.style.display = liked ? 'block' : 'none';
-        }
-    }
+    updateCompactPlayButtonIcons();
 }
-
-updateCompactPlayButtonIcons();
-
-}
-
 
 
 /**
@@ -2116,15 +2200,24 @@ async function updateAlbumPlayButtonIcon() {
 /**
  * NEW: Shows the full-screen player overlay.
  */
+// START: Replace your existing showFullScreenPlayer function with this one.
+/**
+ * NEW: Shows the full-screen player overlay.
+ */
 function showFullScreenPlayer() {
     if (!fullScreenPlayer) return;
+
     fullScreenPlayer.classList.add('active');
-    document.body.style.overflow = 'hidden'; // Prevent scrolling behind the full-screen player
+    document.body.style.overflow = 'hidden';
     console.log("Full-screen player shown.");
 
-    // Update player UI to populate full-screen player elements
+    // The dynamic background logic has been moved to updatePlayerUI
+    // to ensure it runs *after* the new album art is set.
+
+    // Update the rest of the player UI
     updatePlayerUI();
 }
+// END: Replacement for showFullScreenPlayer
 
 /**
  * NEW: Hides the full-screen player overlay.
@@ -8930,6 +9023,47 @@ function updatePlaylistPlayButtons() {
 
     updatePlaylistPlayButton(isPlaying);
 }
+
+// START: Replace the existing showFullScreenPlayer function
+/**
+ * NEW: Shows the full-screen player overlay and sets dynamic background color.
+ */
+function showFullScreenPlayer() {
+    if (!fullScreenPlayer) return;
+
+    fullScreenPlayer.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    console.log("Full-screen player shown.");
+
+    // --- Dynamic Background Logic ---
+    const albumArt = document.getElementById('full-screen-album-art');
+    const setBackgroundColor = () => {
+        try {
+            const colorThief = new ColorThief();
+            const dominantColor = colorThief.getColor(albumArt);
+            const rgbColor = `rgb(${dominantColor[0]}, ${dominantColor[1]}, ${dominantColor[2]})`;
+            
+            // Set a CSS variable for the gradient
+            fullScreenPlayer.style.setProperty('--dominant-color', rgbColor);
+        } catch (e) {
+            console.error("ColorThief error:", e);
+            // Fallback to a default color if there's an error
+            fullScreenPlayer.style.setProperty('--dominant-color', '#4a4a4a');
+        }
+    };
+
+    // If the image is already loaded (e.g., from cache), set the color immediately.
+    if (albumArt.complete) {
+        setBackgroundColor();
+    } else {
+        // Otherwise, wait for it to load.
+        albumArt.onload = setBackgroundColor;
+    }
+
+    // Update the rest of the player UI
+    updatePlayerUI();
+}
+// END: Replacement for showFullScreenPlayer
 
 
 

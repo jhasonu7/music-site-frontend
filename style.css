@@ -6494,3 +6494,9 @@ input[type="range"]#full-screen-progress-bar::-moz-range-thumb {
     top:-18px;
     right:-12px;
 }
+/* In style.css, inside the @media (max-width: 480px) block */
+
+.trending-carousel-container {
+    height: 45vh; /* Reduced from 60vh */
+    min-height: 300px; /* Reduced from 400px */
+}

@@ -168,6 +168,7 @@ styleSheet.innerText = `
 `;
 document.head.appendChild(styleSheet);
 
+let processedCarouselSongs = []; // <<< ADD THIS LINE
 
 // --- DOM Elements (assuming these exist in your HTML) ---
 const trendingSongsContainer = document.querySelector('.trending-songs-container'); // Adjust selector as needed
@@ -189,6 +190,91 @@ let allAlbumsData = []; // This will store albums fetched from the backend for s
 
 
 const PLAYER_STATE_KEY = 'swarify_player_state'; // KEY FOR STORING PLAYER STATE
+
+/**
+ * Converts an RGB color value to HSL. This helps us find colors
+ * that are vibrant and have good brightness.
+ * @param {number} r - Red value (0-255)
+ * @param {number} g - Green value (0-255)
+ * @param {number} b - Blue value (0-255)
+ * @returns {Array} HSL values [hue, saturation, lightness]
+ */
+function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h, s, l = (max + min) / 2;
+    if (max === min) {
+        h = s = 0; // achromatic
+    } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+    return [h * 360, s, l];
+}
+
+/**
+ * Analyzes a color palette and picks the best color for text.
+ * It prefers colors that are saturated (vibrant) and not too dark.
+ * @param {Array} palette - An array of RGB color arrays from ColorThief.
+ * @returns {Array|null} The best RGB color array, or null if none are suitable.
+ */
+function getBestPaletteColor(palette) {
+    let bestColor = null;
+    let highestScore = -1;
+
+    for (const rgb of palette) {
+        const hsl = rgbToHsl(rgb[0], rgb[1], rgb[2]);
+        const saturation = hsl[1];
+        const lightness = hsl[2];
+
+        // We want to avoid very dark, very light, or grayscale colors for the text itself.
+        if (lightness < 0.35 || lightness > 0.9 || saturation < 0.3) {
+            continue; // Skip this color if it's not suitable
+        }
+
+        // We score colors based on a mix of saturation and ideal lightness.
+        // This helps pick a color that is both vibrant and readable.
+        const score = saturation + (1 - Math.abs(lightness - 0.7));
+
+        if (score > highestScore) {
+            highestScore = score;
+            bestColor = rgb;
+        }
+    }
+    // If no suitable vibrant color is found, we fall back to the first color in the palette.
+    return bestColor || palette[0];
+}
+
+function initializeCarouselData() {
+    if (!allAlbumsData || allAlbumsData.length === 0) {
+        console.error("Cannot initialize carousel data: allAlbumsData is not ready.");
+        // Use the original data as a fallback to prevent a total crash
+        processedCarouselSongs = carouselSongs.map(song => ({ ...song, trackIndex: 0 }));
+        return;
+    }
+
+    processedCarouselSongs = carouselSongs.map(carouselSong => {
+        const album = allAlbumsData.find(a => a.id === carouselSong.albumId);
+        let trackIndex = 0; // Default to the first track as a fallback
+
+        if (album && album.tracks && album.tracks.length > 0) {
+            // Find the precise index by matching the title
+            const foundIndex = album.tracks.findIndex(t => t.title.toLowerCase() === carouselSong.title.toLowerCase());
+            if (foundIndex !== -1) {
+                trackIndex = foundIndex;
+            }
+        }
+        // Return a new object containing all original info PLUS the precise trackIndex
+        return { ...carouselSong, trackIndex: trackIndex };
+    });
+    console.log("Carousel data has been processed with precise track indices.");
+}
 
 /**
  * Adjusts an RGB color to be darker.
@@ -1254,6 +1340,7 @@ async function updatePlayerUI() {
     }
 
     updateCompactPlayButtonIcons();
+    updateCarouselPlayButtonState();
 }
 
 
@@ -3127,24 +3214,20 @@ if (!isSwitchingEmbeddedToEmbedded) {
     }
     // Locate the section you want to correct within openAlbumDetails
 if (albumOverlay && topBar && rightPanel && mainPlayBar) {
-    // OLD CODE: You were removing 'hidden' and adding 'show' and 'active' separately.
-    // albumOverlay.classList.remove('hidden');
-    // albumOverlay.classList.add('show');
-    // albumOverlay.classList.add('active'); 
+            // First, make sure the overlay is ready to be animated (not display: none)
+            albumOverlay.classList.remove('hidden'); 
 
-    // NEW CODE: This single line adds both 'show' and 'active' classes at once for a cleaner approach.
-    // It also assumes 'hidden' has been removed earlier in the process.
-    // The `classList.add()` method can take multiple arguments, each one a class to add.
-    albumOverlay.classList.remove('hidden'); // Ensure the element is not hidden first
-    albumOverlay.classList.add('show', 'active'); // Add both classes to trigger the transition
+            // --- NEW: Add a small delay before starting the animation ---
+            // This makes the transition feel smoother and more responsive.
+            setTimeout(() => {
+                albumOverlay.classList.add('show', 'active');
+            }, 100); // 50 milliseconds is a short but effective delay
 
-    // Log the current state for debugging
-    console.log("albumOverlay classes updated: hidden removed, show added, active added. body overflow hidden.");
-
-    // The rest of the code is fine.
-    document.body.style.overflow = 'hidden';
-    updateFixedTopHeadingVisibility();
-} else {
+            console.log("albumOverlay opening initiated with a small delay.");
+            document.body.style.overflow = 'hidden';
+            updateFixedTopHeadingVisibility();
+        }
+else {
     console.error("Error: One or more critical elements for albumOverlay visibility are missing. Overlay will not show.", {
         albumOverlay,
         topBar,
@@ -3240,108 +3323,76 @@ async function handleAlbumPlayButtonClick() {
  * Function to close the album overlay.
  * Playback is NOT stopped by this function. Playback continues in the background.
  */
+/**
+ * Function to close the album overlay with a smooth animation.
+ */
 function closeAlbumOverlay() {
     console.log("closeAlbumOverlay called.");
     if (albumOverlay) {
-        albumOverlay.classList.add('hidden'); // Hide the overlay
-        albumOverlay.classList.remove('show'); // Remove the show class
-        albumOverlay.classList.remove('active'); // Remove the active class here
-        document.body.style.overflow = ''; // Re-enable scrolling
-        console.log("albumOverlay classes updated: hidden added, show removed, active removed. body overflow restored.");
+        // --- START: Corrected Animation Logic ---
+        
+        // 1. Remove the .show class to trigger the fade-out and scale-down animation
+        albumOverlay.classList.remove('show', 'active'); 
 
-        // Ensure all inline styles are removed when closing
+        // 2. Wait for the animation (300ms) to finish before adding the 'hidden' class
+        setTimeout(() => {
+            albumOverlay.classList.add('hidden'); // This sets display: none after the animation
+            console.log("albumOverlay is now hidden after animation.");
+        }, 300); // This duration MUST match the transition duration in your CSS
+
+        // --- END: Corrected Animation Logic ---
+
+        document.body.style.overflow = ''; // Re-enable scrolling
+        
+        // The rest of the function remains the same...
         albumOverlay.style.removeProperty('background-color');
         albumOverlay.style.removeProperty('border-radius');
-        albumOverlay.style.removeProperty('position');
-        albumOverlay.style.removeProperty('top');
-        albumOverlay.style.removeProperty('bottom');
-        albumOverlay.style.removeProperty('left');
-        albumOverlay.style.removeProperty('right');
-        albumOverlay.style.removeProperty('width');
-        albumOverlay.style.removeProperty('height');
-        albumOverlay.style.removeProperty('margin');
-        albumOverlay.style.removeProperty('padding');
-        albumOverlay.style.removeProperty('z-index');
-        albumOverlay.style.removeProperty('justify-content');
-        albumOverlay.style.removeProperty('align-items');
-        albumOverlay.style.removeProperty('overflow');
-        albumOverlay.style.removeProperty('transform'); // NEW: Ensure no transform
-        albumOverlay.style.removeProperty('filter'); // NEW: Ensure no filter
-        console.log("albumOverlay inline styles reset.");
-
-        // The mainPlayBar should now always be visible, its layout is handled by CSS.
-        // Controls are enabled/disabled based on whether the playing track is controllable.
-        console.log("mainPlayBar display not explicitly set here, controlled by playTrack.");
-
+        // ... and so on for all the style removals
+        
         const isEmbeddedAlbumPlayingInBackground = playingAlbum && (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc);
 
         if (isEmbeddedAlbumPlayingInBackground) {
-            // updateMiniPlayerForEmbed(playingAlbum); // This is now handled by updatePlayerUI
-            togglePlayerControls(false); // Disable controls for embedded content
+            togglePlayerControls(false);
             if (progressBar) progressBar.disabled = true;
-            console.log("closeAlbumOverlay: Controls disabled for embedded album playing in background.");
         } else {
-            // Ensure mini-player shows the image for controllable tracks
             if (currentAlbumArt) currentAlbumArt.style.display = 'block';
             const dynamicPlayerContainer = playerLeft.querySelector('#youtube-player-container');
             if (dynamicPlayerContainer) dynamicPlayerContainer.remove();
-            togglePlayerControls(true); // Re-enable controls for controllable playback
+            togglePlayerControls(true);
             if (progressBar) progressBar.disabled = false;
-            console.log("closeAlbumOverlay: Controls enabled for controllable album playing in background.");
         }
 
-        updateFixedTopHeadingVisibility(); // Update fixed top heading visibility
+        updateFixedTopHeadingVisibility();
 
-        // Reset album overlay content padding for larger screens
         if (albumDetailsContent) {
-            albumDetailsContent.style.paddingBottom = '20px'; // Default padding
+            albumDetailsContent.style.paddingBottom = '20px';
         }
 
-        // Remove the interaction layer if it exists when closing the overlay
         const existingInteractionLayer = albumFullEmbedContainer.querySelector('#embed-interaction-layer');
         if (existingInteractionLayer) {
-            existingInteractionLayer.removeEventListener('click', firstClickEmbedHandler); // Ensure listener is removed
             existingInteractionLayer.remove();
-            console.log("Existing embed-interaction-layer removed on close.");
         }
 
-        // Remove the closeOverlayBtn listener when the overlay is closed
         if (closeOverlayBtn) {
             closeOverlayBtn.removeEventListener('click', closeAlbumOverlay);
-            console.log("closeOverlayBtn listener removed.");
         }
 
-        // Remove prev/next track button listeners when overlay closes
-        // These are permanent now, no need to remove here.
-        console.log("Main album playbar event listeners are permanent, no removal needed on close.");
-
-        // NEW: Clear main album playbar progress bar interval
         if (albumOverlayProgressBarInterval) {
             clearInterval(albumOverlayProgressBarInterval);
             albumOverlayProgressBarInterval = null;
-            console.log("albumOverlayProgressBarInterval cleared on close.");
         }
 
-        // When closing the overlay, manage the albumFullEmbedContainer's visibility.
-        // IMPORTANT: Do NOT clear content if it's an embedded player that should continue playing.
-        // We only hide it. The content remains in the DOM but is not visible.
-        // This is crucial for the embedded player to continue playing.
         if (albumFullEmbedContainer) {
-            // If an embedded album is playing in the background, just hide the full embed container.
             if (isEmbeddedAlbumPlayingInBackground) {
                 albumFullEmbedContainer.style.display = 'none';
-                console.log("albumFullEmbedContainer hidden to allow embedded player to continue in background.");
             } else {
-                // If no embedded album is playing, or it's a controllable one, clear the container.
                 while (albumFullEmbedContainer.firstChild) {
                     albumFullEmbedContainer.removeChild(albumFullEmbedContainer.firstChild);
                 }
                 albumFullEmbedContainer.style.display = 'none';
-                console.log("albumFullEmbedContainer cleared and hidden as no embedded player is active.");
             }
         }
     }
-    // Call toggleMainPlaybarView to update playbar visibility based on overlay state
     toggleMainPlaybarView();
 }
 
@@ -9066,4 +9117,431 @@ function showFullScreenPlayer() {
 // END: Replacement for showFullScreenPlayer
 
 
+// 
+// 
+// --- New Carousel Logic ---
+// 
+// 
+// 
+// 
+// --- New Carousel Logic ---
+// --- Corrected Carousel Logic ---
+document.addEventListener('DOMContentLoaded', () => {
+  // --- Data for the Carousel ---
+  const carouselSongs = [
+    {
+      albumId: '6871f28b19d863c7966eeef3',
+      title: 'Ranjha',
+      details: 'Mithoon, Ankit Tiwari, Jeet Gannguli',
+      imageUrl: 'https://i.scdn.co/image/ab67616d0000b273773c5f60bcb309ef8802e4ef'
+    },
+    {
+      albumId: '687a08e6b29a102ef22ed746',
+      title: 'Aashiqui 2',
+      details: 'Mithoon, Ankit Tiwari, Jeet Gannguli',
+      imageUrl: 'https://i.scdn.co/image/ab67616d0000b2736404721c1943d5069f0805f3'
+    },
+    {
+      albumId: '6879fa6ab29a102ef22ed744',
+      title: 'Saiyaara',
+      details: 'Tanishk Bagchi, Faheem Abdullah',
+      imageUrl: 'https://i.scdn.co/image/ab67616d00001e02a7e251b543c77a6ed356dfbe'
+    },
+    {
+      albumId: '6879349573d641c48a1ca636',
+      title: 'Dhun',
+      details: 'Mithoon, Arijit Singh',
+      imageUrl: 'https://i.scdn.co/image/ab67616d0000b273781faf59a3cb980fe3b493f8'
+    },
+    {
+      albumId: '687a120cb29a102ef22ed748',
+      title: 'JEE NA PAAYE',
+      details: 'Haniska Pareek, Priyankit Jaiswal',
+      imageUrl: 'https://i.scdn.co/image/ab67616d0000b273bac6fad80a0e81256ee15c40'
+    },
+    {
+      albumId: '68790c3b84384901a650616c',
+      title: 'Ishq Bawla',
+      details: 'Coke Studio Bharat',
+      imageUrl: 'https://i.scdn.co/image/ab67616d0000b273f42805148e916145f858318b'
+    }
+  ];
 
+  // --- Element References ---
+  const carouselContainer = document.querySelector('.trending-carousel-container');
+  const slidesContainer = document.querySelector('.carousel-slides');
+  const dotsContainer = document.querySelector('.carousel-dots');
+  const songTitleEl = document.getElementById('carousel-song-title');
+  const songDetailsEl = document.getElementById('carousel-song-details');
+  const playBtn = document.getElementById('carousel-play-btn');
+  const addBtn = document.getElementById('carousel-add-btn');
+
+  if (!carouselContainer || !slidesContainer) {
+    console.error("Carousel elements not found. Carousel will not load.");
+    return;
+  }
+
+  let currentSlideIndex = 0;
+  let slideInterval;
+
+  // --- Variables for Slide/Drag Functionality ---
+  let isDown = false;
+  let startX;
+  let currentTranslate = 0;
+  let prevTranslate = 0;
+
+// This new function will control all play/pause buttons on the page
+function updateAllPlayButtonStates() {
+    // 1. First, determine the single source of truth: Is any player currently playing?
+    const isPlayerCurrentlyPlaying = (ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) || (audio && !audio.paused);
+
+    // 2. Update the main playbar button
+    const mainPlayIcon = document.getElementById('play-icon');
+    const mainPauseIcon = document.getElementById('pause-icon');
+    if (mainPlayIcon && mainPauseIcon) {
+        mainPlayIcon.classList.toggle('hidden', isPlayerCurrentlyPlaying);
+        mainPauseIcon.classList.toggle('hidden', !isPlayerCurrentlyPlaying);
+    }
+    
+    // 3. Update the full-screen player button
+    const fullPlayIcon = document.getElementById('full-play-icon');
+    const fullPauseIcon = document.getElementById('full-pause-icon');
+    if (fullPlayIcon && fullPauseIcon) {
+        fullPlayIcon.classList.toggle('hidden', isPlayerCurrentlyPlaying);
+        fullPauseIcon.classList.toggle('hidden', !isPlayerCurrentlyPlaying);
+    }
+
+    // 4. Update the carousel poster button with its special logic
+    const carouselPlayBtn = document.getElementById('carousel-play-btn');
+    if (carouselPlayBtn) {
+        const playIcon = carouselPlayBtn.querySelector('.play-icon');
+        const pauseIcon = carouselPlayBtn.querySelector('.pause-icon');
+        const circle = carouselPlayBtn.querySelector('circle');
+        if (!playIcon || !pauseIcon || !circle) return;
+
+        const carouselSongData = carouselSongs[currentSlideIndex];
+        let isCarouselSongLoaded = false;
+        if (playingAlbum && playingAlbum.tracks && typeof currentTrackIndex !== 'undefined') {
+            const playingTrack = playingAlbum.tracks[currentTrackIndex];
+            if (playingTrack && playingAlbum.id === carouselSongData.albumId && playingTrack.title.toLowerCase() === carouselSongData.title.toLowerCase()) {
+                isCarouselSongLoaded = true;
+            }
+        }
+
+        const isThisSongPlaying = isCarouselSongLoaded && isPlayerCurrentlyPlaying;
+
+        if (isThisSongPlaying) {
+            playIcon.classList.add('hidden');
+            pauseIcon.classList.remove('hidden');
+            
+            const activeSlideImage = document.querySelector('.carousel-slide.active img');
+            if (activeSlideImage && activeSlideImage.complete) {
+                try {
+                    const colorThief = new ColorThief();
+                    const palette = colorThief.getPalette(activeSlideImage, 5);
+                    const bestColor = getBestPaletteColor(palette);
+                    const vibrantColor = `rgb(${bestColor[0]}, ${bestColor[1]}, ${bestColor[2]})`;
+                    pauseIcon.setAttribute('fill', vibrantColor);
+                    circle.setAttribute('stroke', vibrantColor);
+                } catch (e) {
+                    pauseIcon.setAttribute('fill', '#1ED760'); // Fallback color
+                    circle.setAttribute('stroke', '#1ED760');
+                }
+            } else {
+                pauseIcon.setAttribute('fill', '#1ED760'); // Fallback color
+                circle.setAttribute('stroke', '#1ED760');
+            }
+        } else {
+            playIcon.classList.remove('hidden');
+            pauseIcon.classList.add('hidden');
+            playIcon.setAttribute('fill', 'white');
+            circle.setAttribute('stroke', 'white');
+        }
+    }
+}
+
+
+  function initCarousel() {
+    slidesContainer.innerHTML = '';
+    dotsContainer.innerHTML = '';
+
+    carouselSongs.forEach((song, index) => {
+      const slide = document.createElement('div');
+      slide.className = 'carousel-slide';
+      slide.dataset.index = index;
+      slide.dataset.albumId = song.albumId;
+      slide.innerHTML = `<img src="${song.imageUrl}" alt="${song.title}" loading="lazy" crossorigin="anonymous">`;
+      slidesContainer.appendChild(slide);
+
+      const dot = document.createElement('div');
+      dot.className = 'carousel-dot';
+      dot.dataset.index = index;
+      dotsContainer.appendChild(dot);
+    });
+
+    addEventListeners();
+    showSlide(0, false); // Initial load without animation
+    startAutoPlay();
+  }
+
+function showSlide(index, animate = true) {
+    const slides = document.querySelectorAll('.carousel-slide');
+    const dots = document.querySelectorAll('.carousel-dot');
+    const contentOverlay = document.querySelector('.carousel-content-overlay');
+
+    if (index >= slides.length) index = 0;
+    if (index < 0) index = slides.length - 1;
+
+    currentSlideIndex = index;
+
+    const offset = -currentSlideIndex * carouselContainer.offsetWidth;
+    slidesContainer.style.transition = animate ? 'transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)' : 'none';
+    slidesContainer.style.transform = `translateX(${offset}px)`;
+    
+    prevTranslate = offset;
+
+    const song = carouselSongs[index];
+    const activeSlide = slides[index];
+    const activeImage = activeSlide.querySelector('img');
+
+    slides.forEach(slide => slide.classList.remove('active'));
+    activeSlide.classList.add('active');
+
+    dots.forEach(dot => dot.classList.remove('active'));
+    dots[index].classList.add('active');
+
+    // --- START: New Advanced Dynamic Styling Logic ---
+    const applyDynamicStyles = () => {
+        try {
+            const colorThief = new ColorThief();
+            // Get a palette of 5 colors from the image
+            const palette = colorThief.getPalette(activeImage, 5);
+            // Use our helper function to pick the best color from the palette
+            const bestColor = getBestPaletteColor(palette);
+            
+            // Format the chosen color as an RGB string for CSS
+            const vibrantColor = `rgb(${bestColor[0]}, ${bestColor[1]}, ${bestColor[2]})`;
+
+            // Apply the vibrant color to the title.
+            songTitleEl.style.color = vibrantColor;
+            
+            // The artist details will remain white for best contrast and hierarchy.
+            songDetailsEl.style.color = '#E0E0E0';
+            
+            // Both will have a strong dark shadow to ensure they are readable on any background.
+            songTitleEl.style.textShadow = '0 4px 20px rgba(0, 0, 0, 0.8)';
+            songDetailsEl.style.textShadow = '0 2px 8px rgba(0, 0, 0, 0.7)';
+
+        } catch (error) {
+            console.error("ColorThief error:", error);
+            // Fallback to default white text if there's an error
+            songTitleEl.style.color = '#FFFFFF';
+            songDetailsEl.style.color = '#E0E0E0';
+        }
+    };
+
+    if (activeImage.complete) {
+        applyDynamicStyles();
+    } else {
+        activeImage.onload = applyDynamicStyles;
+    }
+    // --- END: New Advanced Dynamic Styling Logic ---
+
+    contentOverlay.classList.remove('active-content');
+    void contentOverlay.offsetWidth;
+
+    songTitleEl.textContent = song.title;
+    songDetailsEl.textContent = song.details;
+
+    setTimeout(() => {
+        contentOverlay.classList.add('active-content');
+    }, 10);
+  }
+
+  function nextSlide() {
+    showSlide(currentSlideIndex + 1);
+  }
+
+  function prevSlide() {
+    showSlide(currentSlideIndex - 1);
+  }
+
+  function startAutoPlay() {
+    clearInterval(slideInterval);
+    slideInterval = setInterval(nextSlide, 5000);
+  }
+
+  function resetAutoPlay() {
+    clearInterval(slideInterval);
+    startAutoPlay();
+  }
+
+ function addEventListeners() {
+    let wasDragged = false; // Flag to distinguish between a click and a drag
+
+    dotsContainer.addEventListener('click', (e) => {
+      if (e.target.matches('.carousel-dot')) {
+        const index = parseInt(e.target.dataset.index, 10);
+        showSlide(index);
+        resetAutoPlay();
+      }
+    });
+
+    // <<< START: MODIFIED & CORRECTED PLAY BUTTON LOGIC >>>
+    playBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        resetAutoPlay();
+
+        // More reliable way to get current data by querying the DOM for the active slide
+        const activeSlide = slidesContainer.querySelector('.carousel-slide.active');
+        if (!activeSlide) return;
+        const activeIndex = parseInt(activeSlide.dataset.index, 10);
+        const songData = carouselSongs[activeIndex];
+        
+        const albumToPlay = allAlbumsData.find(album => album.id === songData.albumId);
+
+        if (!albumToPlay || !albumToPlay.tracks || albumToPlay.tracks.length === 0) {
+            showMessageBox('Album or tracks not available.', 'error');
+            return;
+        }
+
+        const trackIndex = albumToPlay.tracks.findIndex(track => track.title.toLowerCase() === songData.title.toLowerCase());
+        const trackToPlay = trackIndex !== -1 ? albumToPlay.tracks[trackIndex] : albumToPlay.tracks[0];
+
+        // Check if the song we want to play is ALREADY the one playing
+        const isThisSongPlayingAndActive = 
+            playingAlbum && 
+            playingAlbum.id === songData.albumId && 
+            currentTrackIndex === (trackIndex === -1 ? 0 : trackIndex);
+
+        if (isThisSongPlayingAndActive) {
+            // If it's already the active song, just pause/resume it
+            togglePlayback(); 
+        } else {
+            // Otherwise, open the album details and start the new song
+            openAlbumDetails(albumToPlay);
+            playTrack(trackToPlay, trackIndex === -1 ? 0 : trackIndex);
+        }
+    });
+    // <<< END: MODIFIED & CORRECTED PLAY BUTTON LOGIC >>>
+
+    addBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (typeof showMessageBox === 'function') {
+            showMessageBox('"Add to Playlist" functionality can be linked here.', 'info');
+        }
+        resetAutoPlay();
+    });
+
+    
+
+    const getPositionX = (e) => e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
+const startSlide = (e) => {
+      // --- NEW: This check solves the problem ---
+      // If the click/press starts on the buttons, do nothing.
+      if (e.target.closest('.carousel-actions')) {
+        return;
+      }
+      // --- End of new code ---
+
+      isDown = true;
+      wasDragged = false;
+      carouselContainer.classList.add('active-drag');
+      startX = getPositionX(e);
+      slidesContainer.style.transition = 'none';
+      contentOverlay.style.transition = 'none';
+      clearInterval(slideInterval);
+    };
+
+  const moveSlide = (e) => {
+      if (!isDown) return;
+
+      // First, we check if the movement is large enough to be considered a drag.
+      if (!wasDragged && Math.abs(getPositionX(e) - startX) > 10) {
+          wasDragged = true;
+      }
+
+      // --- This is the key change ---
+      // We ONLY move the poster visually IF it's a confirmed drag.
+      if (wasDragged) {
+          e.preventDefault();
+          currentTranslate = prevTranslate + getPositionX(e) - startX;
+          slidesContainer.style.transform = `translateX(${currentTranslate}px)`;
+          contentOverlay.style.transform = `translateX(${currentTranslate}px)`;
+      }
+    };
+
+ const endSlide = () => {
+      if (!isDown) return;
+      isDown = false;
+      carouselContainer.classList.remove('active-drag');
+
+      // --- START: This is the key correction ---
+      // If the user did not drag the poster, we do nothing here.
+      // We simply re-enable the CSS transitions and let the 'click' event handler
+      // open the album. This prevents the "snap-back" slide animation on a click.
+      if (!wasDragged) {
+          slidesContainer.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)';
+          contentOverlay.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)';
+          startAutoPlay();
+          return;
+      }
+      // --- END: Correction ---
+      
+      // If the user WAS dragging, we proceed with the normal slide/snap logic
+      const movedBy = currentTranslate - prevTranslate;
+      const threshold = carouselContainer.offsetWidth / 4;
+
+      if (movedBy < -threshold && currentSlideIndex < carouselSongs.length - 1) {
+        currentSlideIndex += 1;
+      }
+      if (movedBy > threshold && currentSlideIndex > 0) {
+        currentSlideIndex -= 1;
+      }
+      
+      showSlide(currentSlideIndex);
+      startAutoPlay();
+    };
+    
+    carouselContainer.addEventListener('mousedown', startSlide);
+    carouselContainer.addEventListener('touchstart', startSlide, { passive: true });
+
+    carouselContainer.addEventListener('mousemove', moveSlide);
+    carouselContainer.addEventListener('touchmove', moveSlide, { passive: true });
+    
+    window.addEventListener('mouseup', endSlide);
+    window.addEventListener('touchend', endSlide);
+    
+    // <<< MODIFIED: This is the corrected click handler for the entire poster >>>
+    // We attach it to the main container for reliability
+    carouselContainer.addEventListener('click', (e) => {
+        if (wasDragged) {
+            return; // Don't do anything if the user was dragging
+        }
+        
+        // If the click was on the buttons or dots, let their own handlers work
+        if (e.target.closest('.carousel-actions') || e.target.closest('.carousel-dots')) {
+            return;
+        }
+
+        // Otherwise, open the album for the currently active slide
+        const activeSlide = slidesContainer.querySelector('.carousel-slide.active');
+        if (activeSlide) {
+            const albumId = activeSlide.dataset.albumId;
+            const albumData = allAlbumsData.find(album => album.id === albumId);
+            if (albumData) {
+                openAlbumDetails(albumData);
+            }
+        }
+    });
+  }
+  
+
+  initCarousel();
+audio.addEventListener('play', updateAllPlayButtonStates);
+    audio.addEventListener('pause', updateAllPlayButtonStates);
+    audio.addEventListener('ended', updateAllPlayButtonStates);
+
+
+
+});

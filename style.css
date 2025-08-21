@@ -6129,4 +6129,368 @@ input[type="range"]#full-screen-progress-bar::-moz-range-thumb {
     */
     padding-bottom: 2rem;
 }
+/* --- Final Carousel Styles --- */
 
+/* Main container for the carousel, enabling drag/swipe */
+.trending-carousel-container {
+  width: 98%;
+  height: 60vh;
+  min-height: 400px;
+  max-height: 70vh;
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  margin: 0 auto 2rem auto;
+  max-width: 1400px;
+  flex-shrink: 0;
+  cursor: grab;
+}
+
+.trending-carousel-container.active-drag {
+  cursor: grabbing;
+}
+
+/* Wrapper for all slides, laid out horizontally */
+.carousel-slides {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+  will-change: transform;
+}
+
+/* Individual slide styling */
+.carousel-slide {
+  width: 100%;
+  height: 100%;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.carousel-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  pointer-events: none;
+}
+
+/* Dark gradient overlay at the bottom of each slide for text readability */
+.carousel-slide::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 60%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Container for text and buttons, positioned on each slide */
+.carousel-content-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 2rem;
+  box-sizing: border-box;
+  z-index: 3;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1.5rem;
+  pointer-events: none;
+}
+
+.carousel-text-content {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+/* Title and Artist Details Styling */
+#carousel-song-title {
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 900;
+  margin: 0 0 0.5rem 0;
+  opacity: 0;
+  transform: translateY(25px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out, color 0.8s ease-in-out, text-shadow 0.8s ease-in-out;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+#carousel-song-details {
+  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+  font-weight: 700;
+  margin: 0;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease-out 0.15s, transform 0.8s ease-out 0.15s, color 0.8s ease-in-out;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Animation trigger for text fade-in/slide-up effect */
+.carousel-content-overlay.active-content #carousel-song-title,
+.carousel-content-overlay.active-content #carousel-song-details {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Action buttons styling */
+.carousel-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  pointer-events: auto;
+}
+
+#carousel-play-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 70px;
+  height: 70px;
+  padding: 0;
+  transition: transform 0.2s ease;
+}
+
+#carousel-play-btn:hover {
+  transform: scale(1.1);
+}
+
+#carousel-play-btn svg {
+  width: 100%;
+  height: 100%;
+}
+
+#carousel-add-btn {
+  background: rgba(40, 40, 40, 0.7);
+  border: 2px solid #a0a0a0;
+  color: white;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+#carousel-add-btn:hover {
+  background-color: rgba(60, 60, 60, 0.9);
+  border-color: white;
+}
+
+/* Navigation dots styling */
+.carousel-dots {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.75rem;
+  z-index: 4;
+}
+
+.carousel-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.carousel-dot.active {
+  background-color: white;
+  transform: scale(1.2);
+}
+
+/* Responsive adjustments for screens 768px and smaller */
+@media (max-width: 768px) {
+  .carousel-content-overlay {
+    padding: 1.5rem;
+  }
+  #carousel-play-btn {
+    width: 60px;
+    height: 60px;
+  }
+  #carousel-add-btn {
+    width: 45px;
+    height: 45px;
+    font-size: 1.8rem;
+  }
+}
+
+#albumOverlay {
+    z-index: 9999;
+    /* --- Add these 3 lines for the smooth animation --- */
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+#albumOverlay.show {
+    /* This class will be added by JS to trigger the animation */
+    opacity: 1;
+    transform: scale(1);
+}
+
+.carousel-slide {
+    /* ... existing styles ... */
+    cursor: pointer;
+}
+
+
+/* This is the state of the overlay when it's hidden */
+#albumOverlay {
+    z-index: 9999;
+    /* --- Style for the smooth animation --- */
+    opacity: 0; /* Start fully transparent */
+    visibility: hidden; /* Hide it from screen readers and clicks */
+    transform: scale(0.95); /* Start slightly smaller */
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease; /* Animate all properties */
+}
+
+/* This is the state when the .show class is added by JavaScript to open it */
+#albumOverlay.show {
+    opacity: 1; /* Fade it in to be fully visible */
+    visibility: visible;
+    transform: scale(1); /* Scale it up to its normal size */
+}
+
+
+/* The state of the overlay when it's hidden */
+#albumOverlay {
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none; /* Prevent interaction when hidden */
+    
+    /* NEW: Starts slightly smaller AND pushed down */
+    transform: scale(0.98) translateY(15px);
+    
+    /* NEW: Faster, smoother transition using a professional cubic-bezier curve */
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+                visibility 0.25s;
+}
+
+/* The state when the .show class is added to open it */
+#albumOverlay.show {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto; /* Allow interaction when visible */
+    
+    /* NEW: Animates to its final, normal state */
+    transform: scale(1) translateY(0);
+}
+
+#carousel-song-title {
+  font-size: clamp(2rem, 5vw, 4.5rem); /* Slightly larger */
+  font-weight: 900;
+  margin: 0 0 0.5rem 0;
+  opacity: 0;
+  transform: translateY(25px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+
+  /* --- Gradient Text Style --- */
+  /* This example uses a static gradient; your JS can make it dynamic */
+  background: linear-gradient(45deg, #f3ec78, #af4261);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+  /* Use a filter for shadow on gradient text, as text-shadow won't work */
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.7));
+}
+
+#carousel-song-details {
+  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+  font-weight: 700;
+  color: #FFFFFF; /* Keep artist name solid white for contrast */
+  margin: 0;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease-out 0.15s, transform 0.8s ease-out 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+}
+
+#carousel-song-title {
+  font-size: clamp(2rem, 5vw, 4.5rem);
+  font-weight: 900;
+  margin: 0 0 0.5rem 0;
+  opacity: 0;
+  transform: translateY(25px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out, color 0.8s ease-in-out;
+  
+  /* --- Outline (Stroke) Style --- */
+  color: #FFFFFF; /* This is the inner fill color of the text */
+  -webkit-text-stroke: 2px #111111; /* The thickness and color of the outline */
+  text-stroke: 2px #111111;
+  text-shadow: none; /* A shadow is usually not needed with a stroke */
+}
+
+#carousel-song-details {
+  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease-out 0.15s, transform 0.8s ease-out 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+}
+
+#carousel-song-title {
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 900;
+  color: #FFFFFF; /* This color will be dynamically changed by JS */
+  margin: 0 0 0.5rem 0;
+  opacity: 0;
+  transform: translateY(25px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out, color 0.8s ease-in-out, text-shadow 0.8s ease-in-out;
+
+  /* --- Layered Glow & Shadow Style --- */
+  /* This creates a soft outer glow AND a sharp inner shadow for maximum effect */
+  text-shadow: 
+    0 0 25px rgba(0, 0, 0, 0.8),  /* Soft, wide dark glow for depth */
+    0 2px 4px rgba(0, 0, 0, 0.7);  /* Sharper shadow for readability */
+}
+
+#carousel-song-details {
+  font-size: clamp(0.8rem, 2.5vw, 1rem); /* Slightly smaller */
+  font-weight: 500; /* Medium weight for a more elegant look */
+  color: #E0E0E0;
+  margin: 0;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease-out 0.15s, transform 0.8s ease-out 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.1em; /* Wider spacing for a refined feel */
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+.carousel-actions{
+    position: relative;
+    top:-18px;
+    right:-12px;
+}

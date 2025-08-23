@@ -8321,3 +8321,18 @@ tr.playing td:nth-child(1) {
         max-width: none !important;
     }
 }
+
+@media (max-width: 768px) {
+    /* Target the title of a track in the list */
+    #albumDetails-tracks .track-title {
+        font-size: 1rem !important;      /* Approx 16px, a good size for mobile titles */
+        font-weight: 500 !important;     /* Makes the title bold and prominent */
+        color: #FFFFFF !important;       /* Ensures the title is bright white */
+    }
+
+    /* Target the artist name below the title */
+    #albumDetails-tracks .track-artist {
+        font-size: 0.9rem !important;    /* Approx 14px, slightly larger for readability */
+        color: #b3b3b3 !important;      /* Ensures artist name is the secondary gray color */
+    }
+}

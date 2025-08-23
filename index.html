@@ -348,359 +348,93 @@
                 </div>
             </div>
 
-            <div id="albumOverlay" class="album-overlay hidden">
-                <div class="album-overlay-content">
-                    <button class="close-overlay">×</button>
-
-                    <div id="albumDetails" class="album-details">
-                        <div class="album-header flex">
-                            <img id="albumDetails-cover" src="" alt="Album Cover" class="album-cover" />
-                            <div class="album-info">
-                                <span class="album-type">Album</span>
-                                <h1 id="albumDetails-title"></h1>
-                                <p id="albumDetails-artist"></p>
-                                <p id="albumDetails-meta"></p>
-                                <div class="album-buttons">
-                                    <button id="album-play" class="big-play-btn">▶</button>
-                                    <button class="btn1">+</button>
-                                    <button class="btn2">⤓</button>
-                                    <button class="btn3">⋯</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="album-tracks">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Title</th>
-                                        <th>Artist</th>
-                                        <th>Duration</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="albumDetails-tracks"></tbody>
-                            </table>
-                        </div>
-
-
-                    </div>
-             <div class="spotifyPlaylists">
-                <div class="section-heading">
-                    <h1>Trending songs</h1>
-                </div>
-                <div class="carousel-wrapper">
-                    <button class="carousel-nav-btn prev-btn" data-target="trending-songs-cards">&lt;</button>
-                    <div class="cardcontainer" id="trending-songs-cards">
-                        <div class="card" data-album-id="6879fa6ab29a102ef22ed744">
-
-                            <img src="https://i.scdn.co/image/ab67616d00001e02a7e251b543c77a6ed356dfbe"
-                                alt="Saiyaara Album Art">
-                            <div class="play-button card-play-button" data-album-id="6879fa6ab29a102ef22ed744">
-
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">Saiyaara (From "Saiyaara")</div>
-                            <div class="card-artists">Tanishk Bagchi, Faheem Abdullah, Arslan Nizami, Irshad Kamil</div>
-                        </div>
-                        <div class="card" data-album-id="6879349573d641c48a1ca636">
-
-                            <img src="https://i.scdn.co/image/ab67616d0000b273781faf59a3cb980fe3b493f8"
-                                alt="Saiyaara Album Art">
-                            <div class="play-button card-play-button" data-album-id="6879349573d641c48a1ca636">
-
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">Dhun (From "Saiyaara")</div>
-                            <div class="card-artists">Mithoon,Arjit singh</div>
-                        </div>
-                        <div class="card" data-album-id="687a120cb29a102ef22ed748">
-                            <img src="https://i.scdn.co/image/ab67616d0000b273bac6fad80a0e81256ee15c40"
-                                alt="Saiyaara Album Art">
-                            <div class="play-button card-play-button" data-album-id="687a120cb29a102ef22ed748">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">JEE NA PAAYE</div>
-                            <div class="card-artists">Haniska Pareek,Priyankit Jaiswal</div>
-                        </div>
-                        <div class="card" data-album-id="68792b6884384901a6506170">
-                            <img src="https://i.scdn.co/image/ab67616d0000b2730a47bbe7141fdfe0eb2cdba7" alt="Sahiba">
-                            <div class="play-button card-play-button" data-album-id="68792b6884384901a6506170">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">Sahiba</div>
-                            <div class="card-artists">Aditya</div>
-                        </div>
-                        <div class="card" data-album-id="68790c3b84384901a650616c">
-                            <img src="https://i.scdn.co/image/ab67616d0000b273f42805148e916145f858318b"
-                                alt="Ishg Bawla|Coke studio bharat">
-                            <div class="play-button card-play-button" data-album-id="68790c3b84384901a650616c">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">Ishq Bawla|Coke studio bharat</div>
-                            <div class="card-artists">Dhanda Nyoliwa</div>
-                        </div>
-                        <div class="card" data-album-id="68790ad884384901a650616a">
-
-                            <img src="https://i.scdn.co/image/ab67616d0000b273fa06cc36705ff81cd22c884c"
-                                alt="Ishg Bawla|Coke studio bharat">
-                            <div class="play-button card-play-button" data-album-id="68790ad884384901a650616a">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">Show Off</div>
-                            <div class="card-artists">Prem Dholon,Iqbal</div>
-                        </div>
-                        <div class="card" data-album-id="687909df84384901a6506168">
-                            <img src="https://i.scdn.co/image/ab67616d0000b273f7f5503cfc6a54d31e65b112"
-                                alt="Ishg Bawla|Coke studio bharat">
-                            <div class="play-button card-play-button" data-album-id="687909df84384901a6506168">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">Shower</div>
-                            <div class="card-artists">BeckyG</div>
-                        </div>
-                        <div class="card" data-album-id="687908e084384901a6506166">
-                            <img src="https://i.scdn.co/image/ab67616d0000b273786a26c64ff6b997a9552910"
-                                alt="Ishg Bawla|Coke studio bharat">
-                            <div class="play-button card-play-button" data-album-id="687908e084384901a6506166">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">At Peace</div>
-                            <div class="card-artists">Karan Ujla.Ikky</div>
-                        </div>
-                    </div>
-                    <button class="carousel-nav-btn next-btn" data-target="trending-songs-cards">&gt;</button>
-                </div>
-            </div>
-
-            <div class="AlbumPlaylists">
-                <div class="section-heading">
-                    <h1>Popular albums</h1>
-                </div>
-                <div class="carousel-wrapper">
-                    <button class="carousel-nav-btn prev-btn" data-target="popular-albums-cards">&lt;</button>
-                    <div class="cardcontainer" id="popular-albums-cards">
-                        <div class="card" data-album-id="687a08e6b29a102ef22ed746">
-                            <img src="https://i.scdn.co/image/ab67616d0000b2736404721c1943d5069f0805f3"
-                                alt="Saiyaara Album Art">
-                            <div class="play-button card-play-button" data-album-id="687a08e6b29a102ef22ed746">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">Aashiqui 2</div>
-                            <div class="card-artists">Mithoon, Ankit Tiwari, Jeet Gannguli</div>
-                        </div>
-                        <div class="card" data-album-id="68836dafda78931723317153">
-
-                            <img src="https://i.scdn.co/image/ab67616d0000b273707ea5b8023ac77d31756ed4"
-                                alt="Saiyaara Album Art">
-                            <div class="play-button card-play-button" data-album-id="68836dafda78931723317153">
-
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">Yeh Jawaani Hai Deewani</div>
-                            <div class="card-artists">Pritam</div>
-                        </div>
-                        <div class="card" data-album-id="68836d2dda78931723317151">
-                            <img src="https://i.scdn.co/image/ab67616d0000b273711c1639b4bc0f9978ae77a6"
-                                alt="Saiyaara Album Art">
-                            <div class="play-button card-play-button" data-album-id="68836d2dda78931723317151">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">Sanam Teri Kasam</div>
-                            <div class="card-artists">Himesh Reshmiya,Sameer</div>
-                        </div>
-                        <div class="card" data-album-id="6879064984384901a6506164">
-                            <img src="https://i.scdn.co/image/ab67616d0000b2731aa5adad8593923dcdf1a7d0"
-                                alt="Saiyaara Album Art">
-                            <div class="play-button card-play-button" data-album-id="6879064984384901a6506164">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">Unlimited love songs</div>
-                            <div class="card-artists">Arjit Singh</div>
-                        </div>
-                        <div class="card" data-album-id="68836e34da78931723317155">
-                            <img src="https://i.scdn.co/image/ab67616d00001e02a2d5857ebcd5a4d5695ca8d4"
-                                alt="Aur Mohabbat Album Art">
-                            <div class="play-button card-play-button"68836e34da78931723317155">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">Aur Mohabbat Kitni Karoon</div>
-                            <div class="card-artists">Pritam, Arijit Singh, Sandeep Srivastava</div>
-                        </div>
-
-                        <div class="card" data-album-id="6871f5a419d863c7966eeef5">
-                            <img src="https://i.scdn.co/image/ab67616d0000b27383141000ee8ce3b893a0b425"
-                                alt="Aur Mohabbat Album Art">
-                            <div class="play-button card-play-button" data-album-id="6871f5a419d863c7966eeef5">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">Finding Her</div>
-                            <div class="card-artists">Kushgra Barat,Saheed</div>
-                        </div>
-                        <div class="card" data-album-id="6871f28b19d863c7966eeef3">
-
-                            <img src="https://i.scdn.co/image/ab67616d0000b273773c5f60bcb309ef8802e4ef"
-                                alt="Aur Mohabbat Album Ar">
-                            <div class="play-button card-play-button" data-album-id="6871f28b19d863c7966eeef3">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">Raanjhan</div>
-                            <div class="card-artists">Sachet-Parampara, Parampara Tandon, Kausar Munir</div>
-                        </div>
-                    </div>
-                    <button class="carousel-nav-btn next-btn" data-target="popular-albums-cards">&gt;</button>
-                </div>
-            </div>
-            <div class="popular-artists">
-                <div class="section-heading">
-                    <h1>Popular artists</h1>
-                </div>
-                <div class="carousel-wrapper">
-                    <button class="carousel-nav-btn prev-btn" data-target="popular-artists-cards">&lt;</button>
-                    <div class="artist-card-container cardcontainer" id="popular-artists-cards">
-                        <div class="card artist-card" data-album-id="6878fda984384901a6506159">
-                            <img src="https://i.scdn.co/image/ab67616100005174cb6926f44f620555ba444fca" alt="Pritam">
-                            <div class="play-button card-play-button" data-album-id="6878fda984384901a6506159">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">Pritam</div>
-                            <div class="card-artists">Artist</div>
-                        </div>
-                        <div class="card artist-card" data-album-id="687212d419d863c7966eeefa">
-                            <img src="https://i.scdn.co/image/ab67616100005174b19af0ea736c6228d6eb539c
-                                " alt="A.R. Rahman">
-                            <div class="play-button card-play-button" data-album-id="687212d419d863c7966eeefa">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">A.R. Rahman</div>
-                            <div class="card-artists">Artist</div>
-                        </div>
-                        <div class="card artist-card" data-album-id="6878fda984384901a6506159">
-                            <img src="https://i.scdn.co/image/ab676161000051745ba2d75eb08a2d672f9b69b7
-                                " alt="Arijit Singh">
-                            <div class="play-button card-play-button" data-album-id="6878fda984384901a6506159">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">Arijit Singh</div>
-                            <div class="card-artists">Artist</div>
-                        </div>
-                        <div class="card artist-card" data-album-id="6879023b84384901a650615d">
-
-                            <img src="https://i.scdn.co/image/ab67616100005174bb4064bef3a825344d5eb79e
-" alt="Sachin-Jigar">
-                            <div class="play-button card-play-button" data-album-id="6879023b84384901a650615d">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">Sachin-Jigar</div>
-                            <div class="card-artists">Artist</div>
-                        </div>
-                        <div class="card artist-card" data-album-id="686e29e3a8b53196ce754861">
-                            <img src="https://i.scdn.co/image/ab6761610000517490b6c3d093f9b02aad628eaf"
-                                alt="Vishal-Shekhar" />
-                            <div class="play-button card-play-button" data-album-id="686e29e3a8b53196ce754861">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">Vishal-Shekhar</div>
-                            <div class="card-artists">Artist</div>
-                        </div>
-                        <div class="card artist-card" data-album-id="687904e784384901a6506160">
-                            <img src="https://i.scdn.co/image/ab67616100005174c40600e02356cc86f0debe84"
-                                alt="Atif Aslam" />
-                            <div class="play-button card-play-button" data-album-id="687904e784384901a6506160">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">Atif Aslam</div>
-                            <div class="card-artists">Artist</div>
-                        </div>
-                        <div class="card artist-card" data-album-id="6879058d84384901a6506162">
-                            <img src="https://i.scdn.co/image/ab676161000051740f0be2054fe9594026a6b843"
-                                alt="Anirudh Ravichander" />
-                            <div class="play-button card-play-button" data-album-id="6879058d84384901a6506162">
-                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="12" fill="#1ED760" />
-                                    <polygon points="9,6 19,12 9,18" fill="#000000" />
-                                </svg>
-                            </div>
-                            <div class="card-title">Anirudh Ravichander</div>
-                            <div class="card-artists">Artist</div>
-                        </div>
-                    </div>
-                    <button class="carousel-nav-btn next-btn" data-target="popular-artists-cards">&gt;</button>
-                </div>
-            </div>
-                
+       <div id="albumOverlay" class="album-overlay hidden">
+    <div id="album-overlay-scroll-content" class="album-overlay-content">
+       <div id="album-header-content" class="album-header">
+    <img id="albumDetails-cover" src="https://placehold.co/250x250/000/fff?text=Album" alt="Album Cover" class="album-cover" />
+    <div class="album-info">
+        <h1 id="albumDetails-title">Album Title</h1>
+        <div class="artist-info-container">
             
-           <!-- New playbar for album overlay - visible on mobile/tablet -->
-                  
-                </div>
+            <p id="albumDetails-artist">Artist Name</p>
+        </div>
+        <p id="albumDetails-meta">Album • Year • Genre</p>
+    </div>
+</div>
+<div class="album-actions-container">
+    <div class="album-buttons-left">
+        <button class="action-btn" id="album-add-btn" aria-label="Add to playlist">
+            <svg xmlns="http://www.w3.org/2000/svg" height="28px" viewBox="0 0 24 24" width="28px" fill="#a7a7a7">
+                <path d="M0 0h24v24H0V0z" fill="none"/>
+                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+            </svg>
+        </button>
+        <button class="action-btn" id="album-download-btn" aria-label="Download">
+            <svg xmlns="http://www.w3.org/2000/svg" height="28px" viewBox="0 0 24 24" width="28px" fill="#a7a7a7">
+                <path d="M0 0h24v24H0V0z" fill="none"/>
+                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+            </svg>
+        </button>
+        <button class="action-btn" id="album-options-btn" aria-label="More options">
+            <svg xmlns="http://www.w3.org/2000/svg" height="28px" viewBox="0 0 24 24" width="28px" fill="#a7a7a7">
+                <path d="M0 0h24v24H0V0z" fill="none"/>
+                <path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+            </svg>
+        </button>
+    </div>
+    <div class="album-buttons-right">
+        <button id="album-play" class="big-play-btn" aria-label="Play"></button>
+    </div>
+</div>
+<div id="album-search-trigger" class="album-search-bar-trigger">
+    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#a7a7a7"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+    <span>Find in playlist</span>
+</div>
 
-                <div id="album-full-embed-container"
-                    style="width: 100%; height: 352px; margin-top: 0px; border-radius: 12px; overflow: hidden; display: none;">
-                </div>
+        <div class="album-tracks">
+            <table>
+                <tbody id="albumDetails-tracks"></tbody>
+            </table>
+        </div>
+    </div>
 
+    <div id="album-compact-header" class="album-compact-header">
+        <button class="close-overlay">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12l4.58-4.59z"/></svg>
+        </button>
+        <span id="compact-header-title">Album Title</span>
+       
+    </div>
+
+    <div class="album-top-controls">
+         <button class="close-overlay">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12l4.58-4.59z"/></svg>
+        </button>
+    </div>
+    
+    <div id="album-full-embed-container"></div>
+    
+    <div id="album-search-view" class="album-search-view">
+        <div class="album-search-header">
+            <button id="album-search-back-btn" class="album-search-back-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
+            </button>
+            <input type="text" id="album-search-input" placeholder="Find in playlist" autocomplete="off">
+            <button id="album-search-clear-btn" class="album-search-clear-btn hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+            </button>
+        </div>
+        <div id="album-search-results" class="album-search-results">
             </div>
+        <div id="album-no-search-results" class="album-no-search-results hidden">
+             <h3>No results found for "<span id="no-results-query"></span>"</h3>
+             <p>Check the spelling or try different keywords.</p>
+        </div>
+    </div>
+
+    
+    <div id="album-full-embed-container"></div>
+</div>
 
 
            <div class="swarify-add-popup-overlay" id="add-popup-overlay">

@@ -8102,3 +8102,222 @@ tr.playing td:nth-child(1) {
         max-width: none !important;
     }
 }
+
+/* Container for the "You might also like" section */
+#similar-albums-section {
+    padding: 20px;
+    margin-top: 20px;
+}
+
+/* This overrides the default horizontal flex layout of .cardcontainer 
+  and turns it into a responsive grid for the recommendations.
+*/
+#similar-albums-container {
+    display: grid;
+    /* This creates responsive columns: they will be at least 160px wide but will grow to fill space. */
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 20px;
+    overflow-x: hidden; /* Ensure no horizontal scrolling */
+    flex-wrap: wrap; /* Allow cards to wrap in the grid */
+}
+
+/* Ensure cards inside this new grid behave correctly */
+#similar-albums-container .card {
+    width: 100%; /* Make cards fill their grid cell */
+    flex-basis: auto; /* Override any fixed flex-basis */
+}
+
+/* In style.css */
+
+/* REPLACE your existing .album-overlay-content rule with this one */
+.album-overlay-content {
+    height: 100%;
+    width: 100%;
+    overflow-y: auto; /* This is the key property that makes the container scroll */
+    background: linear-gradient(to bottom, var(--album-dominant-color), var(--spotify-black) 400px);
+    color: var(--text-primary);
+    padding-bottom: 90px; /* Space for the player bar */
+    /* We remove display:flex to let children flow as normal blocks */
+}
+
+/* ADD this new rule to ensure the tracks section behaves correctly */
+.album-tracks {
+    padding: 0 10px;
+    width: 100%;
+}
+
+/* Ensure your recommendation section styles from the previous step are also present */
+#similar-albums-section {
+    padding: 20px;
+    margin-top: 20px;
+}
+
+#similar-albums-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 20px;
+    overflow-x: hidden;
+    flex-wrap: wrap;
+}
+
+#similar-albums-container .card {
+    width: 100%;
+    flex-basis: auto;
+}
+
+
+/* In style.css */
+
+/* REPLACE your existing .album-overlay-content rule with this one */
+.album-overlay-content {
+    height: 100%;
+    width: 100%;
+    overflow-y: auto; /* This is the key property that makes the container scroll */
+    background: linear-gradient(to bottom, var(--album-dominant-color), var(--spotify-black) 400px);
+    color: var(--text-primary);
+    padding-bottom: 90px; /* Space for the player bar */
+    /* We REMOVED display:flex to let children flow as normal blocks */
+}
+
+/* ADD THIS NEW UTILITY CLASS AT THE END OF YOUR CSS FILE */
+.hidden {
+    display: none !important;
+}
+
+/* Ensure your other styles for the section are present */
+#similar-albums-section {
+    padding: 20px;
+    margin-top: 30px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+#similar-albums-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 20px;
+}
+#similar-albums-container .card {
+    width: 100%;
+}
+
+/* ======================================================= */
+/* FINAL CORRECTED STYLES FOR ALBUM OVERLAY                */
+/* Replace all existing .album-overlay styles with this.   */
+/* ======================================================= */
+
+/* --- Main Overlay Shell --- */
+.album-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #121212;
+    z-index: 9999;
+    display: none; /* Controlled by JS */
+    overflow: hidden; /* Prevent the shell itself from scrolling */
+}
+.album-overlay.show {
+    display: block;
+}
+
+/* --- The SINGLE Scrollable Content Area --- */
+/* This is the most important correction. We remove flexbox here */
+/* and let content stack naturally in a scrollable view. */
+#album-overlay-scroll-content {
+    height: 100%;
+    width: 100%;
+    overflow-y: auto; /* This makes the entire container scrollable */
+    background: linear-gradient(to bottom, var(--album-dominant-color), #121212 400px);
+    color: var(--text-primary);
+    padding-bottom: 90px; /* Space for the player bar */
+}
+/* Hide the scrollbar for a clean look */
+#album-overlay-scroll-content::-webkit-scrollbar { display: none; }
+#album-overlay-scroll-content { -ms-overflow-style: none; scrollbar-width: none; }
+
+
+/* --- Main Header Section (No changes needed, but included for completeness) --- */
+.album-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 70px 20px 20px 20px;
+}
+.album-cover {
+    width: 250px;
+    height: 250px;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    margin-bottom: 24px;
+}
+.album-info {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+}
+.album-info h1#albumDetails-title {
+    font-size: 1.75rem;
+    font-weight: 900;
+    margin: 0 0 8px 0;
+    color: #FFFFFF;
+}
+/* ... other album-info styles ... */
+
+/* --- Action Buttons & Tracklist (No changes needed) --- */
+.album-actions-container {
+    padding: 0 20px;
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    box-sizing: border-box;
+}
+.album-tracks {
+    padding: 10px 20px 0 20px; /* Consistent horizontal padding */
+}
+#albumDetails-tracks td {
+    border-bottom: none;
+}
+
+/* --- "You might also like" Section --- */
+#similar-albums-section {
+    padding: 0px;
+    margin-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+#similar-albums-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 20px;
+}
+#similar-albums-container .card {
+    width: 100%;
+}
+
+
+/* ======================================================== */
+/* MOBILE CARD LAYOUT FIX (to match the screenshot)       */
+/* Place this at the very end of your style.css file.     */
+/* ======================================================== */
+
+@media (max-width: 768px) {
+    /* This targets the container for the "You might also like" cards on mobile */
+    #similar-albums-container {
+        /* FORCE a 2-column grid layout, like in the screenshot */
+        grid-template-columns: repeat(2, 1fr) !important;
+        /* Reduce the space between cards for a tighter look */
+        gap: 15px !important;
+    }
+
+    /* This targets the cards ONLY within that specific section */
+    #similar-albums-container .card {
+        /* Make the card slightly taller than it is wide, closer to the screenshot's shape */
+        aspect-ratio: 1 / 1.2 !important;
+
+        /* Remove old properties that are not needed for this grid layout */
+        flex: none !important;
+        min-width: auto !important;
+        max-width: none !important;
+    }
+}

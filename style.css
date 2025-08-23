@@ -8061,3 +8061,44 @@ tr.playing td:nth-child(1) {
     0%, 100% { background-size: 5px 20%, 5px 60%; }
     50% { background-size: 5px 100%, 5px 30%; }
 }
+/* --- "You might also like" Section --- */
+#similar-albums-section {
+    padding: 0px;
+    margin-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+#similar-albums-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 20px;
+}
+#similar-albums-container .card {
+    width: 100%;
+}
+
+
+/* ======================================================== */
+/* MOBILE CARD LAYOUT FIX (to match the screenshot)       */
+/* Place this at the very end of your style.css file.     */
+/* ======================================================== */
+
+@media (max-width: 768px) {
+    /* This targets the container for the "You might also like" cards on mobile */
+    #similar-albums-container {
+        /* FORCE a 2-column grid layout, like in the screenshot */
+        grid-template-columns: repeat(2, 1fr) !important;
+        /* Reduce the space between cards for a tighter look */
+        gap: 15px !important;
+    }
+
+    /* This targets the cards ONLY within that specific section */
+    #similar-albums-container .card {
+        /* Make the card slightly taller than it is wide, closer to the screenshot's shape */
+        aspect-ratio: 1 / 1.2 !important;
+
+        /* Remove old properties that are not needed for this grid layout */
+        flex: none !important;
+        min-width: auto !important;
+        max-width: none !important;
+    }
+}

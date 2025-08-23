@@ -8274,7 +8274,7 @@ tr.playing td:nth-child(1) {
     box-sizing: border-box;
 }
 .album-tracks {
-    padding: 10px 20px 0 20px; /* Consistent horizontal padding */
+    padding: 3px;
 }
 #albumDetails-tracks td {
     border-bottom: none;

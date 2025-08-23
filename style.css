@@ -6001,6 +6001,106 @@ input[type="range"]#full-screen-progress-bar::-moz-range-thumb {
     /* ... existing styles ... */
     cursor: pointer;
 }
+#carousel-song-title {
+  font-size: clamp(2rem, 5vw, 4.5rem); /* Slightly larger */
+  font-weight: 900;
+  margin: 0 0 0.5rem 0;
+  opacity: 0;
+  transform: translateY(25px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+
+  /* --- Gradient Text Style --- */
+  /* This example uses a static gradient; your JS can make it dynamic */
+  background: linear-gradient(45deg, #f3ec78, #af4261);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+  /* Use a filter for shadow on gradient text, as text-shadow won't work */
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.7));
+}
+
+#carousel-song-details {
+  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+  font-weight: 700;
+  color: #FFFFFF; /* Keep artist name solid white for contrast */
+  margin: 0;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease-out 0.15s, transform 0.8s ease-out 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+}
+
+#carousel-song-title {
+  font-size: clamp(2rem, 5vw, 4.5rem);
+  font-weight: 900;
+  margin: 0 0 0.5rem 0;
+  opacity: 0;
+  transform: translateY(25px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out, color 0.8s ease-in-out;
+
+  /* --- Outline (Stroke) Style --- */
+  color: #FFFFFF; /* This is the inner fill color of the text */
+  -webkit-text-stroke: 2px #111111; /* The thickness and color of the outline */
+  text-stroke: 2px #111111;
+  text-shadow: none; /* A shadow is usually not needed with a stroke */
+}
+
+#carousel-song-details {
+  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease-out 0.15s, transform 0.8s ease-out 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+}
+
+#carousel-song-title {
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 900;
+  color: #FFFFFF; /* This color will be dynamically changed by JS */
+  margin: 0 0 0.5rem 0;
+  opacity: 0;
+  transform: translateY(25px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out, color 0.8s ease-in-out, text-shadow 0.8s ease-in-out;
+
+  /* --- Layered Glow & Shadow Style --- */
+  /* This creates a soft outer glow AND a sharp inner shadow for maximum effect */
+  text-shadow: 
+    0 0 25px rgba(0, 0, 0, 0.8),  /* Soft, wide dark glow for depth */
+    0 2px 4px rgba(0, 0, 0, 0.7);  /* Sharper shadow for readability */
+}
+
+#carousel-song-details {
+  font-size: clamp(0.8rem, 2.5vw, 1rem); /* Slightly smaller */
+  font-weight: 500; /* Medium weight for a more elegant look */
+  color: #E0E0E0;
+  margin: 0;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease-out 0.15s, transform 0.8s ease-out 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.1em; /* Wider spacing for a refined feel */
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+.carousel-actions{
+    position: relative;
+    top:-18px;
+    right:-12px;
+}
 /* In style.css, inside the @media (max-width: 480px) block */
 
 .trending-carousel-container {

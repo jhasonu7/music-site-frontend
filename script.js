@@ -1927,21 +1927,53 @@ async function fetchAndRenderRecommendedSongs(playlistId) {
         recommendedSongsContainer.innerHTML = '<p class="text-center text-gray-400 py-4 col-span-full">Could not load recommendations.</p>';
     }
 }
-// END: Replacement for fetchAndRenderRecommendedSongs
-// END: Replacement for fetchAndRenderRecommendedSongs
-// END: Replacement for fetchAndRenderRecommendedSongs
 
-// ... (rest of your existing code) ...
+// In script.js, REPLACE the entire fetchAndDisplaySimilarAlbums function
 
-// You can add this right after your existing utility functions.
+async function fetchAndDisplaySimilarAlbums(currentAlbum) {
+    const container = document.getElementById('similar-albums-container');
+    const section = document.getElementById('similar-albums-section');
+    if (!container || !section) {
+        console.error("CRITICAL: Could not find the HTML elements for the recommendations section.");
+        return;
+    }
 
-// Plays a specific track, handling different media types (YouTube, Spotify, SoundCloud, native audio).
-// It updates the player bar UI and manages the progress bar.
-/**
- * CORRECTED FUNCTION - Replaces the old version
- * Plays a specific track, handling different media types.
- * This version prevents the restored `playingAlbum` state from being overwritten on the first play after a reload.
- */
+    // This makes the section visible. The new CSS ensures it has space to appear.
+    section.style.display = '';
+    section.classList.remove('hidden');
+    container.innerHTML = '<p style="color: #b3b3b3; grid-column: 1 / -1; text-align: center;">Loading recommendations...</p>';
+
+    try {
+        const artistQuery = encodeURIComponent(currentAlbum.artist || '');
+        const genreQuery = encodeURIComponent(currentAlbum.genre || '');
+        const currentAlbumId = encodeURIComponent(currentAlbum.id || '');
+        
+        const fetchURL = `${BACKEND_BASE_URL}/api/recommendations?artist=${artistQuery}&genre=${genreQuery}&exclude=${currentAlbumId}&limit=12`;
+
+        const response = await fetch(fetchURL);
+        const similarAlbums = await response.json();
+
+        if (Array.isArray(similarAlbums) && similarAlbums.length > 0) {
+            // SUCCESS: Render the album cards
+            container.innerHTML = '';
+            similarAlbums.forEach(album => {
+                const cardHtml = createAlbumCardHtml(album);
+                container.insertAdjacentHTML('beforeend', cardHtml);
+            });
+            // Re-attach listeners to ALL cards, including the new ones.
+            attachEventListenersToHtmlCards();
+        } else {
+            // NO RESULTS: Display a clear message.
+            console.log("Backend returned an empty list of recommendations.");
+            container.innerHTML = `<p style="color: #b3b3b3; text-align: center; grid-column: 1 / -1;">No similar albums found.</p>`;
+        }
+    } catch (error) {
+        // ERROR: Display an error message.
+        console.error('ERROR fetching similar albums:', error);
+        container.innerHTML = `<p style="color: #ff4d4d; grid-column: 1 / -1; text-align: center;">Could not load recommendations.</p>`;
+    }
+}
+
 async function playTrack(track, indexInAlbum, initialSeekTime = 0) {
     if (!isPlayingFromLikedSongs) {
         isPlayingFromLikedSongs = false;
@@ -2600,7 +2632,8 @@ function openAlbumDetails(albumData, highlightTrackTitle = null) {
         albumOverlay.style.top = `${topBarHeight}px`;
         togglePlayerControls(false); // Disable main controls for embedded content
 
-    } else { // This block handles non-embedded albums
+    } 
+    else { // This block handles non-embedded albums
         albumDetailsContent.style.display = 'block';
         albumFullEmbedContainer.style.display = 'none';
         albumOverlay.classList.add('tracklist-view');
@@ -2670,7 +2703,7 @@ if (albumCover) {
             });
         }
         }
-        
+         fetchAndDisplaySimilarAlbums(albumData);
         // Enable player controls for tracklist albums
         togglePlayerControls(true);
     }
@@ -2926,6 +2959,16 @@ function closeAlbumOverlay() {
                 }
                 albumFullEmbedContainer.style.display = 'none';
             }
+        }
+
+         const similarAlbumsSection = document.getElementById('similar-albums-section');
+        const similarAlbumsContainer = document.getElementById('similar-albums-container');
+        if (similarAlbumsSection) {
+           similarAlbumsSection.classList.add('hidden');
+        }
+        if (similarAlbumsContainer) {
+            // Clear the content to prevent showing old recommendations
+            similarAlbumsContainer.innerHTML = '';
         }
     }
     toggleMainPlaybarView();
@@ -4084,15 +4127,6 @@ if (bottomSearchLink) {
         openSearchPopup();
     });
 }
-
-// ---------------------------
-// Initial data fetch on load
-// ---------------------------
-document.addEventListener("DOMContentLoaded", () => {
-    fetchAlbums();
-});
-
-// ----------
 
 
 function firstClickEmbedHandler() {

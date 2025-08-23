@@ -6500,3 +6500,1956 @@ input[type="range"]#full-screen-progress-bar::-moz-range-thumb {
     height: 45vh; /* Reduced from 60vh */
     min-height: 300px; /* Reduced from 400px */
 }
+/* --- Album Overlay General --- */
+/* This is the main container, hidden by default */
+.album-overlay {
+    position: fixed;
+    top: 0; /* Changed for full-screen view on mobile */
+    left: 0; /* Changed for full-screen view on mobile */
+    width: 100%; /* Changed for full-screen view on mobile */
+    height: 100%; /* Changed for full-screen view on mobile */
+    background: #121212; /* Fallback background */
+    z-index: 999;
+    display: none; /* Initially hidden */
+    overflow: hidden; /* Prevent body scroll */
+}
+
+/* Add this class with JS to show the overlay */
+.album-overlay.show {
+    display: block;
+}
+
+/* This is the scrollable content area with the gradient */
+.album-overlay-content {
+    width: 100%;
+    height: 100%;
+    /* The dynamic gradient that gives the Spotify feel. JS would change the start color. */
+    background: linear-gradient(to bottom, rgba(83, 83, 83, 0.6), #121212 40%);
+    color: white;
+    display: flex;
+    flex-direction: column; /* Stack header and tracklist vertically */
+    overflow-y: auto; /* Allow scrolling for the entire content area */
+    padding-bottom: 90px; /* Space for the player bar */
+}
+/* Hide the scrollbar for a cleaner look */
+.album-overlay-content::-webkit-scrollbar {
+    display: none;
+}
+.album-overlay-content {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+}
+
+
+/* --- Close Button --- */
+.close-overlay {
+    background-color: rgba(0, 0, 0, 0.7);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 28px;
+    font-weight: 300;
+    line-height: 1;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 15px;
+    left: 15px; /* Changed from right to left as per some mobile UI patterns */
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    z-index: 1000;
+}
+.close-overlay:hover {
+    transform: scale(1.1);
+}
+
+
+/* --- Header Section (Cover Art & Info) --- */
+.album-header {
+    display: flex;
+    flex-direction: column; /* Mobile-first: stacked vertically */
+    align-items: center; /* Center content */
+    text-align: center;
+    padding: 60px 20px 20px 20px; /* Top padding for space below close button */
+    gap: 15px;
+    flex-shrink: 0; /* Prevent this section from shrinking */
+}
+
+.album-cover {
+    width: 200px;
+    height: 200px;
+    border-radius: 4px;
+    object-fit: cover;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); /* Prominent shadow */
+}
+
+.album-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center text vertically */
+    gap: 8px;
+}
+
+.album-info .album-type {
+    display: none; /* Often hidden in the mobile view, cleaner look */
+}
+
+.album-info h1 {
+    font-size: clamp(24px, 5vw, 32px);
+    font-weight: 900;
+    margin: 0;
+}
+
+.album-info p {
+    font-size: 14px;
+    color: #b3b3b3;
+    margin: 0;
+}
+
+
+/* --- Buttons Section --- */
+.album-buttons {
+    display: flex;
+    padding: 0 20px 20px 20px;
+    gap: 20px;
+    justify-content: space-between; /* Space out buttons */
+    align-items: center;
+    width: 100%;
+    max-width: 300px; /* Limit width on larger screens */
+    margin: 0 auto; /* Center the buttons container */
+    flex-shrink: 0; /* Prevent this section from shrinking */
+}
+
+/* Group for left-aligned buttons */
+.album-buttons .left-actions {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+#album-play {
+    background-color: #1ED760;
+    color: black;
+    border: none;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    width: 56px;
+    height: 56px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    order: 2; /* Puts it at the end */
+}
+#album-play:hover {
+    transform: scale(1.05);
+}
+
+.btn1, .btn2, .btn3 {
+    background-color: transparent;
+    color: #b3b3b3;
+    border: none;
+    padding: 0;
+    font-size: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+.btn1:hover, .btn2:hover, .btn3:hover {
+    color: white;
+}
+.btn1 { order: 1; } /* First item in left group */
+.btn2 { order: 2; }
+.btn3 { order: 3; }
+
+
+/* --- Tracklist Section --- */
+.album-tracks {
+    padding: 0 10px; /* Padding for the track list */
+    width: 100%;
+}
+
+.album-tracks table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.album-tracks th {
+    /* Hide table headers as they are not present in the mobile UI */
+    display: none;
+}
+
+.album-tracks td {
+    padding: 12px 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: left;
+    vertical-align: middle;
+}
+.album-tracks tr:last-child td {
+    border-bottom: none; /* No border for the last track */
+}
+
+.album-tracks tr {
+    transition: background-color 0.2s ease;
+}
+.album-tracks tr:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+}
+
+/* Specific Column Styling */
+/* # Column */
+.album-tracks td:nth-child(1) {
+    width: 40px;
+    text-align: center;
+    color: #b3b3b3;
+}
+/* Title/Artist Column */
+.album-tracks td:nth-child(2) {
+    font-weight: 600;
+}
+/* This can be a placeholder for artist info if you add it later */
+.album-tracks td:nth-child(3) { display: none; }
+
+/* Duration/Options Column */
+.album-tracks td:nth-child(4) {
+    width: 40px;
+    text-align: center;
+    color: #b3b3b3;
+    font-size: 20px;
+    font-weight: bold;
+    /* You can put a 'more options' icon here, like '...' */
+}
+/* Add a more options button to your HTML in the last td for this */
+.album-tracks td:nth-child(4)::before {
+    content: '...';
+    line-height: 0;
+}
+
+/* --- Playing Track Styling --- */
+tr.playing td {
+    color: #1ED760 !important; /* Green color for all text in the row */
+}
+
+tr.playing td:nth-child(1) {
+    color: transparent; /* Hide the track number */
+    position: relative;
+}
+
+
+@keyframes pulse-bars {
+    0%, 100% { background-size: 5px 20%, 5px 60%; }
+    50% { background-size: 5px 100%, 5px 30%; }
+}
+
+
+/* --- Search Highlight Styling --- */
+.highlighted {
+    background-color: rgba(30, 215, 96, 0.2) !important;
+    border-left: 3px solid #1ED760;
+}
+
+
+/* --- Responsive Desktop/Tablet View --- */
+@media screen and (min-width: 768px) {
+    .album-overlay {
+        left: 25%; /* Starts after sidebar */
+        width: 75%; /* Matches main content area */
+        height: calc(100% - 90px); /* Space for player bar */
+        top:0;
+    }
+    .album-overlay-content {
+        padding-bottom: 0; /* No extra padding needed */
+    }
+    .close-overlay {
+        top: 15px;
+        right: 15px; /* Move to top right on desktop */
+        left: auto;
+    }
+    .album-header {
+        flex-direction: row; /* Side-by-side layout */
+        text-align: left;
+        align-items: flex-end; /* Align to the bottom */
+        padding: 60px 30px 20px 30px;
+        gap: 25px;
+    }
+    .album-cover {
+        width: 232px;
+        height: 232px;
+    }
+    .album-info {
+        align-items: flex-start;
+    }
+    .album-info .album-type {
+        display: block; /* Show album type */
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 12px;
+    }
+    .album-info h1 {
+        font-size: clamp(48px, 8vw, 92px); /* Much larger on desktop */
+    }
+    .album-buttons {
+        justify-content: flex-start; /* Align to the left */
+        margin: 0;
+        max-width: none;
+        padding: 20px 30px;
+    }
+    #album-play { order: 0; }
+    .left-actions { order: 1; }
+    .album-tracks { padding: 0 30px; }
+}
+
+
+
+
+
+/*embedded style*/
+
+/* --- Embedded Album View Styles --- */
+#albumOverlay.embedded-view {
+    left: 25%; /* Default for larger screens */
+}
+
+#albumFullEmbedContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #000;
+    z-index: 1;
+}
+
+#albumFullEmbedContainer iframe {
+    border: 0;
+    border-radius: 12px;
+    width: 100%;
+    height: 100%;
+}
+
+/* Embedded View Header (Top Mask) */
+#embedded-overlay-top-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 188px;
+    z-index: 906;
+    background-color: #1d1b1bff;
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    box-sizing: border-box;
+    overflow: hidden;
+    box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+}
+
+.embedded-header-cover {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    margin-right: 15px;
+}
+.embedded-header-info {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow: hidden;
+}
+.embedded-header-info div {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    margin-bottom: 2px;
+}
+.embedded-header-title {
+    font-size: clamp(1.5em, 5vw, 2.5em);
+    font-weight: bold;
+    color: white;
+}
+.embedded-header-artist {
+    font-size: clamp(0.9em, 3vw, 1.2em);
+    color: #b3b3b3;
+}
+.embedded-header-meta {
+    font-size: clamp(0.7em, 2.5vw, 0.9em);
+    color: #a0a0a0;
+}
+
+/* Interaction Layer for first click */
+#embed-interaction-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1001;
+    cursor: pointer;
+    background-color: rgba(0,0,0,0);
+}
+
+/* Vertical Heart Strip for Embedded View */
+#vertical-heart-strip {
+    position: absolute;
+    right: 10px;
+    top: 200px; /* Position below the header */
+    bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 1002; /* Above interaction layer */
+}
+@media (max-width: 771px) {
+    #albumOverlay.embedded-view {
+        left: 0;
+    }
+}
+
+
+#album-full-embed-container {
+    height:60vh;
+}
+
+
+
+/* --- Root Variables --- */
+:root {
+    --spotify-black: #121212;
+    --spotify-green: #1ED760;
+    --text-primary: #FFFFFF;
+    --text-secondary: #b3b3b3;
+    --background-highlight: rgba(255, 255, 255, 0.1);
+    /* This will be set dynamically by JS */
+    --album-dominant-color: #444444; 
+}
+
+/* --- Main Overlay Shell --- */
+.album-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--spotify-black);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(100%);
+    transition: transform 0.35s ease-in-out, opacity 0.35s ease-in-out, visibility 0.35s;
+}
+
+.album-overlay.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* --- Scrollable Content Area --- */
+.album-overlay-content {
+    height: 100%;
+    width: 100%;
+    overflow-y: auto;
+    background: linear-gradient(to bottom, var(--album-dominant-color), var(--spotify-black) 350px);
+    color: var(--text-primary);
+    padding-bottom: 90px; /* Space for the player bar */
+}
+
+/* Hide scrollbar */
+.album-overlay-content::-webkit-scrollbar { display: none; }
+.album-overlay-content { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* --- Top Controls (Back/Search) --- */
+.album-top-controls {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 15px;
+    z-index: 1002;
+    transition: opacity 0.3s ease;
+}
+
+/* --- Compact Header (Appears on Scroll) --- */
+.album-compact-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background-color: var(--album-dominant-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    z-index: 1001;
+    opacity: 0;
+    transform: translateY(-100%);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#compact-header-title {
+    font-weight: bold;
+    font-size: 1rem;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+.compact-play-btn {
+    background-color: var(--spotify-green);
+    border-radius: 50%;
+    border: none;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: black;
+    margin-left: auto; /* Pushes it to the right */
+}
+
+/* --- State Change on Scroll --- */
+.album-overlay.is-scrolled .album-compact-header {
+    opacity: 1;
+    transform: translateY(0);
+}
+.album-overlay.is-scrolled .album-top-controls {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* --- General Controls --- */
+.close-overlay, .search-trigger-btn {
+    background: rgba(0, 0, 0, 0.4);
+    border: none;
+    border-radius: 50%;
+    color: var(--text-primary);
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --- Main Header Section --- */
+.album-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 80px 20px 20px 20px; /* Top padding for controls */
+}
+
+.album-cover {
+    width: 190px;
+    height: 190px;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    margin-bottom: 20px;
+}
+
+.album-info h1 {
+    font-size: 26px;
+    font-weight: 900;
+    margin: 0 0 8px 0;
+}
+.album-info p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* --- Action Buttons --- */
+.album-actions-container {
+    padding: 0 20px;
+}
+
+.album-buttons {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    position: relative;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+}
+.action-btn svg {
+    width: 28px;
+    height: 28px;
+}
+
+#album-play {
+    background-color: var(--spotify-green);
+    color: var(--spotify-black);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s ease;
+    margin-left: auto; /* Pushes play button to the right */
+}
+#album-play:hover { transform: scale(1.05); }
+
+/* --- Tracklist Table --- */
+.album-tracks {
+    padding: 10px 10px 0 10px;
+}
+.album-tracks table {
+    width: 100%;
+    border-collapse: collapse;
+}
+#albumDetails-tracks tr {
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+}
+#albumDetails-tracks tr:hover {
+    background-color: var(--background-highlight);
+    border-radius: 4px;
+}
+#albumDetails-tracks td {
+    padding: 10px;
+    text-align: left;
+    vertical-align: middle;
+    border-radius: 4px;
+}
+#albumDetails-tracks .track-title-cell {
+    line-height: 1.4;
+}
+#albumDetails-tracks .track-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+#albumDetails-tracks .track-artist {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+#albumDetails-tracks .track-options-cell {
+    text-align: right;
+}
+.track-options-btn {
+    background: none; border: none; color: var(--text-secondary);
+    cursor: pointer;
+}
+
+/* Playing State */
+#albumDetails-tracks tr.playing .track-title,
+#albumDetails-tracks tr.playing .track-artist {
+    color: var(--spotify-green);
+}
+
+/* --- NEW: Search Bar Trigger --- */
+.album-search-bar-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    margin-top: 15px;
+    cursor: text;
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.07);
+    border-radius: 4px;
+}
+.album-search-bar-trigger span {
+    color: #a7a7a7;
+    font-size: 1rem;
+}
+
+
+/* --- NEW: Album Search View --- */
+.album-search-view {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #121212;
+    z-index: 1003; /* Higher than other overlay content */
+    display: none; /* Initially hidden */
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Active state for search view */
+.album-overlay.search-active .album-search-view {
+    display: flex;
+    transform: translateX(0);
+}
+
+.album-search-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    gap: 10px;
+    background-color: #1a1a1a;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+.album-search-back-btn, .album-search-clear-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 5px;
+}
+.album-search-clear-btn.hidden {
+    display: none;
+}
+
+#album-search-input {
+    flex-grow: 1;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 16px;
+    outline: none;
+}
+
+.album-search-results {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+/* Style for each song row in the search results */
+.album-search-results .search-result-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.album-search-results .search-result-row:hover {
+    background-color: var(--background-highlight);
+}
+.search-result-row img {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+.search-result-row .track-info {
+    flex-grow: 1;
+    min-width: 0;
+}
+.search-result-row .track-title {
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.search-result-row .track-artist {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.search-result-row .track-options-btn {
+    color: var(--text-secondary);
+}
+
+
+/* No Results View */
+.album-no-search-results {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+}
+.album-no-search-results h3 {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+}
+.album-no-search-results p {
+    font-size: 1rem;
+}
+
+
+
+/* --- Single-Line Title & Artist with Truncation (Corrected) --- */
+
+/* Apply truncation rules to BOTH the title and the artist divs */
+#albumDetails-tracks .track-title,
+#albumDetails-tracks .track-artist {
+    white-space: nowrap;      /* Keep on a single line */
+    overflow: hidden;         /* Hide overflowing text */
+    text-overflow: ellipsis;  /* Show "..." */
+    display: block;           /* Ensures overflow rules work correctly */
+}
+/* Remove the line between tracks */
+#albumDetails-tracks td {
+    border-bottom: none;
+}
+
+/* --- Album Cover Styling --- */
+
+/* Default size for mobile and smaller screens */
+.album-cover {
+    width: 240px;  /* Increased from 190px */
+    height: 240px; /* Increased from 190px */
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    margin-bottom: 20px;
+}
+
+/* Larger size for desktop screens (768px and wider) */
+@media (max-width: 768px) {
+    .album-cover {
+        width: 300px;  /* Even larger for desktop */
+        height: 320px; /* Even larger for desktop */
+    }
+}
+
+/* --- New Album Header Styling --- */
+
+/* This is the main header container */
+.album-header {
+    height: 450px; /* Give the header a fixed height */
+    width: 100%;
+    padding: 60px 20px 20px 20px; /* Top padding for controls, bottom for actions */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* Aligns content to the bottom */
+    position: relative; /* Needed for background and gradient */
+    background-size: cover;
+    background-position: center;
+    color: var(--text-primary);
+}
+
+
+
+/* This is the hidden image used by the JavaScript ColorThief library */
+.hidden-album-cover-for-js {
+    display: none;
+}
+
+/* The container for the overlaid text */
+.album-info-overlay {
+    position: relative;
+    z-index: 2;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+}
+
+/* Style the now larger album title */
+.album-info-overlay h1 {
+    font-size: 48px;
+    font-weight: 900;
+    margin: 0 0 8px 0;
+    line-height: 1.1;
+}
+
+/* Container for the artist text */
+.artist-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.album-info-overlay p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* --- New Action Buttons Styling --- */
+.album-actions-container-new {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 15px;
+}
+
+.album-buttons-left {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+/* We don't need the old #album-play rules since the new ones are here */
+#album-play {
+    background-color: var(--spotify-green);
+    color: var(--spotify-black);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s ease;
+}
+#album-play:hover {
+    transform: scale(1.05);
+}
+
+/* --- New Album Header Styling --- */
+.album-header {
+    height: auto; /* Let content define height */
+    min-height: 400px;
+    width: 100%;
+    padding: 60px 20px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* Aligns content to the bottom */
+    position: relative;
+    background-size: cover;
+    background-position: center;
+    color: var(--text-primary);
+}
+
+
+
+.hidden-album-cover-for-js {
+    display: none;
+}
+
+.album-info-overlay {
+    position: relative;
+    z-index: 2;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+    margin-bottom: 15px;
+}
+
+.album-info-overlay h1 {
+    font-size: 32px;
+    font-weight: 900;
+    margin: 0 0 8px 0;
+    line-height: 1.2;
+}
+
+.artist-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.album-info-overlay p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* --- New Action Buttons Styling --- */
+.album-actions-container-new {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.album-buttons-left, .album-buttons-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.action-bar-cover {
+    width: 48px;
+    height: 48px;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+#album-shuffle-btn.active {
+    fill: var(--spotify-green); /* Color when shuffle is on */
+}
+
+#album-play {
+    background-color: var(--spotify-green);
+    color: var(--spotify-black);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s ease;
+}
+#album-play:hover {
+    transform: scale(1.05);
+}
+
+/* --- Main Header Section --- */
+.album-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 80px 20px 20px 20px;
+}
+
+/* Make the cover art larger */
+.album-cover {
+    width: 240px; /* Increased size */
+    height: 240px; /* Increased size */
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    margin-bottom: 24px; /* More space below cover */
+}
+
+/* Make the main title larger */
+.album-info h1 {
+    font-size: 2.5rem; /* Larger font size */
+    font-weight: 900;
+    margin: 0 0 8px 0;
+}
+
+.album-info p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* --- Action Buttons (NEW STYLES) --- */
+/* This is now the main flex container for the button groups */
+.album-actions-container {
+    padding: 0 20px;
+    margin-top: 24px; /* Space above the buttons */
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* This pushes the two groups apart */
+    width: 100%;
+    box-sizing: border-box; /* Ensures padding is included in the width */
+}
+
+/* Container for the left icon buttons */
+.album-buttons-left {
+    display: flex;
+    align-items: center;
+    gap: 25px; /* Space between the icons */
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+}
+
+.action-btn:hover svg {
+    fill: #FFFFFF; /* Make icons white on hover */
+}
+
+/* Style for the big green play button */
+#album-play {
+    background-color: var(--spotify-green);
+    color: var(--spotify-black);
+    width: 60px; /* Slightly larger */
+    height: 60px; /* Slightly larger */
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s ease;
+}
+
+#album-play:hover {
+    transform: scale(1.05);
+}
+
+/* --- Main Header Section --- */
+.album-header {
+    display: flex;
+    flex-direction: column;
+    /* This centers the album cover horizontally */
+    align-items: center;
+    text-align: center;
+    padding: 70px 20px 20px 20px; /* Adjust top padding for spacing */
+}
+
+/* Make the cover art large and prominent */
+.album-cover {
+    width: 250px;
+    height: 250px;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    margin-bottom: 24px; /* Space between cover and text */
+}
+
+/* This container will be full-width to allow left-aligning the text inside */
+.album-info {
+    width: 100%;
+    box-sizing: border-box;
+    /* Align the text itself to the left */
+    text-align: left;
+}
+
+/* Style for the main album title */
+.album-info h1 {
+    font-size: 1.75rem; /* 28px */
+    font-weight: 900;
+    margin: 0 0 4px 0;
+    color: var(--text-primary);
+}
+
+/* Style for the artist and meta text */
+.album-info p {
+    font-size: 1rem; /* 16px */
+    color: var(--text-secondary);
+    margin: 0 0 8px 0;
+    font-weight: 500;
+}
+
+#albumDetails-meta {
+    font-size: 0.875rem; /* 14px */
+    color: var(--text-secondary);
+}
+
+
+/* --- Action Buttons Container --- */
+.album-actions-container {
+    padding: 0 20px;
+    margin-top: 16px; /* Space above the buttons */
+    display: flex;
+    align-items: center;
+    /* This pushes the left and right button groups to opposite ends */
+    justify-content: space-between;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Container for the left icon buttons (add, download, etc.) */
+.album-buttons-left {
+    display: flex;
+    align-items: center;
+    gap: 25px; /* Space between the icons */
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+}
+
+/* Make icons white on hover for better feedback */
+.action-btn:hover svg {
+    fill: #FFFFFF;
+}
+
+/* Container for the play button */
+.album-buttons-right {
+    display: flex;
+}
+
+/* Style for the big green play button */
+#album-play {
+    background-color: var(--spotify-green);
+    color: var(--spotify-black);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s ease;
+}
+
+#album-play:hover {
+    transform: scale(1.05);
+}
+
+/* --- Header & Info Fix --- */
+
+/* This rule correctly centers the album cover image */
+.album-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* This centers the album cover and the text container block */
+}
+
+/*
+ * THE KEY FIX: This section makes the text container full-width
+ * and then aligns the text *inside it* to the left.
+*/
+.album-info {
+    width: 100%;                /* Makes the container span the full screen width */
+    box-sizing: border-box;     /* Ensures padding is calculated correctly */
+    padding: 0 24px;            /* Adds space on the left and right edges */
+    text-align: left;           /* Aligns the text to the left */
+}
+
+/* Explicitly set a bright white color for the title */
+.album-info h1#albumDetails-title {
+    color: #FFFFFF;
+    font-size: 1.75rem; /* 28px */
+    font-weight: 900;
+    margin-bottom: 4px;
+}
+
+/* Explicitly set a bright, light gray color for the artist and meta text */
+.album-info p#albumDetails-artist {
+    color: #E0E0E0;
+    font-size: 1rem; /* 16px */
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.album-info p#albumDetails-meta {
+    color: #b3b3b3;
+    font-size: 0.875rem; /* 14px */
+}
+/* ============================================= */
+/* FORCEFUL STYLE OVERRIDE FOR ALBUM OVERLAY TEXT */
+/* Place this at the very end of your CSS file. */
+/* ============================================= */
+
+/*
+  This rule targets the container for your text.
+  It ensures the container is full-width and aligns the text inside to the left.
+*/
+#albumOverlay .album-info {
+    width: 100% !important;
+    padding: 0 24px !important; /* Adds space on the left/right */
+    box-sizing: border-box !important;
+    text-align: left !important; /* <<< ALIGNMENT FIX */
+}
+
+/*
+  This rule targets the album title specifically.
+  The !important flag ensures this color overrides any other style.
+*/
+#albumOverlay .album-info h1#albumDetails-title {
+    color: #FFFFFF !important; /* <<< COLOR FIX (Bright White) */
+    text-align: left !important;
+}
+
+/*
+  This rule targets the artist name.
+*/
+#albumOverlay .album-info p#albumDetails-artist {
+    color: #E0E0E0 !important; /* <<< COLOR FIX (Light Gray) */
+    text-align: left !important;
+}
+
+/*
+  This rule targets the metadata line (Album • Year • Genre).
+*/
+#albumOverlay .album-info p#albumDetails-meta {
+    color: #b3b3b3 !important; /* <<< COLOR FIX (Secondary Gray) */
+    text-align: left !important;
+}
+
+/* ======================================================== */
+/* FINAL FIX for MOBILE & TABLET SCREENS                     */
+/* Place this entire block at the VERY END of your CSS file. */
+/* ======================================================== */
+
+@media (max-width: 768px) {
+    /*
+      This block ONLY activates on screens 768px or smaller
+      to specifically fix the layout and color on mobile and tablets.
+    */
+
+    /* This rule makes the text container full-width and left-aligned */
+    #albumOverlay .album-info {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 0 20px !important; /* Padding for mobile */
+        text-align: left !important;  /* <<< ALIGNMENT FIX */
+    }
+
+    /* This rule makes the title bright white and left-aligned */
+    #albumOverlay .album-info h1#albumDetails-title {
+        color: #FFFFFF !important;    /* <<< COLOR FIX (Bright White) */
+        text-align: left !important;
+        font-size: 1.5rem !important; /* Good font size for mobile */
+    }
+
+    /* This rule makes the artist/meta text light gray and left-aligned */
+    #albumOverlay .album-info p#albumDetails-artist,
+    #albumOverlay .album-info p#albumDetails-meta {
+        color: #E0E0E0 !important;    /* <<< COLOR FIX (Light Gray) */
+        text-align: left !important;
+    }
+}
+
+/* ================================================= */
+/* MOBILE VIEW FIX (for screens up to 768px wide)    */
+/* Place this at the end of your CSS file.           */
+/* ================================================= */
+
+@media (max-width: 768px) {
+
+    /* --- Header Container --- */
+    /* This resets the header to allow individual item alignment */
+    .album-header {
+        padding: 60px 20px 20px 20px !important;
+        display: block !important;
+    }
+
+    /* --- Album Cover --- */
+    /* This centers the cover image using margins */
+    .album-header .album-cover {
+        display: block !important;
+        /* This is the key to centering the image */
+        margin: 0 auto 24px auto !important; /* Top, Horizontal, Bottom */
+        width: 220px !important;
+        height: 220px !important;
+    }
+
+    /* --- Text Block --- */
+    /* This ensures the text container is full-width and left-aligned */
+    .album-header .album-info {
+        width: 100% !important;
+        text-align: left !important; /* <<< This aligns the text to the left */
+    }
+
+    /* --- Text Styling --- */
+    /* These rules force the text to be bright and correctly sized */
+    .album-info h1#albumDetails-title {
+        color: #FFFFFF !important;
+        font-size: 1.75rem !important; /* 28px */
+        font-weight: 900 !important;
+    }
+
+    .album-info p#albumDetails-artist {
+        color: #E0E0E0 !important;
+        font-size: 1rem !important; /* 16px */
+    }
+
+    .album-info p#albumDetails-meta {
+        color: #b3b3b3 !important;
+    }
+
+    /* --- Action Buttons --- */
+    /* This ensures the buttons are correctly positioned below the text */
+    .album-actions-container {
+        padding: 0 20px !important;
+        margin-top: 16px !important;
+    }
+}
+
+/* ======================================================= */
+/* NEW & CORRECTED STYLES FOR THE ALBUM OVERLAY HEADER     */
+/* Replace your old styles with this block.                */
+/* ======================================================= */
+
+/* --- Root Variables (ensure these are at the top) --- */
+:root {
+    --spotify-black: #121212;
+    --spotify-green: #1ED760;
+    --text-primary: #FFFFFF;
+    --text-secondary: #b3b3b3;
+    --background-highlight: rgba(255, 255, 255, 0.1);
+    /* This will be set dynamically by your new JS function */
+    --album-dominant-color: #444444; 
+}
+
+/* --- Scrollable Content Area Gradient --- */
+.album-overlay-content {
+    background: linear-gradient(to bottom, var(--album-dominant-color), var(--spotify-black) 400px);
+}
+
+/* --- Main Header Section --- */
+.album-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* This centers the cover image horizontally */
+    text-align: center;
+    padding: 70px 20px 20px 20px;
+}
+
+/* --- Album Cover --- */
+.album-cover {
+    width: 250px;
+    height: 250px;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    margin-bottom: 24px; /* Space between cover and text block */
+}
+
+/* --- Text & Info Container --- */
+/* This container is full-width, allowing text inside to be left-aligned */
+.album-info {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left; /* <<< THIS IS THE KEY ALIGNMENT FIX */
+}
+
+.album-info h1#albumDetails-title {
+    font-size: 1.75rem; /* 28px */
+    font-weight: 900;
+    margin: 0 0 8px 0;
+    color: var(--text-primary) !important; /* Force bright white */
+}
+
+/* --- New styles for Artist info with avatars --- */
+.artist-info-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.artist-avatars {
+    display: flex;
+}
+
+.artist-avatars img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--spotify-black);
+    margin-left: -8px; /* Creates the overlap effect */
+}
+
+.artist-avatars img:first-child {
+    margin-left: 0;
+}
+
+.album-info p#albumDetails-artist {
+    font-size: 1rem; /* 16px */
+    color: var(--text-primary) !important; /* Make artist name white and bold */
+    font-weight: bold;
+    margin: 0;
+}
+
+.album-info p#albumDetails-meta {
+    font-size: 0.875rem; /* 14px */
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+
+/* --- Action Buttons Container --- */
+.album-actions-container {
+    padding: 0 20px;
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Pushes button groups apart */
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.album-buttons-left {
+    display: flex;
+    align-items: center;
+    gap: 25px; /* Space between icons */
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+.action-btn svg {
+    fill: var(--text-secondary); /* Default icon color */
+    transition: fill 0.2s ease;
+}
+
+.action-btn:hover svg {
+    fill: var(--text-primary); /* Brighter color on hover */
+}
+
+.album-buttons-right {
+    display: flex;
+}
+
+/* --- Big Green Play Button --- */
+#album-play {
+    background-color: var(--spotify-green);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s ease;
+}
+
+#album-play:hover {
+    transform: scale(1.05);
+}
+
+/* Add the play/pause icon SVG inside the button */
+#album-play svg {
+    fill: #000000; /* Icon color is black */
+    width: 28px;
+    height: 28px;
+}
+
+
+/* ======================================================= */
+/* FINAL CSS FOR LEFT-ALIGNED ALBUM OVERLAY                */
+/* Replace your old header styles with this block.         */
+/* ======================================================= */
+
+/* --- Dynamic Gradient for the background --- */
+.album-overlay-content {
+    background: linear-gradient(to bottom, var(--album-dominant-color), #121212 400px);
+}
+
+/* --- Main Header Container --- */
+/* This centers the content block (cover, text, buttons) on the page */
+.album-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+    padding: 70px 20px 20px 20px;
+}
+
+/* --- Album Cover --- */
+.album-cover {
+    width: 250px;
+    height: 250px;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    margin-bottom: 24px;
+}
+
+/* --- Text Info Container --- */
+/* This container is full-width, allowing the text inside to be aligned left */
+.album-info {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left; /* <<< THIS IS THE KEY LAYOUT FIX */
+}
+
+.album-info h1#albumDetails-title {
+    font-size: 1.75rem; /* 28px */
+    font-weight: 900;
+    margin: 0 0 8px 0;
+    color: #FFFFFF !important; /* Force bright white */
+}
+
+.album-info p {
+    font-size: 1rem; /* 16px */
+    color: #E0E0E0 !important; /* Force light gray */
+    margin: 0 0 8px 0;
+}
+
+.album-info p#albumDetails-meta {
+    font-size: 0.875rem; /* 14px */
+    color: #b3b3b3; /* Softer gray for metadata */
+}
+
+
+/* --- Action Buttons Container --- */
+/* This uses flexbox to push the left and right button groups apart */
+.album-actions-container {
+    padding: 0 20px;
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between; 
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.album-buttons-left, .album-buttons-right {
+    display: flex;
+    align-items: center;
+}
+
+.album-buttons-left {
+    gap: 25px; /* Space between left icons */
+}
+
+.action-btn svg {
+    fill: #b3b3b3; /* Standard gray for icons */
+    transition: fill 0.2s ease;
+}
+
+.action-btn:hover svg {
+    fill: #FFFFFF; /* White on hover */
+}
+
+/* --- Big Green Play Button --- */
+#album-play {
+    background-color: #1ED760;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s ease;
+}
+#album-play:hover {
+    transform: scale(1.05);
+}
+#album-play svg {
+    fill: #000000;
+    width: 28px;
+    height: 28px;
+}
+@media (max-width: 768px) {
+    .album-header .album-cover {
+        display: block !important;
+        margin: 0 auto 24px auto !important;
+        width: 348px !important;
+        height: 300px !important;
+            position: relative;
+    top: -56px;
+}
+ .album-overlay{
+        padding: 0rem;
+    }
+
+        #albumOverlay .album-info{
+            top:-53px;
+            position: relative;
+           
+        }
+
+        .album-actions-container {
+            top:-70px;
+            position: relative;
+    }
+    .album-search-bar-trigger{
+        position: relative;
+        top:-61px;
+    }
+    .album-tracks{
+        position: relative;
+        top:-33px;
+
+    }
+
+}
+
+/* --- NEW: Album Search View --- */
+.album-search-view {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #121212;
+    z-index: 1003; /* Higher than other overlay content */
+    display: none; /* Initially hidden */
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Active state for search view */
+.album-overlay.search-active .album-search-view {
+    display: flex;
+    transform: translateX(0);
+}
+
+.album-search-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    gap: 10px;
+    /* This background was changed from a solid color to the gradient */
+    background: linear-gradient(to bottom, #235179, #131a2a);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+.album-search-back-btn, .album-search-clear-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 5px;
+}
+.album-search-clear-btn.hidden {
+    display: none;
+}
+
+#album-search-input {
+    flex-grow: 1;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 16px;
+    outline: none;
+}
+
+
+/* --- NEW styles for Album Search Results to match the image --- */
+
+/* Style for each song row in the search results */
+.album-search-results .search-result-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.album-search-results .search-result-row:hover {
+    background-color: var(--background-highlight);
+}
+
+/* Album art in search results */
+.search-result-row img {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+/* Container for title and artist */
+.search-result-row .track-info {
+    flex-grow: 1;
+    min-width: 0; /* For truncation */
+}
+
+/* Title text */
+.search-result-row .track-title {
+    color: var(--text-primary);
+    font-weight: 600; /* Bolder text */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.2s ease;
+}
+
+/* Artist text */
+.search-result-row .track-artist {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Container for the right-side icons */
+.search-result-row .track-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px; /* Space between checkmark and options */
+    margin-left: auto; /* Push to the far right */
+    flex-shrink: 0;
+}
+
+/* Style for the checkmark */
+.search-result-row .checkmark-icon svg {
+    display: block;
+    width: 24px;
+    height: 24px;
+}
+.search-result-row .checkmark-icon.hidden {
+    display: none; /* Hide by default */
+}
+
+
+/* Changes to the three-dot options button */
+.search-result-row .track-options-btn {
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.search-result-row .track-options-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* --- NEW styles for Album Search Results to match the image --- */
+
+/* ... other search result styles remain the same ... */
+
+/* Container for the right-side icons */
+.search-result-row .track-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* Style for the checkmark */
+.search-result-row .checkmark-icon svg {
+    display: block;
+    width: 24px;
+    height: 24px;
+}
+.search-result-row .checkmark-icon.hidden {
+    display: none;
+}
+
+/* NEW: Style for the playing state icon (pause bars) */
+.search-result-row .playing-state-icon svg {
+    display: block;
+    width: 24px;
+    height: 24px;
+    fill: var(--spotify-green, #1ED760);
+}
+.search-result-row .playing-state-icon.hidden {
+    display: none;
+}
+
+
+/* In style.css */
+#full-screen-player {
+    background-image: linear-gradient(to bottom, var(--dominant-color, #4a4a4a), #121212 50%);
+    transition: background-image 0.7s ease-in-out;
+}
+
+#main-play-bar {
+    background-color: var(--dominant-color-main, #1A0303);
+    transition: background-color 0.7s ease-in-out;
+}
+
+
+/* [style.css] */
+
+/* --- FINAL STICKY PLAY BUTTON & COMPACT HEADER TRANSITION --- */
+
+/* 1. Prepare the scrollable area for sticky positioning */
+#album-overlay-scroll-content {
+    position: relative; /* This is necessary for child sticky elements to work correctly */
+    z-index: 0;
+}
+
+/* 2. Style the container of the play button to be sticky */
+.album-actions-container .album-buttons-right {
+    position: -webkit-sticky; /* For Safari */
+    position: sticky;
+    /* Aligns the button vertically within the compact header's height (68px).
+       (68px header height - 52px final button height) / 2 = 8px from the top. */
+    top: 8px; 
+    z-index: 1002; /* Ensures it's on top of the header bar */
+}
+
+/* 3. Add smooth transitions to the play button for shrinking effect */
+#album-play {
+    /* Use a cubic-bezier for a more dynamic "snap" effect */
+    transition: width 0.3s cubic-bezier(0.25, 0.1, 0.25, 1), 
+                height 0.3s cubic-bezier(0.25, 0.1, 0.25, 1), 
+                box-shadow 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+#album-play svg {
+    transition: width 0.3s cubic-bezier(0.25, 0.1, 0.25, 1), 
+                height 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* 4. Define the shrunken state when scrolled */
+.album-overlay.is-scrolled #album-play {
+    width: 52px;
+    height: 52px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.album-overlay.is-scrolled #album-play svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* 5. Refine the compact header bar's appearance and transition */
+.album-compact-header {
+    height: 68px; /* Give the bar a fixed height for alignment */
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+    z-index: 1001; /* Positioned below the sticky play button */
+}
+
+#compact-header-title {
+    opacity: 0;
+    transition: opacity 0.3s ease 0.1s; /* Slight delay on the title fade-in */
+}
+
+/* 6. Define the final "stuck" state for the compact header when scrolled */
+.album-overlay.is-scrolled .album-compact-header {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.album-overlay.is-scrolled #compact-header-title {
+    opacity: 1;
+}
+
+#albumDetails-tracks tr.playing .track-title {
+    color: var(--spotify-green, #00723D);
+}
+
+
+
+
+/* --- This corrected styling is now active --- */
+
+/* When a track is playing, make ONLY the title text green. */
+tr.playing .track-title {
+    color: #1ED760 !important; /* Spotify Green */
+}
+
+/* When a track is playing, hide its number in the first column. */
+tr.playing td:nth-child(1) {
+    color: transparent; /* Makes the number invisible */
+    position: relative; /* Required for the icon positioning */
+}
+
+/* Create the animated sound bars icon and place it over the hidden number. */
+
+
+/* The animation for the sound bars. */
+@keyframes pulse-bars {
+    0%, 100% { background-size: 5px 20%, 5px 60%; }
+    50% { background-size: 5px 100%, 5px 30%; }
+}

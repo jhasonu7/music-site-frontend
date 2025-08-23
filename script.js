@@ -350,26 +350,38 @@ function hslToRgb(h, s, l) {
 }
 
 /**
- * Creates an advanced, aesthetically pleasing background color from a source color.
- * This function ensures the color is always dark and tastefully desaturated.
+ * Creates a BOLD and VIBRANT background color from a source color.
+ * This updated function increases saturation and lightness for a more dominant look.
  * @param {number[]} rgb - The input [r, g, b] array from ColorThief.
  * @returns {number[]} The final, adjusted [r, g, b] array.
  */
-function createAdvancedBackgroundColor(rgb) {
+function createVibrantBackgroundColor(rgb) {
     // 1. Convert the dominant RGB color to HSL
     let [h, s, l] = rgbToHsl(rgb[0], rgb[1], rgb[2]);
 
     // 2. Intelligently adjust Saturation and Lightness
     // Clamp saturation to a tasteful maximum of 50%
-    s = Math.min(s, 0.50); 
+    s = Math.min(s, 0.60); 
     // Force the lightness to be in a consistent, dark range (15%)
-    l = 0.15;
+    l = 0.28;
 
     // 3. Convert the adjusted HSL color back to RGB
     return hslToRgb(h, s, l);
 }
 
-// END: New functions
+function createAdvancedBackgroundColor(rgb) {
+   // 1. Convert the dominant RGB color to HSL
+    let [h, s, l] = rgbToHsl(rgb[0], rgb[1], rgb[2]);
+
+    // 2. Intelligently adjust Saturation and Lightness
+    // Clamp saturation to a tasteful maximum of 50%
+    s = Math.min(s, 0.60); 
+    // Force the lightness to be in a consistent, dark range (15%)
+    l = 0.28;
+
+    // 3. Convert the adjusted HSL color back to RGB
+    return hslToRgb(h, s, l);
+}
 
 
 let ytPlayer = null; // Global variable to hold the YouTube player instance
@@ -2072,10 +2084,11 @@ async function playTrack(track, indexInAlbum, initialSeekTime = 0) {
             }
         };
     }
-    updateTrackHighlightingInOverlay();
+   
     highlightPlayingLikedSong();
     updateAlbumPlayButtonIcon();
     updatePlaylistPlayButtons();
+      updatePlayingTrackIndicator();
 }
 
 /**
@@ -2120,112 +2133,6 @@ function showAllCards() {
  * Updates the highlighting and icons for tracks in the album overlay.
  * This function is called whenever playback state might have changed or the overlay is opened.
  */
-async function updateTrackHighlightingInOverlay() {
-    if (!albumDetailsTracksBody || !currentAlbum || !currentAlbum.tracks) {
-        return;
-    }
-
-    document.querySelectorAll('#albumDetails-tracks tr').forEach(async (row, i) => {
-        const iconCell = row.querySelector('td:first-child');
-        const trackInRow = currentAlbum.tracks[i];
-
-        // Reset all rows first
-        row.classList.remove('playing', 'paused');
-        row.style.backgroundColor = row.classList.contains('highlighted-search-result') ? 'rgba(30, 215, 96, 0.3)' : 'transparent';
-        row.style.color = '';
-        row.querySelectorAll('td').forEach(td => td.style.color = '');
-
-        if (iconCell) {
-            // The icon cell now contains the heart and number, so we don't reset its innerHTML here.
-            // We just need to manage the playing/paused state visual cues.
-            const trackNumberSpan = iconCell.querySelector('.track-index-number');
-            const heartContainer = iconCell.querySelector('.heart-icon-container');
-
-            // Make sure number is visible by default
-            if (trackNumberSpan) trackNumberSpan.style.display = 'inline';
-            if (heartContainer) heartContainer.style.display = 'inline-flex';
-
-            // Remove any old playing/paused icons that might have been injected
-            const oldPlayingIcon = iconCell.querySelector('.playing-state-icon');
-            if (oldPlayingIcon) oldPlayingIcon.remove();
-        }
-
-        const isCurrentTrack = (playingAlbum && playingAlbum.id === currentAlbum.id && i === currentTrackIndex);
-
-        if (isCurrentTrack && trackInRow) {
-            let isPlaying = false;
-            let isPaused = false;
-
-            // Check native audio state
-            if (audio.src && audio.src === trackInRow.src) {
-                isPlaying = !audio.paused && !audio.ended;
-                isPaused = audio.paused && !audio.ended;
-            }
-            // Check YouTube player state
-            else if (ytPlayer && trackInRow.iframeSrc && trackInRow.iframeSrc.includes('https://www.youtube.com/embed/')) {
-                const videoIdMatch = trackInRow.iframeSrc.match(/\/embed\/([a-zA-Z0-9_-]+)/);
-                const videoId = videoIdMatch ? videoIdMatch[1] : null;
-                if (videoId && ytPlayer.getVideoData() && ytPlayer.getVideoData().video_id === videoId) {
-                    const playerState = ytPlayer.getPlayerState();
-                    isPlaying = playerState === YT.PlayerState.PLAYING;
-                    isPaused = playerState === YT.PlayerState.PAUSED;
-                }
-            }
-            // Check Spotify player state
-            else if (spotifyPlayer && trackInRow.spotifyUri) {
-                try {
-                    const state = await spotifyPlayer.getCurrentState();
-                    if (state && state.track_window.current_track.uri === trackInRow.spotifyUri) {
-                        isPlaying = !state.paused;
-                        isPaused = state.paused;
-                    }
-                } catch (e) {
-                    console.warn("Error checking Spotify state for track icon update:", e);
-                }
-            }
-            // For non-controllable embedded tracks, if they are the currently playing album, assume playing
-            else if (trackInRow.rawHtmlEmbed || trackInRow.soundcloudEmbed || trackInRow.audiomackEmbed || trackInRow.fullSoundcloudEmbed) {
-                if (playingAlbum && playingAlbum.id === currentAlbum.id) {
-                    isPlaying = true; // Assume playing if it's the active embedded album
-                }
-            }
-
-
-            if (isPlaying) {
-                row.classList.add('playing');
-                row.style.backgroundColor = '#25934cff';
-                row.style.color = '#1ED760';
-                row.querySelectorAll('td').forEach(td => td.style.color = '#1ED760');
-                // Also color the heart icon green
-                const heartIcon = row.querySelector('.heart-icon');
-                if(heartIcon) heartIcon.style.stroke = '#1ED760';
-
-
-                if (iconCell) {
-                    const trackNumberSpan = iconCell.querySelector('.track-index-number');
-                    const heartContainer = iconCell.querySelector('.heart-icon-container');
-                    if(trackNumberSpan) trackNumberSpan.style.display = 'none';
-                    if(heartContainer) heartContainer.style.display = 'none';
-
-                    // Inject a playing icon (e.g., sound bars)
-                    iconCell.insertAdjacentHTML('afterbegin', '<div class="playing-state-icon" style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" width="24" height="24" fill="#1ED760"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg></div>');
-                }
-            } else if (isPaused) {
-                row.classList.add('paused');
-                row.style.backgroundColor = row.classList.contains('highlighted-search-result') ? 'rgba(30, 215, 96, 0.3)' : 'transparent';
-                row.style.color = '#1ED760';
-                row.querySelectorAll('td').forEach(td => td.style.color = '#1ED760');
-                 // Also color the heart icon green
-                const heartIcon = row.querySelector('.heart-icon');
-                if(heartIcon) heartIcon.style.stroke = '#1ED760';
-
-                if (iconCell) {
-                     // Keep heart and number visible, just colored green.
-                }
-            }
-        }
-    });
-}
 
 
 /**
@@ -2376,868 +2283,496 @@ function updateFixedTopHeadingVisibility() {
     }
 }
 
+/**
+ * Attaches event listeners for the in-album search functionality.
+ */
+function setupAlbumSearchListeners() {
+    const overlay = document.getElementById('albumOverlay');
+    const searchTrigger = document.getElementById('album-search-trigger');
+    const searchView = document.getElementById('album-search-view');
+    const searchBackBtn = document.getElementById('album-search-back-btn');
+    const searchInput = document.getElementById('album-search-input');
+    const clearSearchBtn = document.getElementById('album-search-clear-btn');
+    const resultsContainer = document.getElementById('album-search-results');
 
+    if (!overlay || !searchTrigger || !searchView || !searchBackBtn || !searchInput || !clearSearchBtn) {
+        console.error("One or more album search elements are missing.");
+        return;
+    }
 
-function openAlbumDetails(albumData, highlightTrackTitle = null) {
-
-
+    // --- Event Listeners ---
     
-    console.log("openAlbumDetails called with albumData:", albumData);
-    const isOpeningEmbeddedAlbum = (
-        albumData.rawHtmlEmbed || albumData.fullSoundcloudEmbed || albumData.audiomackEmbed || albumData.iframeSrc
-    );
+    // Open the search view
+    searchTrigger.onclick = () => {
+        overlay.classList.add('search-active');
+        populateAlbumSearchResults(); // Populate with all songs initially
+        setTimeout(() => searchInput.focus(), 300); // Focus after transition
+    };
 
-    // Get existing iframe in the full embed container to check if it's the same album
-    // Prefer an existing iframe that matches THIS album by data-album-id (handles multiple iframes kept for background playback)
-const existingMatchingIframe = albumFullEmbedContainer.querySelector(`iframe[data-album-id="${albumData.id}"]`);
-// Fallback to any iframe if a matching one isn't present
-const existingIframeInFullEmbedContainer = existingMatchingIframe || albumFullEmbedContainer.querySelector('iframe');
-const existingEmbedAlbumId = existingMatchingIframe ? albumData.id : (existingIframeInFullEmbedContainer ? existingIframeInFullEmbedContainer.dataset.albumId : null);
+    // Close the search view
+    searchBackBtn.onclick = () => {
+        overlay.classList.remove('search-active');
+        searchInput.value = ''; // Clear input on close
+    };
 
-// If a matching iframe exists, we'll reuse it and ensure it's visible while hiding others.
-const isSameEmbeddedAlbumAlreadyLoaded = !!existingMatchingIframe && isOpeningEmbeddedAlbum;
+    // Filter results on input
+    searchInput.oninput = () => {
+        filterAlbumSearchResults();
+        clearSearchBtn.classList.toggle('hidden', searchInput.value.length === 0);
+    };
 
-if (isSameEmbeddedAlbumAlreadyLoaded) {
-    // Make sure only the matching iframe is visible to avoid showing stale/other embeds.
-    albumFullEmbedContainer.querySelectorAll('iframe').forEach(iframe => {
-        try { iframe.style.display = (iframe.dataset.albumId === albumData.id) ? 'block' : 'none'; } catch(e) {}
+    // Clear the input field
+    clearSearchBtn.onclick = () => {
+        searchInput.value = '';
+        searchInput.focus();
+        filterAlbumSearchResults();
+        clearSearchBtn.classList.add('hidden');
+    };
+}
+
+/**
+ * Populates the search results container with all tracks from the current album.
+ */
+/**
+ * Populates the search results container with all tracks from the current album.
+ 
+
+
+/**
+ * Highlights the currently playing track in the album search results.
+ */
+function populateAlbumSearchResults() {
+    const resultsContainer = document.getElementById('album-search-results');
+    resultsContainer.innerHTML = ''; // Clear previous results
+
+    if (currentAlbum && currentAlbum.tracks) {
+        currentAlbum.tracks.forEach((track, index) => {
+            const row = document.createElement('div');
+            row.className = 'search-result-row';
+            row.dataset.trackIndex = index;
+            
+            row.innerHTML = `
+                <img src="${track.img || currentAlbum.coverArt}" alt="${track.title}">
+                <div class="track-info">
+                    <div class="track-title">${track.title || 'Untitled'}</div>
+                    <div class="track-artist">${track.artist || currentAlbum.artist}</div>
+                </div>
+                <button class="track-options-btn">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                </button>
+            `;
+            
+            row.addEventListener('click', (e) => {
+                if (e.target.closest('.track-options-btn')) return;
+                playTrack(currentAlbum.tracks[index], index);
+                // The line that closed the search view has been removed from here.
+            });
+
+            resultsContainer.appendChild(row);
+        });
+    }
+    updateSearchTrackHighlight(); // Ensure highlight is correct when search is opened
+}
+
+
+/**
+ * Highlights the currently playing track in the album search results by adding a 'playing' class.
+ * CORRECTED: This function now reliably adds and removes a CSS class instead of using inline styles.
+ */
+function updateSearchTrackHighlight() {
+    const searchResultsContainer = document.getElementById('album-search-results');
+    if (!searchResultsContainer) return;
+
+    const rows = searchResultsContainer.querySelectorAll('.search-result-row');
+    const playingAlbumId = playingAlbum ? playingAlbum.id : null;
+    const isOverlayAlbumContext = currentAlbum && playingAlbumId === currentAlbum.id;
+    const playingTrackIndex = isOverlayAlbumContext ? currentTrackIndex : -1;
+
+    rows.forEach(row => {
+        const rowIndex = parseInt(row.dataset.trackIndex, 10);
+        
+        // Add or remove the 'playing' class based on the current track
+        if (rowIndex === playingTrackIndex) {
+            row.classList.add('playing');
+        } else {
+            row.classList.remove('playing');
+        }
     });
 }
 
-    console.log(`DEBUG: isOpeningEmbeddedAlbum = ${isOpeningEmbeddedAlbum}`);
-    console.log(`DEBUG: isSameEmbeddedAlbumAlreadyLoaded = ${isSameEmbeddedAlbumAlreadyLoaded}`);
-    console.log("DEBUG: albumData for evaluation:", albumData);
-    console.log("DEBUG: currentAlbum for evaluation:", currentAlbum);
+
+/**
+ * Filters the visible tracks in the search view based on the input query.
+ */
+function filterAlbumSearchResults() {
+    const query = document.getElementById('album-search-input').value.toLowerCase().trim();
+    const rows = document.querySelectorAll('#album-search-results .search-result-row');
+    const noResultsView = document.getElementById('album-no-search-results');
+    const noResultsQuerySpan = document.getElementById('no-results-query');
+    
+    let hasVisibleResults = false;
+
+    rows.forEach(row => {
+        const title = row.querySelector('.track-title').textContent.toLowerCase();
+        const artist = row.querySelector('.track-artist').textContent.toLowerCase();
+        
+        if (title.includes(query) || artist.includes(query)) {
+            row.style.display = 'flex';
+            hasVisibleResults = true;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    // Show or hide the "No results" message
+    if (!hasVisibleResults && query) {
+        noResultsView.classList.remove('hidden');
+        noResultsQuerySpan.textContent = `"${document.getElementById('album-search-input').value}"`;
+    } else {
+        noResultsView.classList.add('hidden');
+    }
+}
+
+// [script.js]
+
+/**
+ * Updates the visual indicator for the currently playing track in the album overlay.
+ * It removes the 'playing' class from any previous track and adds it to the current one.
+ */
+function updatePlayingTrackIndicator() {
+    const tracksBody = document.getElementById('albumDetails-tracks');
+    if (!tracksBody) return; // Exit if the album overlay isn't open
+
+    // 1. Find any row that is currently marked as 'playing' and remove the class.
+    const previouslyPlayingRow = tracksBody.querySelector('tr.playing');
+    if (previouslyPlayingRow) {
+        previouslyPlayingRow.classList.remove('playing');
+    }
+
+    // 2. Add the 'playing' class to the new current track's row, but only if
+    //    the album being played is the one currently displayed in the overlay.
+    if (playingAlbum && currentAlbum && playingAlbum.id === currentAlbum.id && typeof currentTrackIndex !== 'undefined') {
+        const newPlayingRow = tracksBody.querySelector(`tr[data-track-index="${currentTrackIndex}"]`);
+        if (newPlayingRow) {
+            newPlayingRow.classList.add('playing');
+            
+        }
+    }
+}
+
+
+
+
+
+function openAlbumDetails(albumData, highlightTrackTitle = null) {
+    console.log("openAlbumDetails called with albumData:", albumData);
+
+    const isOpeningEmbeddedAlbum = !!(albumData.rawHtmlEmbed || albumData.fullSoundcloudEmbed || albumData.audiomackEmbed || albumData.iframeSrc);
+
+    // Get existing iframe in the full embed container to check if it's the same album
+    const existingMatchingIframe = albumFullEmbedContainer.querySelector(`iframe[data-album-id="${albumData.id}"]`);
+    const isSameEmbeddedAlbumAlreadyLoaded = !!existingMatchingIframe && isOpeningEmbeddedAlbum;
+
+    if (isSameEmbeddedAlbumAlreadyLoaded) {
+        // Make sure only the matching iframe is visible to avoid showing stale/other embeds.
+        albumFullEmbedContainer.querySelectorAll('iframe').forEach(iframe => {
+            iframe.style.display = (iframe.dataset.albumId === albumData.id) ? 'block' : 'none';
+        });
+    }
 
     // --- Critical DOM element checks ---
-    if (!albumOverlay) {
-        console.error("Error: albumOverlay element not found.");
+    if (!albumOverlay || !topBar || !rightPanel || !mainPlayBar || !albumFullEmbedContainer || !closeOverlayBtn) {
+        console.error("Error: A critical UI element for the album overlay is missing.");
         return;
     }
-    if (!topBar) {
-        console.error("Error: topBar element not found.");
-        return;
-    }
-    if (!rightPanel) {
-        console.error("Error: rightPanel element not found.");
-        return;
-    }
-    if (!mainPlayBar) {
-        console.error("Error: mainPlayBar element not found.");
-        return;
-    } // Changed from playerBar
-    if (!albumFullEmbedContainer) {
-        console.error("Error: albumFullEmbedContainer element not found.");
-        return;
-    }
-    // Assign to the global variable
-    albumDetailsContent = document.getElementById('albumDetails');
+   albumDetailsContent = document.getElementById('album-overlay-scroll-content'); // Assign to the global variable
     if (!albumDetailsContent) {
         console.error("Error: albumDetails element (main content) not found.");
         return;
     }
-    if (!closeOverlayBtn) {
-        console.error("Error: closeOverlayBtn element not found.");
-        return;
-    }
-    if (!albumHeader) {
-        console.error("Error: albumHeader element not found.");
-        return;
-    } // Added check
-    if (!albumDetailsCover) {
-        console.error("Error: albumDetailsCover element not found.");
-        return;
-    } // Added check
-    if (!albumDetailsTitle) {
-        console.error("Error: albumDetailsTitle element not found.");
-        return;
-    } // Added check
-    if (!albumDetailsArtist) {
-        console.error("Error: albumDetailsArtist element not found.");
-        return;
-    } // Added check
-    if (!albumDetailsMeta) {
-        console.error("Error: albumDetailsMeta element not found.");
-        return;
-    } // Added check
-    if (!albumTracksSection) {
-        console.error("Error: albumTracksSection element not found.");
-        return;
-    } // Added check
-    if (!albumPlayButton) {
-        console.error("Error: albumPlayButton element not found.");
-        return;
-    } // Added check
-    if (!albumDetailsTracksBody) {
-        console.error("Error: albumDetailsTracksBody element not found.");
-        return;
-    } // Added check
 
-    // IMPORTANT CHANGE:
-    // Only clear albumFullEmbedContainer if we are about to load a *new* embedded album into it.
-    // If opening a non-embedded album, we only hide it.
-    
-    // Determine if we are switching from one embedded album to another
-    const isSwitchingEmbeds = playingAlbum && isOpeningEmbeddedAlbum && playingAlbum.id !== albumData.id && 
+    // Determine if we are switching between different embedded albums
+    const isSwitchingEmbeds = playingAlbum && isOpeningEmbeddedAlbum && playingAlbum.id !== albumData.id &&
         (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc);
 
     if (isOpeningEmbeddedAlbum && !isSameEmbeddedAlbumAlreadyLoaded) {
         if (isSwitchingEmbeds) {
             // Hide the UI of the currently playing album before adding the new one
-            console.log("Switching embeds. Hiding previous album's UI.");
             for (const child of albumFullEmbedContainer.children) {
                 if (child instanceof HTMLElement) {
                     child.style.display = 'none';
                 }
             }
         } else {
-            // If it's the first embed or switching from a non-embed, clear the container
-            console.log("Clearing embed container for a fresh start.");
-            albumFullEmbedContainer.innerHTML = '';
+            albumFullEmbedContainer.innerHTML = ''; // Clear for a fresh embed
         }
-    }else if (!isOpeningEmbeddedAlbum && existingIframeInFullEmbedContainer) {
-        // If opening a non-embedded album, and an embedded player is currently in the full embed container,
-        // just hide the full embed container. DO NOT remove its children.
+    } else if (!isOpeningEmbeddedAlbum) {
+        // If opening a non-embedded album, just hide the embed container
         albumFullEmbedContainer.style.display = 'none';
-        console.log("Opening non-embedded album. Hiding albumFullEmbedContainer to preserve existing embedded player.");
-    } else if (!isOpeningEmbeddedAlbum && !existingIframeInFullEmbedContainer) { // Corrected condition
-        // If opening a non-embedded album and no embed is currently in the container, ensure it's empty and hidden.
-        while (albumFullEmbedContainer.firstChild) {
-            albumFullEmbedContainer.removeChild(albumFullEmbedContainer.firstChild);
-        }
-        albumFullEmbedContainer.style.display = 'none';
-        console.log("Opening non-embedded album. No existing embed. Ensuring albumFullEmbedContainer is empty and hidden.");
     }
 
-    // MODIFIED LOGIC FOR currentTrackIndex RESET:
-    // Determine if the album being opened is different from the one currently playing.
-    // If it's a new album, reset currentTrackIndex. Otherwise, preserve it.
-    // Also, if nothing is playing, reset to 0.
+    // Reset track index if a new album is opened
     if (!playingAlbum || playingAlbum.id !== albumData.id) {
-        currentTrackIndex = 0; // Reset if a new album is being opened for playback or viewing
-        console.log("openAlbumDetails: Resetting currentTrackIndex to 0 as a new album is being opened or nothing is playing.");
-    } else {
-        // If the album being opened is the same as the one currently playing,
-        // currentTrackIndex should already be correct from the playback.
-        console.log("openAlbumDetails: Preserving currentTrackIndex as the same album is already playing.");
+        currentTrackIndex = 0;
     }
 
-    // Always set currentAlbum to the album being opened, as this is the *viewed* album.
     currentAlbum = albumData;
-    console.log("openAlbumDetails: currentAlbum set to:", currentAlbum ? currentAlbum.title : "null");
 
-    // Remove explicit background color and border-radius from JavaScript
-    if (albumOverlay) {
-        albumOverlay.style.removeProperty('background-color');
-        albumOverlay.style.removeProperty('border-radius');
-        albumOverlay.style.removeProperty('position');
-        albumOverlay.style.removeProperty('top');
-        albumOverlay.style.removeProperty('bottom');
-        albumOverlay.style.removeProperty('left');
-        albumOverlay.style.removeProperty('right');
-        albumOverlay.style.removeProperty('width');
-        albumOverlay.style.removeProperty('height');
-        albumOverlay.style.removeProperty('margin');
-        albumOverlay.style.removeProperty('padding');
-        albumOverlay.style.removeProperty('z-index');
-        albumOverlay.style.removeProperty('justify-content');
-        albumOverlay.style.removeProperty('align-items');
-        albumOverlay.style.removeProperty('overflow');
-        albumOverlay.style.removeProperty('transform'); // NEW: Ensure no transform
-        albumOverlay.style.removeProperty('filter'); // NEW: Ensure no filter
-        console.log("albumOverlay inline styles reset.");
-    }
-    if (albumDetailsCover) {
-        albumDetailsCover.src = albumData.coverArt || 'https://placehold.co/160x160/000000/FFFFFF?text=Album'; // Fallback image
-    }
-    if (albumDetailsTitle) {
-        albumDetailsTitle.textContent = albumData.title || 'Unknown Title';
-    }
-    if (albumDetailsArtist) {
-        albumDetailsArtist.textContent = albumData.artist || 'Unknown Artist';
-    }
-    if (albumDetailsMeta) {
-        albumDetailsMeta.textContent = `Album • ${albumData.year || 'Year N/A'} • ${albumData.genre || 'Genre N/A'}`;
-    }
+    // Populate album info
+    albumDetailsCover.src = albumData.coverArt || 'https://placehold.co/160x160/000000/FFFFFF?text=Album';
+    albumDetailsTitle.textContent = albumData.title || 'Unknown Title';
+    albumDetailsArtist.textContent = albumData.artist || 'Unknown Artist';
+    albumDetailsMeta.textContent = `Album • ${albumData.year || 'Year N/A'} • ${albumData.genre || 'Genre N/A'}`;
 
-    // 2. Populate the tracklist table OR the full embed container
-    if (albumDetailsTracksBody) {
-        albumDetailsTracksBody.innerHTML = ''; // Clear existing tracks
-        console.log("albumDetailsTracksBody cleared.");
-    }
+    albumDetailsTracksBody.innerHTML = ''; // Clear existing tracks
+    albumFullEmbedContainer.style.display = 'none'; // Hide by default
 
-    albumFullEmbedContainer.style.display = 'none'; // Hide by default, will be shown if it's an embed
+    // --- Main Logic: Embedded vs. Non-Embedded ---
+    if (isOpeningEmbeddedAlbum) {
+        albumDetailsContent.style.display = 'none';
+        albumFullEmbedContainer.style.display = 'block'; // Use block for embeds
+        albumOverlay.classList.add('embedded-view'); // Add class for specific styling
+        albumOverlay.classList.remove('tracklist-view');
 
-
-    // If the album has a raw HTML embed OR a full SoundCloud embed OR Audiomack embed OR YouTube embed, display it in the dedicated container
-    if (isOpeningEmbeddedAlbum && albumFullEmbedContainer) {
-        console.log("Detected embedded album content.");
-        // Hide the traditional album details content
-        if (albumDetailsContent) {
-            albumDetailsContent.style.display = 'none';
-            console.log("albumDetailsContent set to display: none for embedded album.");
-        }
-        // Only create/insert the iframe if it's a new embedded album or a different one
         if (!isSameEmbeddedAlbumAlreadyLoaded) {
-            const embedContent = albumData.soundcloudEmbed || albumData.fullSoundcloudEmbed || albumData.rawHtmlEmbed || albumData.audiomackEmbed || (albumData.iframeSrc ? `<iframe src="${albumData.iframeSrc}" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" style="border-radius:12px;"></iframe>` : '');
-            console.log("openAlbumDetails: Attempting to display full embed. Content received:", embedContent ? embedContent.substring(0, 200) + '...' : 'No content'); // Log first 200 chars
+            const embedContent = albumData.soundcloudEmbed || albumData.fullSoundcloudEmbed || albumData.rawHtmlEmbed || albumData.audiomackEmbed || (albumData.iframeSrc ? `<iframe src="${albumData.iframeSrc}" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>` : '');
 
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = embedContent;
             const originalIframe = tempDiv.querySelector('iframe');
 
             if (originalIframe) {
-                console.log("openAlbumDetails: Iframe element found in embed content. Inserting new iframe.");
-                originalIframe.removeAttribute('width');
-                originalIframe.removeAttribute('height');
-                originalIframe.style.border = '0';
-                originalIframe.style.borderRadius = '12px';
-                originalIframe.style.width = '100%'; // Make it fill the container
-                originalIframe.style.height = '100%'; // Make it fill the container
-                originalIframe.dataset.albumId = albumData.id; // Store album ID on the iframe for future checks
-
-                // Append iframe first so the interaction layer sits on top
+                originalIframe.dataset.albumId = albumData.id;
                 albumFullEmbedContainer.appendChild(originalIframe);
-                // Ensure the newly appended iframe is visible and hide any other iframes in the container
-                try {
-                    albumFullEmbedContainer.querySelectorAll('iframe').forEach(iframe => {
-                        iframe.style.display = (iframe === originalIframe) ? 'block' : 'none';
-                    });
-                } catch(e) {}
-
-                console.log("originalIframe appended to albumFullEmbedContainer.");
-
+                albumFullEmbedContainer.querySelectorAll('iframe').forEach(iframe => {
+                    iframe.style.display = (iframe === originalIframe) ? 'block' : 'none';
+                });
             } else {
                 albumFullEmbedContainer.innerHTML = embedContent;
-                // If embedContent contained an iframe inserted via innerHTML, ensure only that iframe is visible
-                try {
-                    const newIframe = albumFullEmbedContainer.querySelector('iframe');
-                    if (newIframe) {
-                        albumFullEmbedContainer.querySelectorAll('iframe').forEach(iframe => iframe.style.display = (iframe === newIframe) ? 'block' : 'none');
-                        newIframe.dataset.albumId = albumData.id; // normalize dataset if possible
-                    }
-                } catch(e) {}
-
-                console.warn("openAlbumDetails: Embed content did not contain an iframe. Appending raw HTML directly. This might not be expected.");
             }
 
-          // NEW: Always ensure the top mask div is present and updated for embedded albums
-        let topMaskDiv = albumFullEmbedContainer.querySelector('#embedded-overlay-top-mask');
-        if (!topMaskDiv) {
-            topMaskDiv = document.createElement('div');
+            // Create and populate the top mask header
+            let topMaskDiv = document.createElement('div');
             topMaskDiv.id = 'embedded-overlay-top-mask';
+            topMaskDiv.innerHTML = `
+                <img src="${albumData.coverArt || 'https://placehold.co/80x80/4a4a4a/ffffff?text=Album'}" alt="Album Cover" class="embedded-header-cover">
+                <div class="embedded-header-info">
+                    <div class="embedded-header-title">${albumData.title || 'Embedded Content'}</div>
+                    <div class="embedded-header-artist">${albumData.artist || 'Various Artists'}</div>
+                    <div class="embedded-header-meta">Album • ${albumData.year || 'Year N/A'} • ${albumData.genre || 'Genre N/A'}</div>
+                </div>`;
             albumFullEmbedContainer.appendChild(topMaskDiv);
-            console.log("embedded-overlay-top-mask created and appended.");
-        }
 
-        // Populate the content of the top mask div with image on left, text on right
-        topMaskDiv.innerHTML = `
-            <img src="${albumData.coverArt || 'https://placehold.co/80x80/4a4a4a/ffffff?text=Album'}"
-                 alt="Album Cover"
-                 style="width: 80px; height: 80px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); margin-right: 15px;">
-            <div style="display: flex; flex-direction: column; flex-grow: 1; overflow: hidden;">
-                <div style="font-size: clamp(1.5em, 5vw, 2.5em); font-weight: bold; color: white; margin-bottom: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
-                    ${albumData.title || 'Embedded Content'}
-                </div>
-                <div style="font-size: clamp(0.9em, 3vw, 1.2em); color: #b3b3b3; margin-bottom: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
-                    ${albumData.artist || 'Various Artists'}
-                </div>
-                <div style="font-size: clamp(0.7em, 2.5vw, 0.9em); color: #a0a0a0; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
-                    Album • ${albumData.year || 'Year N/A'} • ${albumData.genre || 'Genre N/A'}
-                </div>
-            </div>
-        `;
-        console.log("embedded-overlay-top-mask content populated with image left, text right.");
+            // Create the interaction layer to capture the first click
+            const embedInteractionLayer = document.createElement('div');
+            embedInteractionLayer.id = 'embed-interaction-layer';
+            albumFullEmbedContainer.appendChild(embedInteractionLayer);
 
-        // Apply styles to the topMaskDiv, letting its height adjust based on content
-        topMaskDiv.style.cssText = `
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height:188px;
-            /* Height will be determined by content + padding */
-            z-index: 906;
-            background-color: #1d1b1bff; /* Fully opaque black background as requested */
-            display: flex;
-            align-items: center; /* Vertically center content */
-            padding: 15px 20px; /* Padding around content */
-            box-sizing: border-box;
-            overflow: hidden; /* Hide overflow if text is too long */
-            box-shadow: 0 5px 25px rgba(0,0,0,0.5); /* Subtle shadow at the bottom */
-        `;
-        console.log("embedded-overlay-top-mask styled.");
-
-
-
-
-            // ONLY add the interaction layer if it's a NEW embedded album
-            let embedInteractionLayer = albumFullEmbedContainer.querySelector('#embed-interaction-layer');
-            if (!embedInteractionLayer) { // Ensure it doesn't already exist from a previous *same* album open
-                embedInteractionLayer = document.createElement('div');
-                embedInteractionLayer.id = 'embed-interaction-layer';
-                embedInteractionLayer.style.cssText = `
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    z-index: 1001; /* Ensure it's above the iframe */
-                    cursor: pointer;
-                    background-color: rgba(0,0,0,0); /* Fully transparent */
-                `;
-                albumFullEmbedContainer.appendChild(embedInteractionLayer);
-                console.log("embedInteractionLayer created and appended for NEW embedded album.");
-            }
-            // Always attach/re-attach the wrapper listener for a new embed, as it will be removed on first valid click
-            if (embedInteractionLayer._firstClickWrapper) {
-                embedInteractionLayer.removeEventListener('click', embedInteractionLayer._firstClickWrapper);
-                delete embedInteractionLayer._firstClickWrapper;
-            }
-            const wrapper = function (e) {
+            const firstClickHandler = (e) => {
                 const rect = embedInteractionLayer.getBoundingClientRect();
                 const y = e.clientY - rect.top;
-                if (y <= 180) {
-                    // Click in excluded top region: ignore.
-                    console.log("embedInteractionLayer click ignored because it's within top 180px."); 
-                    e.stopPropagation();
+                if (y <= 180) { // Exclude clicks in the top header area
                     return;
                 }
-                firstClickEmbedHandler();
+                firstClickEmbedHandler(); // This function should remove the layer
+                embedInteractionLayer.removeEventListener('click', firstClickHandler);
             };
-            embedInteractionLayer._firstClickWrapper = wrapper;
-            embedInteractionLayer.addEventListener('click', wrapper);
-            console.log("embedInteractionLayer wrapper listener attached for NEW embedded album.");
+            embedInteractionLayer.addEventListener('click', firstClickHandler);
 
-
-
-
-            // NEW: Add vertical heart strip for embedded albums
+            // Create and populate the vertical heart strip
             const verticalHeartStrip = document.createElement('div');
             verticalHeartStrip.id = 'vertical-heart-strip';
-            // Styles are defined in the injected stylesheet, just append it.
-            albumFullEmbedContainer.appendChild(verticalHeartStrip);
-
-            // Populate the strip with clickable hearts
-            for (let i = 0; i < 15; i++) { // Add 15 hearts as an example
+            for (let i = 0; i < 15; i++) {
                 const heartContainer = document.createElement('div');
                 heartContainer.className = 'heart-icon-container';
-                heartContainer.innerHTML = `<svg class="heart-icon" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
+                heartContainer.innerHTML = `<svg class="heart-icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
                 heartContainer.addEventListener('click', (e) => {
-                    e.stopPropagation(); // VERY IMPORTANT: Prevent click from reaching interaction layer
-                    const heartIcon = e.currentTarget.querySelector('.heart-icon');
-                    heartIcon.classList.toggle('liked');
+                    e.stopPropagation();
+                    e.currentTarget.querySelector('.heart-icon').classList.toggle('liked');
                 });
                 verticalHeartStrip.appendChild(heartContainer);
             }
-            console.log("Vertical heart strip added to embedded album overlay.");
+            albumFullEmbedContainer.appendChild(verticalHeartStrip);
 
-
-  // NEW: Add vertical heart strip for embedded albums
-            const verticalHeartStrip1 = document.createElement('div');
-            verticalHeartStrip1.id = 'vertical-heart-strip1';
-            // Styles are defined in the injected stylesheet, just append it.
-            albumFullEmbedContainer.appendChild(verticalHeartStrip1);
-
-            // Populate the strip with clickable hearts
-            for (let i = 0; i < 15; i++) { // Add 15 hearts as an example
-                const heartContainer1 = document.createElement('div');
-                heartContainer1.className = 'heart-icon-container1';
-                heartContainer1.innerHTML = `<svg class="heart-icon1" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
-                heartContainer1.addEventListener('click', (e) => {
-                    e.stopPropagation(); // VERY IMPORTANT: Prevent click from reaching interaction layer
-                    const heartIcon = e.currentTarget.querySelector('.heart-icon1');
-                    heartIcon.classList.toggle('liked');
-                });
-                verticalHeartStrip.appendChild(heartContainer1);
-            }
-            console.log("Vertical heart strip added to embedded album overlay.");
-
-
-
-
-
-
-
-
-
-
-
-        } else {
-            console.log("openAlbumDetails: Same embedded album already loaded. Reusing existing iframe.");
-            // If it's the same embedded album, ensure the interaction layer is GONE
-            // It should have been removed by firstClickEmbedHandler on the initial interaction.
-            const existingInteractionLayer = albumFullEmbedContainer.querySelector('#embed-interaction-layer');
-            if (existingInteractionLayer) {
-                existingInteractionLayer.removeEventListener('click', firstClickEmbedHandler);
-                existingInteractionLayer.remove();
-                console.log("Existing embed-interaction-layer removed for SAME embedded album (should have been removed already).");
-            }
         }
 
-        // Ensure albumFullEmbedContainer is visible and styled for embeds
-        albumFullEmbedContainer.style.position = 'absolute';
-        albumFullEmbedContainer.style.top = '0';
-        albumFullEmbedContainer.style.left = '0';
-        albumFullEmbedContainer.style.width = '100%';
-        albumFullEmbedContainer.style.height = '100%'; // This makes it fill the parent overlay
-        albumFullEmbedContainer.style.overflow = 'hidden'; // Hide overflow of the iframe
-        albumFullEmbedContainer.style.backgroundColor = '#000'; // Optional: black background for embeds
-        albumFullEmbedContainer.style.display = 'flex'; // Ensure it's visible
-        albumFullEmbedContainer.style.zIndex = '1'; // Ensure it has a z-index to form a stacking context
-        console.log("albumFullEmbedContainer positioned to fill parent and set to display: flex.");
-        // Hide the player bar for embedded albums
-        if (mainPlayBar) { // Changed from playerBar
-            mainPlayBar.style.display = 'flex'; // Ensure mainPlayBar is visible
-            togglePlayerControls(false); // Disable controls for embedded content
-            // updateMiniPlayerForEmbed(albumData); // This is now handled by updatePlayerUI
+        const topBarHeight = topBar.offsetHeight;
+        albumOverlay.style.top = `${topBarHeight}px`;
+        togglePlayerControls(false); // Disable main controls for embedded content
+
+    } else { // This block handles non-embedded albums
+        albumDetailsContent.style.display = 'block';
+        albumFullEmbedContainer.style.display = 'none';
+        albumOverlay.classList.add('tracklist-view');
+        albumOverlay.classList.remove('embedded-view');
+         // --- Populate Header Info ---
+        const albumCover = document.getElementById('albumDetails-cover');
+        const albumTitle = document.getElementById('albumDetails-title');
+        const albumArtist = document.getElementById('albumDetails-artist');
+        const albumMeta = document.getElementById('albumDetails-meta');
+        const compactTitle = document.getElementById('compact-header-title');
+
+    // Inside your openAlbumDetails function in script.js
+
+if (albumCover) {
+    // THIS IS THE CRUCIAL FIX FOR THE COLOR
+    albumCover.crossOrigin = "Anonymous"; 
+
+    albumCover.src = albumData.coverArt || 'https://placehold.co/180x180/000/fff?text=Album';
+    
+    const setDynamicColor = () => {
+        try {
+            const colorThief = new ColorThief();
+            // This function should create a VIBRANT color, not a dark one.
+            const finalColor = createVibrantBackgroundColor(colorThief.getColor(albumCover));
+            const rgbColor = `rgb(${finalColor[0]}, ${finalColor[1]}, ${finalColor[2]})`;
+            albumOverlay.style.setProperty('--album-dominant-color', rgbColor);
+        } catch (e) {
+            console.error("ColorThief error:", e);
+            albumOverlay.style.setProperty('--album-dominant-color', '#444444'); // Fallback
         }
+    };
 
-        if (albumOverlay && topBar) {
-            const topBarHeight = topBar.offsetHeight;
-            albumOverlay.style.position = 'fixed';
-            albumOverlay.style.top = `${topBarHeight}px`;
-            albumOverlay.style.bottom = '0';
-            albumOverlay.style.right = '0';
-            albumOverlay.style.width = 'auto';
-            albumOverlay.style.height = 'auto';
-            albumOverlay.style.zIndex = '900'; // Adjusted z-index to be below full-screen player but above playbar
-            console.log("albumOverlay positioned fixed and sized to full available space.");
+    if (albumCover.complete) setDynamicColor();
+    else albumCover.onload = setDynamicColor;
+}
 
-            if (window.innerWidth < 772) {
-                albumOverlay.style.left = '0';
-            } else {
-                albumOverlay.style.left = '25%';
-            }
-        }
+        if (albumTitle) albumTitle.textContent = albumData.title || 'Unknown Title';
+        if (albumArtist) albumArtist.textContent = albumData.artist || 'Unknown Artist';
+        if (albumMeta) albumMeta.textContent = `Album • ${albumData.year || 'N/A'} • ${albumData.tracks ? albumData.tracks.length : 0} songs`;
+        if (compactTitle) compactTitle.textContent = albumData.title || 'Unknown Title';
 
-        if (closeOverlayBtn) {
-            closeOverlayBtn.style.display = 'flex';
-            closeOverlayBtn.style.position = 'absolute';
-            closeOverlayBtn.style.top = `${topBar ? topBar.offsetHeight + 15 : 15}px`;
-            closeOverlayBtn.style.right = '16px';
-            closeOverlayBtn.style.backgroundColor = 'rgb(26, 2, 2)';
-            closeOverlayBtn.style.color = 'white';
-            closeOverlayBtn.style.border = 'none';
-            closeOverlayBtn.style.borderRadius = '50%';
-            closeOverlayBtn.style.width = '34px';
-            closeOverlayBtn.style.height = '34px';
-            closeOverlayBtn.style.justifyContent = 'center';
-            closeOverlayBtn.style.alignItems = 'center';
-            closeOverlayBtn.style.cursor = 'pointer';
-            closeOverlayBtn.style.zIndex = '10000'; // Ensure it's above the embed container
-            console.log("closeOverlayBtn styled and displayed.");
-        }
-
-    } else { // This block handles non-embedded albums (with tracks or no tracks)
-        console.log("Detected non-embedded album (with tracks or no tracks).");
-
-        // Ensure albumFullEmbedContainer is hidden for non-embedded albums
-        if (albumFullEmbedContainer) {
-            albumFullEmbedContainer.style.display = 'none';
-            // Its content was already cleared at the beginning of openAlbumDetails
-            console.log("albumFullEmbedContainer explicitly hidden for tracklist album.");
-        }
-
-        if (albumDetailsContent) {
-            albumDetailsContent.style.display = 'block';
-            // Apply styling to the main album details content area
-            albumDetailsContent.style.boxSizing = 'border-box'; // Include padding in width
-            albumDetailsContent.style.maxWidth = '100%'; // Ensure it takes full width
-
-            // Responsive padding for albumDetailsContent
-            if (window.innerWidth < 386) { // New breakpoint for very small screens
-                albumDetailsContent.style.padding = '5px'; // Even more reduced padding
-            } else if (window.innerWidth < 768) {
-                albumDetailsContent.style.padding = '10px'; // Reduced padding for mobile
-            } else {
-                albumDetailsContent.style.padding = '20px'; // Default padding for larger screens
-            }
-            console.log("albumDetailsContent set to display: block and styled.");
-        }
-
-        if (albumHeader) {
-            albumHeader.style.display = 'flex';
-            albumHeader.style.alignItems = 'flex-end'; // Align items to the bottom
-            albumHeader.style.gap = '20px'; // Gap between cover and text
-            albumHeader.style.backgroundColor = 'rgba(0, 0, 0, 0.3)'; // Slightly darker background for header
-            albumHeader.style.borderRadius = '8px'; // Rounded corners for the header
-            albumHeader.style.flexWrap = 'wrap'; // Allow wrapping on smaller screens
-
-            // Reduced margin-bottom to decrease space between header and tracks
-            albumHeader.style.marginBottom = '15px';
-            console.log("albumHeader styled.");
-
-            // Responsive adjustments for albumHeader and albumDetailsCover
-            if (window.innerWidth < 768) { // Example breakpoint for mobile/small tablets
-                albumHeader.style.flexDirection = 'column';
-                albumHeader.style.alignItems = 'center'; // Center items horizontally
-                albumHeader.style.textAlign = 'center'; // Center text
-                albumHeader.style.padding = '15px'; // Reduce padding for small screens
-
-                if (albumDetailsCover) {
-                    albumDetailsCover.style.width = '120px'; // Smaller cover image
-                    albumDetailsCover.style.height = '120px';
-                    albumDetailsCover.style.margin = '0 auto 15px auto'; // Center image and add bottom margin
-                }
-                if (albumDetailsTitle) {
-                    albumDetailsTitle.style.fontSize = 'clamp(1.8em, 6vw, 2.5em)'; // Adjust clamp for smaller screens
-                    albumDetailsTitle.style.marginBottom = '2px';
-                }
-                if (albumDetailsArtist) {
-                    albumDetailsArtist.style.fontSize = 'clamp(1em, 3.5vw, 1.2em)';
-                    albumDetailsArtist.style.marginBottom = '2px';
-                }
-                if (albumDetailsMeta) {
-                    albumDetailsMeta.style.fontSize = 'clamp(0.8em, 3vw, 0.9em)';
-                    // Optionally hide meta on very small screens if space is critical
-                    // albumDetailsMeta.style.display = 'none';
-                }
-            } else { // Reset for larger screens
-                albumHeader.style.flexDirection = 'row';
-                albumHeader.style.alignItems = 'flex-end';
-                albumHeader.style.textAlign = 'left';
-                albumHeader.style.padding = '20px';
-
-                if (albumDetailsCover) {
-                    albumDetailsCover.style.width = '160px';
-                    albumDetailsCover.style.height = '160px';
-                    albumDetailsCover.style.margin = '0'; // Remove auto margin
-                }
-            }
-        }
-        if (albumDetailsCover) {
-            albumDetailsCover.src = albumData.coverArt || 'https://placehold.co/160x160/000000/FFFFFF?text=Album'; // Fallback image
-            albumDetailsCover.style.borderRadius = '8px'; // Rounded corners for cover
-            albumDetailsCover.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.5)'; // Add shadow
-            albumDetailsCover.style.objectFit = 'cover'; // Ensure image covers the area
-            albumDetailsCover.style.display = 'block'; // Ensure it's visible by default
-            console.log("albumDetailsCover styled.");
-        }
-        // Adjust text elements within album header for better spacing
-        if (albumDetailsTitle) {
-            albumDetailsTitle.textContent = albumData.title || 'Unknown Title';
-            albumDetailsTitle.style.fontWeight = 'bold';
-            albumDetailsTitle.style.color = '#fff';
-            console.log("albumDetailsTitle styled.");
-        }
-        if (albumDetailsArtist) {
-            albumDetailsArtist.textContent = albumData.artist || 'Unknown Artist';
-            albumDetailsArtist.style.color = '#b3b3b3';
-            console.log("albumDetailsArtist styled.");
-        }
-        if (albumDetailsMeta) {
-            albumDetailsMeta.textContent = `Album • ${albumData.year || 'Year N/A'} • ${albumData.genre || 'Genre N/A'}`;
-            albumDetailsMeta.style.color = '#a0a0a0';
-            console.log("albumDetailsMeta styled.");
-        }
-
-        if (albumTracksSection) {
-            albumTracksSection.style.display = 'block';
-            // Always apply bottom padding for smaller screens to lift tracks above player bar
-            if (window.innerWidth < 450) {
-                albumTracksSection.style.paddingBottom = '80px';
-            } else {
-                albumTracksSection.style.paddingBottom = '20px'; // Default bottom padding
-            }
-
-            // Horizontal padding for albumTracksSection - removed and relying on albumDetailsContent
-            albumTracksSection.style.paddingLeft = '0';
-            albumTracksSection.style.paddingRight = '0';
-            console.log("albumTracksSection styled.");
-        }
-        if (albumPlayButton) {
-            albumPlayButton.style.display = 'inline-flex'; // Changed to inline-flex for centering icon
-            albumPlayButton.style.justifyContent = 'center'; // Center horizontally
-            albumPlayButton.style.alignItems = 'center'; // Center vertically
-            albumPlayButton.style.marginTop = '9px'; // Space above play button
-            albumPlayButton.style.width = '60px'; // Make it a fixed size for circular shape
-            albumPlayButton.style.height = '60px'; // Make it a fixed size for circular shape
-            albumPlayButton.style.borderRadius = '50%'; // Make it circular
-            albumPlayButton.style.backgroundColor = '#d71e1eff';
-            albumPlayButton.style.color = 'black';
-            albumPlayButton.style.fontWeight = 'bold';
-            albumPlayButton.style.textTransform = 'uppercase';
-            albumPlayButton.style.letterSpacing = '1px';
-            albumPlayButton.style.border = 'none';
-            albumPlayButton.style.cursor = 'pointer';
-            albumPlayButton.onmouseover = function() { this.style.backgroundColor = '#df1f1fff'; };
-            albumPlayButton.onmouseout = function() { this.style.backgroundColor = '#d71e1eff'; };
-            console.log("albumPlayButton styled.");
-
-            // Add click listener for the album play button
-            albumPlayButton.removeEventListener('click', handleAlbumPlayButtonClick); // Prevent duplicates
-            albumPlayButton.addEventListener('click', handleAlbumPlayButtonClick);
-        }
-
-        // Table styling
-        if (albumDetailsTracksBody && albumDetailsTracksBody.parentNode && albumDetailsTracksBody.parentNode.tagName === 'TABLE') {
-            const trackTable = albumDetailsTracksBody.parentNode;
-            trackTable.style.width = '100%'; // Make table take full width
-            trackTable.style.borderCollapse = 'collapse'; // Collapse borders
-            trackTable.style.marginTop = '20px'; // Space above table
-            trackTable.style.color = '#fff'; // Text color
-            trackTable.style.tableLayout = 'fixed'; // Use fixed table layout for column width control
-            console.log("Track table styled.");
-
-            // Style table headers
-            const tableHeaders = trackTable.querySelectorAll('th');
-            tableHeaders.forEach(th => {
-                th.style.padding = '15px 10px';
-                th.style.textAlign = 'left';
-                th.style.borderBottom = '1px solid #444';
-                th.style.color = '#b3b3b3';
-                th.style.fontWeight = 'normal';
-                th.style.textTransform = 'uppercase';
-                th.style.fontSize = '0.8em';
-            });
-
-            // Adjust specific column widths for responsiveness
-            if (tableHeaders.length >= 4) {
-                if (window.innerWidth < 400) { // New breakpoint for very small screens
-                    tableHeaders[0].style.width = '15%'; // Number column (increased for icon visibility)
-                    tableHeaders[1].style.width = '40%'; // Title column (adjusted)
-                    tableHeaders[2].style.width = '25%'; // Artist column
-                    tableHeaders[3].style.width = '20%'; // Duration column
-                } else if (window.innerWidth < 768) {
-                    // Mobile specific column widths (between 400px and 768px)
-                    tableHeaders[0].style.width = '12%'; // Number column (increased for icon visibility)
-                    tableHeaders[1].style.width = '40%'; // Title column (adjusted)
-                    tableHeaders[2].style.width = '28%'; // Artist column
-                    tableHeaders[3].style.width = '20%'; // Duration column
-                } else {
-                    // Larger screen column widths
-                    tableHeaders[0].style.width = '10%';
-                    tableHeaders[1].style.width = '45%';
-                    tableHeaders[2].style.width = '30%';
-                    tableHeaders[3].style.width = '15%';
-                }
-            }
-            console.log("Table headers styled and column widths adjusted.");
-        }
-
-        if (albumData.tracks && albumData.tracks.length > 0) {
-            albumData.tracks.forEach((track, index) => {
-                const row = document.createElement('tr');
-                row.dataset.trackIndex = index;
-                row.dataset.title = track.title || 'Untitled';
-                row.dataset.artist = track.artist || albumData.artist || 'Various Artists';
-                row.dataset.img = track.img || albumData.coverArt;
-                row.dataset.src = track.src || '';
-                row.dataset.iframeSrc = track.iframeSrc || '';
-                row.dataset.spotifyUri = track.spotifyUri || '';
-                row.dataset.rawHtmlEmbed = track.rawHtmlEmbed || '';
-                row.dataset.soundcloudEmbed = track.soundcloudEmbed || '';
-                row.dataset.audiomackEmbed = track.audiomackEmbed || '';
-                row.dataset.fullSoundcloudEmbed = track.fullSoundcloudEmbed || '';
-
-                // NEW: Updated row innerHTML with heart icon
+        // --- Populate Tracklist ---
+        const tracksBody = document.getElementById('albumDetails-tracks');
+        if (tracksBody) {
+            tracksBody.innerHTML = ''; // Clear previous tracks
+            if (albumData.tracks && albumData.tracks.length > 0) {
+                albumData.tracks.forEach((track, index) => {
+                    const row = document.createElement('tr');
+                    row.dataset.trackIndex = index;
+                    // Replace this line
                 row.innerHTML = `
-                    <td class="track-number-cell">
-                        <span class="heart-icon-container">
-                            <svg class="heart-icon" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                        </span>
-                        <span class="track-index-number">${index + 1}</span>
+                    <td class="track-title-cell">
+                        <div class="track-title">${track.title || 'Untitled'}</div>
+                        <div class="track-artist">${track.artist || albumData.artist || 'Various Artists'}</div>
                     </td>
-                    <td class="track-title">${track.title || 'Untitled'}</td>
-                    <td>${track.artist || albumData.artist || 'Various Artists'}</td>
-                    <td>${formatTime(track.duration)}</td>
-                `;
+                    <td class="track-options-cell">
+                        <button class="track-options-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                        </button>
+                    </td>`;
 
-                // NEW: Add click listener to the heart icon container
-                const heartContainer = row.querySelector('.heart-icon-container');
-                if (heartContainer) {
-                    heartContainer.addEventListener('click', (e) => {
-                        e.stopPropagation(); // Prevent the row's click listener (play track) from firing
-                        const heartIcon = e.currentTarget.querySelector('.heart-icon');
-                        heartIcon.classList.toggle('liked');
-                    });
-                }
-
-
-                // Apply styles to each table cell
-                row.querySelectorAll('td').forEach(td => {
-                    td.style.padding = '12px 10px'; // Increased padding
-                    td.style.borderBottom = '1px solid #333'; // Lighter border
-                    td.style.verticalAlign = 'middle';
-                    td.style.whiteSpace = 'nowrap'; // Prevent text wrapping by default
-                    td.style.overflow = 'hidden';
-                    td.style.textOverflow = 'ellipsis'; // Add ellipsis for overflow
-                    // Responsive font size for table cells
-                    td.style.setProperty('font-size', 'clamp(0.8em, 2.5vw, 1em)', 'important');
+                row.addEventListener('click', (e) => {
+                    if (e.target.closest('.track-options-btn')) return;
+                    playTrack(albumData.tracks[index], index);
                 });
-                // Specific styling for track title to allow wrapping on small screens
-                const trackTitleCell = row.querySelector('.track-title');
-                if (trackTitleCell) {
-                    trackTitleCell.style.fontWeight = 'bold';
-                    trackTitleCell.style.color = '#fff';
-                    trackTitleCell.style.whiteSpace = 'normal'; // Allow title to wrap
-                    trackTitleCell.style.wordBreak = 'break-word'; // Break long words
-                }
-
-                // Hover effect for rows
-                row.style.transition = 'background-color 0.2s ease';
-                row.onmouseover = function() { this.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'; };
-                row.onmouseout = function() { this.style.backgroundColor = 'transparent'; };
-
-
-                if (highlightTrackTitle && (track.title || '').toLowerCase().includes(highlightTrackTitle.toLowerCase())) {
-                    row.classList.add('highlighted-search-result');
-                    row.style.backgroundColor = 'rgba(30, 215, 96, 0.3)'; // Highlight color
-                } else {
-                    row.classList.remove('highlighted-search-result');
-                    row.style.backgroundColor = 'transparent'; // Ensure no highlight if not matched
-                }
-
-                row.addEventListener('click', async () => { // Made async to await Spotify state
-                    const clickedTrackIndex = parseInt(row.dataset.trackIndex);
-                    const clickedTrack = currentAlbum.tracks[clickedTrackIndex];
-
-                    // Check if the clicked track is the same as the currently playing track
-                    const isCurrentlyPlayingThisTrack = (playingAlbum && playingAlbum.id === currentAlbum.id && clickedTrackIndex === currentTrackIndex);
-
-                    // Check if the track is controllable by our JS (YouTube or Spotify SDK, or native audio)
-                    const isControllableTrack = clickedTrack.spotifyUri || (clickedTrack.iframeSrc && clickedTrack.iframeSrc.includes('https://www.youtube.com/embed/')) || (clickedTrack.src && !clickedTrack.iframeSrc && !clickedTrack.spotifyUri && !clickedTrack.rawHtmlEmbed && !clickedTrack.soundcloudEmbed && !clickedTrack.audiomackEmbed && !clickedTrack.fullSoundcloudEmbed);
-
-                    let shouldPlay = true;
-                    let seekTime = 0;
-
-                    if (isCurrentlyPlayingThisTrack && isControllableTrack) {
-                        // If it's the same controllable track, toggle play/pause
-                        let isPlaying = false;
-                        if (audio.src && audio.src === clickedTrack.src) {
-                            isPlaying = !audio.paused;
-                        } else if (ytPlayer && clickedTrack.iframeSrc && clickedTrack.iframeSrc.includes('https://www.youtube.com/embed/')) {
-                            const videoIdMatch = clickedTrack.iframeSrc.match(/\/embed\/([a-zA-Z0-9_-]+)/);
-                            const videoId = videoIdMatch ? videoIdMatch[1] : null;
-                            if (videoId && ytPlayer.getVideoData() && ytPlayer.getVideoData().video_id === videoId) {
-                                isPlaying = ytPlayer.getPlayerState() === YT.PlayerState.PLAYING;
-                            }
-                        } else if (spotifyPlayer && clickedTrack.spotifyUri) {
-                            try {
-                                const state = await spotifyPlayer.getCurrentState();
-                                if (state && state.track_window.current_track.uri === clickedTrack.spotifyUri) {
-                                    isPlaying = !state.paused;
-                                }
-                            } catch (e) {
-                                console.warn("Error checking Spotify state for toggle:", e);
-                            }
-                        }
-
-                        if (isPlaying) {
-                            // Pause
-                            if (audio.src && audio.src === clickedTrack.src) audio.pause();
-                            else if (ytPlayer) ytPlayer.pauseVideo();
-                            else if (spotifyPlayer) await spotifyPlayer.pause();
-                            shouldPlay = false; // Don't call playTrack, just pause
-                            console.log(`DEBUG: Paused currently playing controllable track "${clickedTrack.title}".`);
-                        } else {
-                            // Resume from last known position
-                            seekTime = lastKnownPlaybackPosition;
-                            console.log(`DEBUG: Resuming currently paused controllable track "${clickedTrack.title}" from: ${seekTime} seconds.`);
-                        }
-                    } else {
-                        // If it's a different track or a non-controllable embed, stop all and play fresh
-                        
-// Preserve embedded playback when switching embedded->embedded (don't stop previous embed)
-const isBackgroundEmbeddedPlaying = playingAlbum && (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc || playingAlbum.soundcloudEmbed);
-const isClickedTrackEmbedded = clickedTrack && (clickedTrack.rawHtmlEmbed || clickedTrack.fullSoundcloudEmbed || clickedTrack.audiomackEmbed || clickedTrack.iframeSrc || clickedTrack.soundcloudEmbed);
-const isSwitchingEmbeddedToEmbedded = isBackgroundEmbeddedPlaying && isClickedTrackEmbedded && playingAlbum && currentAlbum && playingAlbum.id !== currentAlbum.id;
-if (!isSwitchingEmbeddedToEmbedded) {
-    stopAllPlaybackUI();
-} else {
-    console.log("Preserving background embedded playback when switching to another embedded album.");
-}
-
-                        console.log(`DEBUG: Playing new track or non-controllable embedded track "${clickedTrack.title}". Starting fresh.`);
-                    }
-
-                    // No need to reset all track icons here. updateTrackHighlightingInOverlay will handle it.
-                    if (shouldPlay) {
-                        playTrack(clickedTrack, clickedTrackIndex, seekTime);
-                    } else {
-                        // If paused, just update the UI to reflect pause state
-                        updateTrackHighlightingInOverlay(); // Re-apply highlights and icons
-                        if (playPauseBtn) {
-                            playIcon.classList.remove('hidden');
-                            pauseIcon.classList.add('hidden');
-                        }
-                        updateAlbumPlayButtonIcon(); // Sync album play button
-                    }
-                    updatePlayerUI(); // Sync all player UI
-                    updateFixedTopHeadingVisibility(); // Sync fixed top heading
-                });
-                if (albumDetailsTracksBody) {
-                    albumDetailsTracksBody.appendChild(row);
-                }
+                tracksBody.appendChild(row);
             });
-            // After populating tracks, update highlighting based on current playback
-            updateTrackHighlightingInOverlay();
         }
-        if (closeOverlayBtn) {
-            closeOverlayBtn.style.display = 'flex';
-            closeOverlayBtn.style.position = 'absolute';
-            closeOverlayBtn.style.top = '15px';
-            closeOverlayBtn.style.right = '16px';
-            closeOverlayBtn.style.backgroundColor = 'rgb(26, 2, 2)';
-            closeOverlayBtn.style.color = 'white';
-            closeOverlayBtn.style.border = 'none';
-            closeOverlayBtn.style.borderRadius = '50%';
-            closeOverlayBtn.style.width = '34px';
-            closeOverlayBtn.style.height = '34px';
-            closeOverlayBtn.style.justifyContent = 'center';
-            closeOverlayBtn.style.alignItems = 'center';
-            closeOverlayBtn.style.cursor = 'pointer';
-            closeOverlayBtn.style.zIndex = '1000';
-            console.log("closeOverlayBtn styled and displayed.");
         }
+        
+        // Enable player controls for tracklist albums
+        togglePlayerControls(true);
     }
-    // Always update the album play button icon when opening a non-embedded album
+
+    // --- Common Logic for Both Album Types ---
+    const playButton = document.getElementById('album-play');
+    const compactPlayButton = document.getElementById('compact-header-play-btn');
+    const closeButtons = document.querySelectorAll('.close-overlay');
+    
+    const playClickHandler = () => {
+         if (albumData.tracks && albumData.tracks.length > 0) {
+            const isPlayingThisAlbum = playingAlbum && playingAlbum.id === albumData.id;
+            if (isPlayingThisAlbum) {
+                togglePlayback();
+            } else {
+                playTrack(albumData.tracks[0], 0);
+            }
+        }
+    };
+
+    if (playButton) playButton.onclick = playClickHandler;
+    if (compactPlayButton) compactPlayButton.onclick = playClickHandler;
+    closeButtons.forEach(btn => btn.onclick = closeAlbumOverlay);
+
+    setupAlbumScrollListener();
+    
+
+    // Show the Overlay
+    albumOverlay.classList.remove('hidden');
+    setTimeout(() => albumOverlay.classList.add('show'), 10);
+    document.body.style.overflow = 'hidden';
+
+
+        
+
+    // --- Final UI Updates & Event Listeners ---
     updateAlbumPlayButtonIcon();
-    // NEW: Update the main album playbar UI when opening a non-embedded album
     updatePlayerUI();
+ setupAlbumScrollListener();
 
-    // Add the event listeners for player controls here, once the album details are populated
-    // and the player is ready to be interacted with for the *newly opened album*.
-    if (prevTrackBtn) {
-        prevTrackBtn.removeEventListener('click', prevTrack); // Prevent duplicates
-        prevTrackBtn.addEventListener('click', prevTrack);
-    }
-    if (nextTrackBtn) {
-        nextTrackBtn.removeEventListener('click', nextTrack); // Prevent duplicates
-        nextTrackBtn.addEventListener('click', nextTrack);
-    }
-    // Attach event listener for the close button
-    if (closeOverlayBtn) {
-        closeOverlayBtn.removeEventListener('click', closeAlbumOverlay); // Prevent multiple listeners
-        closeOverlayBtn.addEventListener('click', closeAlbumOverlay);
-    }
-    // Locate the section you want to correct within openAlbumDetails
-if (albumOverlay && topBar && rightPanel && mainPlayBar) {
-            // First, make sure the overlay is ready to be animated (not display: none)
-            albumOverlay.classList.remove('hidden'); 
+  setupAlbumScrollListener();
+    
+    // Add this new line right after it:
+    setupAlbumSearchListeners(); 
+    // Attach/re-attach common event listeners
+    prevTrackBtn.removeEventListener('click', prevTrack);
+    prevTrackBtn.addEventListener('click', prevTrack);
+    nextTrackBtn.removeEventListener('click', nextTrack);
+    nextTrackBtn.addEventListener('click', nextTrack);
+    closeOverlayBtn.removeEventListener('click', closeAlbumOverlay);
+    closeOverlayBtn.addEventListener('click', closeAlbumOverlay);
 
-            // --- NEW: Add a small delay before starting the animation ---
-            // This makes the transition feel smoother and more responsive.
-            setTimeout(() => {
-                albumOverlay.classList.add('show', 'active');
-            }, 100); // 50 milliseconds is a short but effective delay
+    // Show the overlay with a smooth animation
+    albumOverlay.classList.remove('hidden');
+    setTimeout(() => {
+        albumOverlay.classList.add('show', 'active');
+    }, 50); // Small delay for smoother transition
 
-            console.log("albumOverlay opening initiated with a small delay.");
-            document.body.style.overflow = 'hidden';
-            updateFixedTopHeadingVisibility();
-        }
-else {
-    console.error("Error: One or more critical elements for albumOverlay visibility are missing. Overlay will not show.", {
-        albumOverlay,
-        topBar,
-        rightPanel,
-        mainPlayBar
-    });
+    document.body.style.overflow = 'hidden';
+    updateFixedTopHeadingVisibility();
 }
 
+
+
+// START: Add these two new functions to script.js
+
+/**
+ * Attaches a scroll event listener to the album overlay's content area.
+ * It's crucial to remove any old listener first to prevent duplicates.
+ */
+function setupAlbumScrollListener() {
+    const scrollContent = document.getElementById('album-overlay-scroll-content');
+    if (!scrollContent) return;
+
+    // Remove the previous listener to avoid memory leaks or multiple triggers
+    scrollContent.removeEventListener('scroll', handleAlbumScroll);
+    // Add the new listener
+    scrollContent.addEventListener('scroll', handleAlbumScroll);
 }
 
+/**
+ * Handles the scroll event within the album overlay.
+ * Toggles a class on the main overlay element based on the scroll position,
+ * which triggers the CSS transitions for the compact header.
+ */
+function handleAlbumScroll() {
+    const overlay = document.getElementById('albumOverlay');
+    const scrollContent = document.getElementById('album-overlay-scroll-content');
+    if (!overlay || !scrollContent) return;
+
+    // The threshold is the point at which you want the header to appear.
+    // A value of 60 means after scrolling down 60 pixels.
+    const scrollThreshold = 500;
+
+    if (scrollContent.scrollTop > scrollThreshold) {
+        overlay.classList.add('is-scrolled');
+    } else {
+        overlay.classList.remove('is-scrolled');
+    }
+}
+
+// END: Add these two new functions to script.js
 /**
  * Function to handle the click on the main album play button within the overlay.
  * Toggles playback of the current album's current track.
@@ -3314,7 +2849,7 @@ async function handleAlbumPlayButtonClick() {
         console.log("Album Play Button: Playing/Resuming current track from lastKnownPlaybackPosition.");
     }
     updateAlbumPlayButtonIcon(); // Always update icon after action
-    updateTrackHighlightingInOverlay(); // Update track highlighting in overlay
+  
     updatePlayerUI(); // Sync all player UI
     updateFixedTopHeadingVisibility(); // Sync fixed top heading
 }

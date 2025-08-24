@@ -9770,3 +9770,141 @@ font-weight: 500;
 .add-to-queue-btn {
     color: #75f695;
 }
+
+@media (max-width:768px){
+    .top-bar{
+ background:   transparent;
+    border-bottom: transparent;
+    box-shadow:none;
+    }
+
+    .header{
+        background-color: transparent ;
+    }
+
+    .search-box{
+        display: none;
+    }
+  .right{
+    padding-top:4px;
+  }
+  .user-avatar-container {
+    background-color: transparent;
+    color:rgb(223,188,115);
+    border: 5px solid rgb(223,188,115);
+  }
+.user-avatar-container:hover {
+    background-color: transparent;
+}
+
+/* ======================================================= */
+/* Golden Hamburger Icon Styling                         */
+/* ======================================================= */
+
+.hamburgerContainer img,
+.hamburgerContainer svg {
+    /* * This filter chain converts the original icon color (assumed to be white) 
+     * into a vibrant, bold gold. The drop-shadow adds a subtle glow, 
+     * making it appear bolder.
+    */
+    filter: invert(85%) sepia(30%) saturate(1500%) hue-rotate(350deg) brightness(100%) drop-shadow(0 0 1px #ffd700);
+    
+    /* Adding 'filter' to the transition for a smooth hover effect */
+    transition: transform 0.2s, filter 0.2s;
+}
+
+/* On hover, we slightly increase the brightness to make it pop */
+.hamburgerContainer img:hover,
+.hamburgerContainer svg:hover {
+    filter: invert(85%) sepia(30%) saturate(1500%) hue-rotate(350deg) brightness(110%) drop-shadow(0 0 2px #fff8b3);
+}
+
+  /* ======================================================= */
+/* Hamburger Icon Dimension Increase                     */
+/* ======================================================= */
+
+/* Increase size for desktop and tablet views */
+.hamburgerContainer img,
+.hamburgerContainer svg {
+    width: 40px;
+    height: 40px;
+}
+
+/* Increase size for mobile view */
+
+    .hamburgerContainer img,
+    .hamburgerContainer svg {
+        width: 24px;
+        height: 24px;
+    }
+
+
+}
+
+
+/* ======================================================= */
+/* Dark Gradient for Top Corners on Mobile/Tablet       */
+/* ======================================================= */
+
+/* This rule applies only to screens 768px wide or smaller */
+@media (max-width: 768px) {
+    /* * We use a ::before pseudo-element on the main carousel container.
+     * This creates a new layer that sits on top of the image but below
+     * the text and buttons, preventing any interference.
+    */
+    .trending-carousel-container::before {
+        content: '';
+        position: absolute;
+        inset: 0; /* Covers the entire container area */
+        
+        /* * This creates two radial gradients:
+         * 1. One positioned at the top-left corner (0% 0%).
+         * 2. One positioned at the top-right corner (100% 0%).
+         * Each gradient starts with a semi-transparent black and fades out,
+         * creating a soft shadow effect in the corners.
+        */
+        background-image:
+            radial-gradient(circle at 0% 0%, rgba(0, 0, 0, 0.8) 0%, transparent 50%),
+            radial-gradient(circle at 100% 0%, rgba(0, 0, 0, 0.8) 0%, transparent 50%);
+
+        /* Ensures this gradient layer doesn't block clicks on the carousel */
+        pointer-events: none;
+
+        /* * Places this gradient above the poster image (z-index: 1 or default)
+         * but below the text content and buttons overlay (z-index: 3).
+        */
+        z-index: 2;
+    }
+}
+
+.record-breaking-section .mini-album-card .card-title {
+    display: none;
+}
+
+
+
+#carousel-play-btn .circle {
+    stroke: rgb(223,188,115) !important; /* Golden border */
+}
+
+#carousel-play-btn .play-icon,
+#carousel-play-btn .pause-icon {
+    fill: rgb(223,188,115) !important;   /* Golden play/pause icon */
+}
+
+/* --- Golden Add (+) Button --- */
+#carousel-add-btn {
+    background-color: rgba(255, 215, 0, 0.15); /* Subtle semi-transparent gold background */
+    border-color: rgb(223,188,115);                     /* Golden border */
+    color: rgb(223,188,115);                            /* Golden '+' symbol */
+}
+
+/* Optional: A nice hover effect for the add button */
+#carousel-add-btn:hover {
+    background-color: rgba(255, 215, 0, 0.3);
+    border-color: #fff; /* White border on hover provides a nice contrast */
+}
+
+#carousel-play-btn .circle {
+    stroke: rgb(223,188,115) !important; /* Forces the border to be golden */
+}

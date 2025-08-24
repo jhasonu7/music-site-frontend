@@ -12926,5 +12926,10 @@ font-weight: 500;
     stroke: rgb(223,188,115) !important; /* Forces the border to be golden */
 }
 
-
+@media (max-width: 768px) {
+    .artist-image-container2 {
+        position: relative;
+        top: -62px;
+    }
+}
 

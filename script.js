@@ -9344,51 +9344,50 @@ document.addEventListener('DOMContentLoaded', () => {
     const closePopupBtn = document.getElementById('close-record-breaking-popup2');
     const popupGrid = document.getElementById('record-breaking-popup-grid2');
 
-    // Function to open the popup
-    const openRecordBreakingPopup2 = () => {
-        if (!popupOverlay || !popupGrid) return;
+   // in script.js, find the existing openRecordBreakingPopup2 function and replace it with this one
 
-        // 1. Clear any old content from the grid
-        popupGrid.innerHTML = '';
+const openRecordBreakingPopup2 = () => {
+    if (!popupOverlay || !popupGrid) return;
 
-        // 2. Find the original mini-carousel albums
-        const originalCards = document.querySelectorAll('#record-breaking-albums-container2 .mini-album-card2');
+    // 1. Clear any old content from the grid
+    popupGrid.innerHTML = '';
 
-        // 3. Create a new card in the popup for each original card
-        originalCards.forEach(originalCard => {
-            const albumId = originalCard.dataset.albumId;
-            const album = allAlbumsData.find(a => a.id === albumId);
+    // 2. Find the original mini-carousel albums with the CORRECTED class name
+    const originalCards = document.querySelectorAll('#record-breaking-albums-container2 .mini-album-card'); // <<< THIS IS THE FIX
 
-            if (album) {
-                const newCard = document.createElement('div');
-                newCard.className = 'record-breaking-popup-card2';
-                // Set the data-album-id so we know which album to open on click
-                newCard.dataset.albumId = album.id;
-                newCard.innerHTML = `
-                    <img src="${album.coverArt}" alt="${album.title}">
-                    <div class="card-title2">${album.title}</div>
-                `;
+    // 3. Create a new card in the popup for each original card
+    originalCards.forEach(originalCard => {
+        const albumId = originalCard.dataset.albumId;
+        const album = allAlbumsData.find(a => a.id === albumId);
 
-                // 4. Add a click listener to the new card
-                newCard.addEventListener('click', () => {
-                    // Find the full album data and open the details overlay
-                    const albumToOpen = allAlbumsData.find(a => a.id === album.id);
-                    if (albumToOpen) {
-                        openAlbumDetails(albumToOpen);
-                        // REMOVED THE FOLLOWING LINE:
-                        // closeRecordBreakingPopup2(); // Close the grid popup after opening the album
-                    }
-                });
+        if (album) {
+            const newCard = document.createElement('div');
+            // This class was also updated for consistency in the previous step,
+            // but we'll correct it here too to be safe.
+            newCard.className = 'record-breaking-popup-card'; 
+            newCard.dataset.albumId = album.id;
+            newCard.innerHTML = `
+                <img src="${album.coverArt}" alt="${album.title}">
+                <div class="card-title">${album.title}</div>
+            `;
 
-                popupGrid.appendChild(newCard);
-            }
-        });
+            // 4. Add a click listener to the new card
+            newCard.addEventListener('click', () => {
+                const albumToOpen = allAlbumsData.find(a => a.id === album.id);
+                if (albumToOpen) {
+                    openAlbumDetails(albumToOpen);
+                }
+            });
 
-        // 5. Show the popup
-        popupOverlay.classList.remove('hidden');
-        popupOverlay.classList.add('flex'); // Use flex to center the content
-        document.body.classList.add('popup-active2'); // Prevent background scrolling
-    };
+            popupGrid.appendChild(newCard);
+        }
+    });
+
+    // 5. Show the popup
+    popupOverlay.classList.remove('hidden');
+    popupOverlay.classList.add('flex');
+    document.body.classList.add('popup-active2');
+};
 
     // Function to close the popup
     const closeRecordBreakingPopup2 = () => {

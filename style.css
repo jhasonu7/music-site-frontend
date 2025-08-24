@@ -13061,3 +13061,6 @@ font-weight: 500;
 #carousel-play-btn circle {
   stroke: rgb(223, 188, 115) !important; /* Golden border */
 }
+.card-title {
+    color: rgb(223,188,115);
+}

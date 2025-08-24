@@ -8465,7 +8465,7 @@ tr.playing td:nth-child(1) {
 .mini-album-card::after {
     content: '';
     position: absolute;
-    inset: 0;
+    inset: 1;
     background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 70%);
 }
 
@@ -12939,10 +12939,5 @@ font-weight: 500;
 .card{
     padding: 0px;
 }
-.mini-album-card::after {
-    content: '';
-    position: absolute;
-    inset: 1;
-    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 70%);
-}
+
 

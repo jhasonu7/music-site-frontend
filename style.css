@@ -9909,6 +9909,1991 @@ font-weight: 500;
     stroke: rgb(223,188,115) !important; /* Forces the border to be golden */
 }
 
+
+.record-breaking-section {
+    width: 98%;
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #0d0f22;
+    border-radius: 20px;
+    overflow: hidden;
+    box-sizing: border-box;
+    flex-shrink: 0; /* Prevents this section from being squished */
+}
+
+.record-breaking-content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 2rem;
+}
+
+.text-content {
+    flex: 1;
+    z-index: 2;
+}
+
+.section-super-title {
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.section-main-title {
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.1;
+    margin-bottom: 1rem;
+}
+
+.section-description {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    max-width: 500px;
+    margin-bottom: 2rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+}
+
+.action-buttons button {
+    padding: 0.8rem 1.8rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s ease;
+}
+
+.listen-now-btn {
+    background: linear-gradient(90deg, #e74c3c, #c0392b);
+    color: white;
+}
+
+.add-to-queue-btn {
+    background: transparent;
+    color: white;
+    border: 2px solid white;
+}
+
+.artist-image-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.artist-image-container img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 15px;
+}
+
+.mini-album-carousel-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+}
+
+.mini-album-carousel {
+    display: flex;
+    gap: 1.5rem;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding: 1rem 0;
+    scrollbar-width: none;
+}
+.mini-album-carousel::-webkit-scrollbar {
+    display: none;
+}
+
+.mini-album-card {
+    flex: 0 0 140px;
+    aspect-ratio: 1 / 1;
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.mini-album-card:hover {
+    transform: translateY(-5px);
+}
+
+.mini-album-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mini-album-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 70%);
+}
+
+.mini-album-card .card-title {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    color: white;
+    font-weight: 600;
+    z-index: 2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mini-carousel-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    z-index: 5;
+}
+.mini-carousel-nav.prev { left: -45px; }
+.mini-carousel-nav.next { right: -45px; }
+
+/* Responsive Styles for the new section */
+@media (max-width: 992px) {
+    .record-breaking-content {
+        flex-direction: column;
+    }
+    .artist-image-container {
+        order: -1;
+        width: 100%;
+    }
+    .text-content {
+        text-align: center;
+    }
+    .section-description,
+    .mini-album-carousel-wrapper {
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .action-buttons {
+        justify-content: center;
+    }
+    .mini-carousel-nav {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .record-breaking-section {
+        padding: 1.5rem 1rem;
+    }
+    .action-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    .action-buttons button {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+
+/* ... and other mini-carousel styles ... */
+
+
+/* ======================================================= */
+/*            RESPONSIVE STYLES (SCALING)                */
+/* ======================================================= */
+
+@media (max-width: 992px) {
+    .record-breaking-content {
+        /* THIS IS THE KEY FIX: Keep the layout in a row */
+        flex-direction: row;
+        gap: 1.5rem;
+    }
+
+    /* Assign proportional widths to the columns */
+    .text-content {
+        flex-basis: 55%;
+    }
+    .artist-image-container {
+        flex-basis: 45%;
+    }
+
+    /* Other scaling styles... */
+    .section-main-title {
+        font-size: clamp(1.5rem, 4vw, 2.5rem);
+    }
+    .section-description {
+        font-size: clamp(0.75rem, 2vw, 0.9rem);
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        display: -webkit-box;
+    }
+    .action-buttons button {
+        padding: 0.6rem 1.2rem;
+        font-size: clamp(0.7rem, 2.5vw, 0.9rem);
+    }
+    .mini-album-card {
+        flex: 0 0 90px;
+    }
+    .mini-carousel-nav {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .record-breaking-content {
+        gap: 1rem;
+    }
+    .text-content {
+        flex-basis: 60%;
+    }
+    .artist-image-container {
+        flex-basis: 40%;
+    }
+    .section-description {
+        -webkit-line-clamp: 2;
+    }
+    .action-buttons {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .mini-album-card {
+        flex: 0 0 75px;
+    }
+}
+
+/* ================================================================ */
+/* FINAL MOBILE & TABLET FIX for Record Breaking Albums Section     */
+/* This creates a proportional, two-column layout that matches the  */
+/* provided screenshot on all screen sizes.                         */
+/* ================================================================ */
+
+/* --- Responsive Scaling for Tablet & Mobile (screens up to 992px wide) --- */
+@media (max-width: 992px) {
+    .record-breaking-section {
+        padding: 1.5rem;
+        /* Let the content inside determine the height for proportional scaling */
+        height: auto; 
+    }
+
+    /* 1. Ensure the two-column layout is maintained */
+    .record-breaking-content {
+        flex-direction: row; /* This keeps the columns side-by-side */
+        align-items: center; /* Vertically center the content in each column */
+        gap: 1.5rem;
+    }
+
+    /* 2. Assign proportional widths to the columns */
+    .text-content {
+        flex-basis: 55%; /* Give more space to the text */
+        text-align: left; /* Keep text left-aligned */
+    }
+    .artist-image-container {
+        flex-basis: 45%;
+    }
+
+    /* 3. Make the image scale down proportionally without cropping */
+    .artist-image-container img {
+        width: 100%;
+        height: auto; /* This is the key to proportional scaling */
+        display: block; 
+    }
+
+    /* 4. Hide the description paragraph to match the screenshot */
+    .section-description {
+        display: none;
+    }
+
+    /* 5. Scale down the fonts for smaller screens */
+    .section-super-title {
+        font-size: clamp(0.8rem, 2vw, 1rem);
+    }
+    .section-main-title {
+        font-size: clamp(1.5rem, 5vw, 2.5rem);
+        /* Add more space below the title since the description is gone */
+        margin-bottom: 1.5rem; 
+    }
+
+    /* 6. Scale down the action buttons */
+    .action-buttons {
+        margin-bottom: 2rem;
+        gap: 0.75rem;
+        flex-wrap: wrap; /* Allow buttons to wrap on very narrow screens */
+    }
+    .action-buttons button {
+        padding: 0.6rem 1.2rem;
+        font-size: clamp(0.7rem, 2.5vw, 0.9rem);
+    }
+
+    /* 7. Scale down the mini-carousel at the bottom */
+    .mini-album-card {
+        flex: 0 0 100px; /* Smaller cards */
+    }
+    .mini-carousel-nav {
+        display: none; /* Hide navigation arrows on mobile */
+    }
+}
+
+/* --- Further adjustments for very small screens (phones) --- */
+@media (max-width: 480px) {
+    .record-breaking-section {
+        padding: 1.2rem;
+    }
+    .record-breaking-content {
+        gap: 1rem;
+    }
+    /* Give even more space to the text on very narrow screens */
+    .text-content {
+        flex-basis: 60%; 
+    }
+    .artist-image-container {
+        flex-basis: 40%;
+    }
+    .mini-album-card {
+        flex: 0 0 80px; /* Even smaller cards */
+    }
+}
+
+/* ================================================================ */
+/* FINAL MOBILE FIX for Record Breaking Albums Section (Stacked)    */
+/* This creates a compact, single-column layout and hides the       */
+/* singer's image on mobile, as per the latest screenshot.          */
+/* ================================================================ */
+
+/* This targets tablets and mobile phones */
+@media (max-width: 992px) {
+
+    /* Make the overall section more compact */
+    .record-breaking-section {
+        padding: 1.5rem 1rem; /* Reduced padding */
+        margin: 1rem auto;
+    }
+
+    /* 1. Stack the layout vertically */
+    .record-breaking-content {
+        flex-direction: column;
+        gap: 1rem; /* Reduced gap between stacked items */
+    }
+
+    /* 2. Hide the singer's image completely */
+    .artist-image-container {
+        display: none !important; /* Use !important to be certain it's hidden */
+    }
+
+    /* 3. Center all the text content */
+    .text-content {
+        text-align: center;
+        width: 100%; /* Ensure it takes the full width */
+    }
+
+    /* 4. Scale down fonts and reduce margins for a tighter look */
+    .section-super-title {
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+    }
+    .section-main-title {
+        font-size: 1.8rem; /* Significantly smaller title */
+        line-height: 1.2;
+        margin-bottom: 1.2rem;
+    }
+
+    /* 5. Scale down buttons and reduce spacing */
+    .action-buttons {
+        justify-content: center;
+        gap: 0.75rem; /* Tighter gap between buttons */
+        margin-bottom: 1.5rem; /* Less space below buttons */
+    }
+    .action-buttons button {
+        padding: 0.6rem 1.4rem; /* Smaller buttons */
+        font-size: 0.9rem;
+    }
+
+    /* 6. Scale down the mini-carousel */
+    .mini-album-carousel-wrapper {
+        max-width: 100%;
+        margin: 0 auto;
+    }
+    .mini-album-carousel {
+        gap: 1rem; /* Tighter gap between mini-albums */
+        padding-bottom: 0;
+    }
+    .mini-album-card {
+        flex: 0 0 110px; /* Smaller mini-album cards */
+    }
+    .mini-album-card .card-title {
+        font-size: 0.8rem;
+    }
+    
+    /* Hide desktop navigation arrows */
+    .mini-carousel-nav {
+        display: none;
+    }
+}
+
+
+/* ================================================================= */
+/* FINAL OVERRIDE: Record Breaking Section Mobile Layout             */
+/* This forces a compact, two-column layout on mobile devices.       */
+/* ================================================================= */
+
+@media (max-width: 768px) {
+
+    /* --- Overall Section Compactness --- */
+    .record-breaking-section {
+        padding: 1rem !important; /* Force smaller padding */
+        margin: 1rem auto !important;
+        height: auto !important; /* Let content determine the height */
+    }
+
+    /* --- Force Two-Column Layout & Reduce Gaps --- */
+    .record-breaking-content {
+        display: flex !important;
+        flex-direction: row !important; /* Force side-by-side columns */
+        align-items: center !important;
+        gap: 0.75rem !important; /* Force a smaller gap between columns */
+    }
+
+    /* --- Configure the Left (Text) Column --- */
+    .text-content {
+        flex: 1 1 60% !important; /* Give it more space */
+        min-width: 0 !important; /* CRITICAL: Allows the column to shrink */
+        text-align: left !important;
+    }
+
+    /* --- Force the Right (Image) Column to be VISIBLE --- */
+    .artist-image-container {
+        display: flex !important; /* Force the container to be visible */
+        flex: 1 1 40% !important;
+        min-width: 0 !important; /* CRITICAL: Allows the column to shrink */
+    }
+
+    .artist-image-container img {
+        width: 100% !important;
+        height: auto !important; /* Ensures the image scales proportionally */
+        display: block !important;
+    }
+
+    /* --- Reduce Text Size and Margins --- */
+    .section-super-title {
+        font-size: 0.8rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+    .section-main-title {
+        font-size: clamp(1.2rem, 5vw, 1.6rem) !important;
+        line-height: 1.2 !important;
+        margin-bottom: 1rem !important;
+    }
+    .section-description {
+        display: none !important; /* Hide description to save space */
+    }
+
+    /* --- Reduce Button Size and Gaps --- */
+    .action-buttons {
+        gap: 0.5rem !important;
+        margin-bottom: 1rem !important;
+        flex-wrap: wrap !important;
+    }
+    .action-buttons button {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    /* --- Reduce Mini Carousel Size --- */
+    .mini-album-carousel {
+        gap: 0.5rem !important;
+        padding-bottom: 0 !important;
+    }
+    .mini-album-card {
+        flex: 0 0 75px !important; /* Make mini-album cards smaller */
+    }
+}
+
+
+/*
+  This CSS section ensures the "Record Breaking Albums" layout
+  matches the provided image on all screen sizes, including
+  mobile and tablet.
+*/
+
+/* --- Final Mobile & Tablet Fix for a Two-Column Layout --- */
+/* This targets devices up to 768px wide (phones and tablets) */
+@media (max-width: 768px) {
+
+    /* Force a compact, two-column layout */
+    .record-breaking-content {
+        display: flex !important;
+        flex-direction: row !important; /* Force side-by-side columns */
+        align-items: center !important;
+        gap: 0.75rem !important; /* Reduce gap between columns */
+    }
+
+    /* Configure the Left (Text) Column */
+    .text-content {
+        flex: 1 1 60% !important; /* Give it more space */
+        min-width: 0 !important; /* Critical for shrinking */
+        text-align: left !important;
+    }
+
+    /* Configure the Right (Image) Column to be Visible */
+    .artist-image-container {
+        display: flex !important; /* Force the container to be visible */
+        flex: 1 1 40% !important; /* Allocate 40% of the space to the image */
+        min-width: 0 !important; /* Critical for shrinking */
+    }
+
+    .artist-image-container img {
+        width: 100% !important;
+        height: auto !important; /* Ensure proportional scaling */
+        display: block !important;
+    }
+
+    /* Reduce text size and margins for a better fit */
+    .section-super-title {
+        font-size: 0.8rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+
+    .section-main-title {
+        font-size: clamp(1.2rem, 5vw, 1.6rem) !important;
+        line-height: 1.2 !important;
+        margin-bottom: 1rem !important;
+    }
+
+    /* Hide the description paragraph as it's not in the image */
+    .section-description {
+        display: none !important;
+    }
+
+    /* Adjust buttons and carousel for the new layout */
+    .action-buttons {
+        gap: 0.5rem !important;
+        margin-bottom: 1rem !important;
+        flex-wrap: wrap !important;
+    }
+    
+    .action-buttons button {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    .mini-album-carousel {
+        gap: 0.5rem !important;
+    }
+    
+    .mini-album-card {
+        flex: 0 0 75px !important;
+    }
+
+    .mini-carousel-nav {
+        display: none !important; /* Hide navigation arrows on mobile */
+    }
+}
+
+/* ================================================================ */
+/* CORRECTED STYLES: Record Breaking Albums Section           */
+/* This creates a proportional, two-column layout on ALL screens.   */
+/* ================================================================ */
+
+/* --- Base Styles (Desktop First) --- */
+.record-breaking-section {
+    width: 98%;
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #0d0f22;
+    border-radius: 20px;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.record-breaking-content {
+    display: flex;
+    flex-direction: row; /* This is the key: ALWAYS a row */
+    align-items: center;
+    gap: 2rem;
+}
+
+.text-content {
+    flex: 1 1 55%; /* Give more space to text */
+    min-width: 0; /* Prevents flex item overflow */
+    text-align: left;
+}
+
+.artist-image-container {
+    flex: 1 1 45%; /* Give less space to the image */
+    min-width: 0;
+    display: flex;
+}
+
+.artist-image-container img {
+    max-width: 100%;
+    height: auto; /* Ensures the image scales proportionally */
+    border-radius: 15px;
+    display: block;
+}
+
+.section-super-title {
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: #a7a7a7;
+    margin-bottom: 0.5rem;
+}
+
+.section-main-title {
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+}
+
+/* The description is not in the screenshot; hiding it saves space */
+.section-description {
+    display: none;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap; /* Allows buttons to wrap on smaller screens */
+}
+
+.listen-now-btn {
+    padding: 0.8rem 1.8rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: linear-gradient(90deg, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+}
+
+.add-to-queue-btn {
+    padding: 0.8rem 1.8rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    color: white;
+    border: 2px solid white;
+}
+
+/* Mini Carousel Styles (largely unchanged) */
+.mini-album-carousel-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+}
+
+.mini-album-carousel {
+    display: flex;
+    gap: 1.5rem;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding: 1rem 0;
+    scrollbar-width: none;
+}
+.mini-album-carousel::-webkit-scrollbar {
+    display: none;
+}
+
+.mini-album-card {
+    flex: 0 0 140px;
+    aspect-ratio: 1 / 1;
+}
+
+.mini-carousel-nav {
+    display: none; /* Hidden on all screen sizes for a cleaner look */
+}
+
+
+/* --- Responsive Scaling for Tablet & Mobile (screens up to 992px) --- */
+@media (max-width: 992px) {
+    .record-breaking-section {
+        padding: 1.5rem;
+    }
+
+    .record-breaking-content {
+        gap: 1.5rem;
+    }
+
+    .section-main-title {
+        font-size: clamp(1.8rem, 5vw, 2.5rem);
+    }
+    
+    .section-super-title {
+        font-size: clamp(0.9rem, 2vw, 1.1rem);
+    }
+
+    .action-buttons {
+        gap: 0.75rem;
+        margin-bottom: 2rem;
+    }
+
+    .action-buttons button {
+        padding: 0.6rem 1.2rem;
+        font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+    }
+
+    .mini-album-card {
+        flex: 0 0 100px; /* Smaller cards */
+    }
+}
+
+
+/* --- Further Adjustments for Small Phones (screens up to 480px) --- */
+@media (max-width: 480px) {
+    .record-breaking-section {
+        padding: 1.2rem;
+    }
+
+    .record-breaking-content {
+        gap: 1rem;
+    }
+
+    /* Give text a bit more room on very narrow screens */
+    .text-content {
+        flex-basis: 60%;
+    }
+    .artist-image-container {
+        flex-basis: 40%;
+    }
+    
+    .mini-album-card {
+        flex: 0 0 80px; /* Even smaller cards */
+    }
+}
+
+
+/* ================================================================ */
+/* FINAL FIX: Record Breaking Albums Section Layout & Order       */
+/* This forces the layout from your screenshot on all screen sizes. */
+/* ================================================================ */
+
+/* This targets tablets and mobile phones */
+@media (max-width: 992px) {
+
+    /* 1. Force the two-column layout */
+    .record-breaking-content {
+        display: flex !important;
+        flex-direction: row !important; /* Keeps items side-by-side */
+        align-items: center !important;
+    }
+
+    /* 2. Force the correct order */
+    .text-content {
+        order: 1 !important; /* Ensures text content appears first (left) */
+        text-align: left !important;
+    }
+
+    .artist-image-container {
+        order: 2 !important; /* Ensures the image appears second (right) */
+        display: flex !important; /* Overrides any 'display: none' rules */
+    }
+}
+
+/* ================================================================= */
+/* FINAL MOBILE LAYOUT: Record Breaking Section (Two-Column)     */
+/* This forces the desktop-style layout on mobile devices.         */
+/* ================================================================= */
+
+@media (max-width: 768px) {
+
+    /* --- Make the overall section more compact --- */
+    .record-breaking-section {
+        padding: 1rem !important;
+        margin: 1rem auto !important;
+    }
+
+    /* --- 1. Force a two-column layout & reduce gaps --- */
+    .record-breaking-content {
+        display: flex !important;
+        flex-direction: row !important;   /* This is the key: forces side-by-side columns */
+        align-items: center !important;
+        gap: 0.75rem !important;          /* Reduces space between the text and image */
+    }
+
+    /* --- 2. Configure the left (text) column --- */
+    .text-content {
+        flex: 1 1 60% !important;         /* Gives the text column 60% of the space */
+        min-width: 0 !important;          /* CRITICAL: Allows the column to shrink without breaking the layout */
+        text-align: left !important;
+        order: 1 !important;
+    }
+
+    /* --- 3. Configure the right (image) column --- */
+    .artist-image-container {
+        display: flex !important;         /* This ensures the image is always visible */
+        flex: 1 1 40% !important;         /* Gives the image column 40% of the space */
+        min-width: 0 !important;
+        order: 2 !important;
+    }
+
+    .artist-image-container img {
+        width: 100% !important;
+        height: auto !important;          /* Ensures the image scales proportionally */
+    }
+
+    /* --- 4. Reduce text size and margins --- */
+    .section-super-title {
+        font-size: 0.8rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+
+    .section-main-title {
+        font-size: clamp(1.2rem, 5vw, 1.6rem) !important; /* Makes font size responsive */
+        line-height: 1.2 !important;
+        margin-bottom: 1rem !important;
+    }
+
+    .section-description {
+        display: none !important;         /* Hides the description to save space, like in the image */
+    }
+
+    /* --- 5. Reduce button size and gaps --- */
+    .action-buttons {
+        gap: 0.5rem !important;
+        margin-bottom: 1rem !important;
+        flex-wrap: wrap !important;       /* Lets buttons stack if screen is extremely narrow */
+        flex-direction: row !important;   /* Keeps buttons side-by-side */
+        align-items: center;
+    }
+
+    .action-buttons button {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    /* --- 6. Reduce mini-carousel size --- */
+    .mini-album-card {
+        flex: 0 0 75px !important;        /* Makes the small album covers smaller */
+    }
+
+    .mini-carousel-nav {
+        display: none !important;
+    }
+}
+
+/* ================================================================ */
+/* FINAL MOBILE LAYOUT: Side-by-Side Buttons & Larger Image       */
+/* This code creates the layout from your second screenshot.        */
+/* ================================================================ */
+
+@media (max-width: 768px) {
+
+    /* --- Make the overall section more compact --- */
+    .record-breaking-section {
+        padding: 1rem !important;
+        margin: 1rem auto !important;
+    }
+
+    /* --- 1. Force a two-column layout --- */
+    .record-breaking-content {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 1rem !important;
+    }
+
+    /* --- 2. Adjust column widths to make the image larger --- */
+    .text-content {
+        flex: 1 1 55% !important; /* Gives the text column 55% of the space */
+        min-width: 0 !important;
+    }
+
+    .artist-image-container {
+        display: flex !important;
+        flex: 1 1 45% !important; /* Gives the image column 45% of the space */
+        min-width: 0 !important;
+    }
+
+    .artist-image-container img {
+        width: 100% !important;
+        height: auto !important;
+    }
+    
+    .section-description {
+        display: none !important;
+    }
+
+    /* --- 3. Set buttons to be side-by-side --- */
+    .action-buttons {
+        flex-direction: row !important;      /* This is the key change for the buttons */
+        align-items: center !important;    /* Vertically aligns the buttons */
+        gap: 0.75rem !important;
+        margin-bottom: 1.5rem !important;
+    }
+
+    /* --- 4. Adjust button sizes for the new layout --- */
+    .action-buttons button {
+        width: auto !important;              /* Allows buttons to size based on content */
+        max-width: none !important;
+        padding: 0.6rem 1.2rem !important;
+        font-size: 0.85rem !important;
+    }
+
+    /* --- 5. Scale down other elements --- */
+    .section-main-title {
+        font-size: clamp(1.4rem, 5vw, 1.8rem) !important;
+        margin-bottom: 1.2rem !important;
+    }
+    
+    .mini-album-card {
+        flex: 0 0 80px !important;
+    }
+
+    .mini-carousel-nav {
+        display: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+
+    .record-breaking-section {
+        padding: 1rem !important;
+        margin: 1rem auto !important;
+    }
+
+    .record-breaking-content {
+        display: flex !important;
+        flex-direction: row !important;
+        /* align-items: stretch; is the default and works best here */
+        gap: 1rem !important;
+    }
+
+    .text-content {
+        flex: 1 1 55% !important;
+        min-width: 0 !important;
+    }
+
+    .artist-image-container {
+        display: flex !important;
+        flex: 1 1 45% !important;
+        min-width: 0 !important;
+    }
+
+    /* --- THIS IS THE FIX --- */
+    .artist-image-container img {
+        width: 100% !important;
+        height: 100% !important;         /* Make image fill its container vertically */
+        object-fit: cover !important;    /* Prevents distortion by cropping to fit */
+        border-radius: 15px;             /* Ensure the border-radius is maintained */
+    }
+    /* ----------------------- */
+
+    .section-description {
+        display: none !important;
+    }
+
+    .action-buttons {
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 0.75rem !important;
+        margin-bottom: 1.5rem !important;
+    }
+
+    .action-buttons button {
+        width: auto !important;
+        max-width: none !important;
+        padding: 0.6rem 1.2rem !important;
+        font-size: 0.85rem !important;
+    }
+
+    .section-main-title {
+        font-size: clamp(1.4rem, 5vw, 1.8rem) !important;
+        margin-bottom: 1.2rem !important;
+    }
+    
+    .mini-album-card {
+        flex: 0 0 80px !important;
+    }
+
+    .mini-carousel-nav {
+        display: none !important;
+    }
+}
+
+/* ================================================================ */
+/* FINAL RESPONSIVE CODE: Record Breaking Section                 */
+/* This maintains the target aspect ratio on all mobile screens.   */
+/* ================================================================ */
+
+/* --- General Styles for Mobile & Tablets (up to 768px) --- */
+@media (max-width: 768px) {
+    .record-breaking-section {
+        padding: 1rem !important;
+        margin: 1rem auto !important;
+    }
+
+    .record-breaking-content {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 1rem !important;
+    }
+
+    .text-content {
+        flex: 1 1 55% !important;
+        min-width: 0 !important;
+    }
+
+    .artist-image-container {
+        display: flex !important;
+        flex: 1 1 45% !important;
+        min-width: 0 !important;
+    }
+
+    .artist-image-container img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important; /* This is key to preventing distortion */
+        border-radius: 15px;
+    }
+    
+    .section-description {
+        display: none !important;
+    }
+
+    .action-buttons {
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 0.75rem !important;
+        margin-bottom: 1.5rem !important;
+    }
+
+    .action-buttons button {
+        width: auto !important;
+        max-width: none !important;
+        padding: 0.6rem 1.2rem !important;
+        font-size: 0.85rem !important;
+    }
+
+    .section-main-title {
+        font-size: clamp(1.4rem, 5vw, 1.8rem) !important;
+        margin-bottom: 1.2rem !important;
+    }
+    
+    .mini-album-card {
+        flex: 0 0 80px !important;
+    }
+
+    .mini-carousel-nav {
+        display: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+
+
+ .mini-album-carousel-wrapper {
+    position: relative;
+    width: 170%;
+    max-width: 482px;
+}
+
+
+    .artist-image-container {
+        position: relative;
+        top:-60px;
+    }
+    .action-buttons {
+        position: relative;
+        left:11vw;
+        flex-direction: row important;
+    }
+
+    .action-buttons button{
+        position: relative;
+        left:-14vw;
+    }
+}
+
+/* --- Specific Adjustments for SMALL Mobile Screens (up to 480px) --- */
+@media (max-width: 480px) {
+    .record-breaking-section {
+        padding: 0.75rem !important; /* Tighter padding */
+    }
+
+    .record-breaking-content {
+        gap: 0.5rem !important; /* Smaller gap between columns */
+    }
+    
+    /* Give text a bit more room on very narrow screens */
+    .text-content {
+        flex-basis: 60% !important;
+    }
+    .artist-image-container {
+        flex-basis: 40% !important;
+    }
+
+    .section-main-title {
+        font-size: clamp(1rem, 5vw, 1.4rem) !important; /* Smaller title */
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .action-buttons {
+        margin-bottom: 0.75rem !important;
+    }
+
+    .action-buttons button {
+        padding: 0.4rem 0.8rem !important; /* Smaller buttons */
+        font-size: 0.75rem !important;
+    }
+
+    .mini-album-card {
+        flex: 0 0 65px !important; /* Even smaller album cards */
+    }
+
+    .mini-album-carousel-wrapper {
+    position: relative;
+    width: 170%;
+    max-width: 482px;
+}
+
+
+    .artist-image-container {
+        position: relative;
+        top:-60px;
+    }
+    .action-buttons {
+        position: relative;
+        left:13vw;
+        display: inline-block;
+    }
+}
+
+
+.mini-album-carousel {
+    gap:0.3rem;
+}
+.mini-album-carousel-wrapper{
+    max-width:510px;
+}
+
+
+/*for artist card design--*/
+
+.record-breaking-section2 {
+    width: 98%;
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #0d0f22;
+    border-radius: 20px;
+    overflow: hidden;
+    box-sizing: border-box;
+    flex-shrink: 0; /* Prevents this section from being squished */
+}
+
+.record-breaking-content2 {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 2rem;
+}
+
+.text-content2 {
+    flex: 1;
+    z-index: 2;
+}
+
+.section-super-title2 {
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.section-main-title2 {
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.1;
+    margin-bottom: 1rem;
+}
+
+.section-description2 {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    max-width: 500px;
+    margin-bottom: 2rem;
+}
+
+.action-buttons2 {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+}
+
+.action-buttons2 button {
+    padding: 0.8rem 1.8rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s ease;
+}
+
+.listen-now-btn2 {
+    background: linear-gradient(90deg, #e74c3c, #c0392b);
+    color: white;
+}
+
+.add-to-queue-btn2 {
+    background: transparent;
+    color: white;
+    border: 2px solid white;
+}
+
+.artist-image-container2 {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.artist-image-container2 img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 15px;
+}
+
+.mini-album-carousel-wrapper2 {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+}
+
+.mini-album-carousel2 {
+    display: flex;
+    gap: 1.5rem;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding: 1rem 0;
+    scrollbar-width: none;
+}
+.mini-album-carousel2::-webkit-scrollbar {
+    display: none;
+}
+
+.mini-album-card2 {
+    flex: 0 0 140px;
+    aspect-ratio: 1 / 1;
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.mini-album-card2:hover {
+    transform: translateY(-5px);
+}
+
+.mini-album-card2 img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mini-album-card2::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 70%);
+}
+
+.mini-album-card2 .card-title2 {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    color: white;
+    font-weight: 600;
+    z-index: 2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mini-carousel-nav2 {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    z-index: 5;
+}
+.mini-carousel-nav2.prev2 { left: -45px; }
+.mini-carousel-nav2.next2 { right: -45px; }
+
+/* Responsive Styles for the new section */
+@media (max-width: 992px) {
+    .record-breaking-content2 {
+        flex-direction: column;
+    }
+    .artist-image-container2 {
+        order: -1;
+        width: 100%;
+    }
+    .text-content2 {
+        text-align: center;
+    }
+    .section-description2,
+    .mini-album-carousel-wrapper2 {
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .action-buttons2 {
+        justify-content: center;
+    }
+    .mini-carousel-nav2 {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .record-breaking-section2 {
+        padding: 1.5rem 1rem;
+    }
+    .action-buttons2 {
+        flex-direction: column;
+        align-items: center;
+    }
+    .action-buttons2 button {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+
+/* ... and other mini-carousel styles ... */
+
+
+/* ======================================================= */
+/* RESPONSIVE STYLES (SCALING)                */
+/* ======================================================= */
+
+@media (max-width: 992px) {
+    .record-breaking-content2 {
+        /* THIS IS THE KEY FIX: Keep the layout in a row */
+        flex-direction: row;
+        gap: 1.5rem;
+    }
+
+    /* Assign proportional widths to the columns */
+    .text-content2 {
+        flex-basis: 55%;
+    }
+    .artist-image-container2 {
+        flex-basis: 45%;
+    }
+
+    /* Other scaling styles... */
+    .section-main-title2 {
+        font-size: clamp(1.5rem, 4vw, 2.5rem);
+    }
+    .section-description2 {
+        font-size: clamp(0.75rem, 2vw, 0.9rem);
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        display: -webkit-box;
+    }
+    .action-buttons2 button {
+        padding: 0.6rem 1.2rem;
+        font-size: clamp(0.7rem, 2.5vw, 0.9rem);
+    }
+    .mini-album-card2 {
+        flex: 0 0 90px;
+    }
+    .mini-carousel-nav2 {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .record-breaking-content2 {
+        gap: 1rem;
+    }
+    .text-content2 {
+        flex-basis: 60%;
+    }
+    .artist-image-container2 {
+        flex-basis: 40%;
+    }
+    .section-description2 {
+        -webkit-line-clamp: 2;
+    }
+    .action-buttons2 {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .mini-album-card2 {
+        flex: 0 0 75px;
+    }
+}
+
+/* ================================================================ */
+/* FINAL MOBILE & TABLET FIX for Record Breaking Albums Section     */
+/* This creates a proportional, two-column layout that matches the  */
+/* provided screenshot on all screen sizes.                         */
+/* ================================================================ */
+
+/* --- Responsive Scaling for Tablet & Mobile (screens up to 992px wide) --- */
+@media (max-width: 992px) {
+    .record-breaking-section2 {
+        padding: 1.5rem;
+        /* Let the content inside determine the height for proportional scaling */
+        height: auto;
+    }
+
+    /* 1. Ensure the two-column layout is maintained */
+    .record-breaking-content2 {
+        flex-direction: row; /* This keeps the columns side-by-side */
+        align-items: center; /* Vertically center the content in each column */
+        gap: 1.5rem;
+    }
+
+    /* 2. Assign proportional widths to the columns */
+    .text-content2 {
+        flex-basis: 55%; /* Give more space to the text */
+        text-align: left; /* Keep text left-aligned */
+    }
+    .artist-image-container2 {
+        flex-basis: 45%;
+    }
+
+    /* 3. Make the image scale down proportionally without cropping */
+    .artist-image-container2 img {
+        width: 100%;
+        height: auto; /* This is the key to proportional scaling */
+        display: block;
+    }
+
+    /* 4. Hide the description paragraph to match the screenshot */
+    .section-description2 {
+        display: none;
+    }
+
+    /* 5. Scale down the fonts for smaller screens */
+    .section-super-title2 {
+        font-size: clamp(0.8rem, 2vw, 1rem);
+    }
+    .section-main-title2 {
+        font-size: clamp(1.5rem, 5vw, 2.5rem);
+        /* Add more space below the title since the description is gone */
+        margin-bottom: 1.5rem;
+    }
+
+    /* 6. Scale down the action buttons */
+    .action-buttons2 {
+        margin-bottom: 2rem;
+        gap: 0.75rem;
+        flex-wrap: wrap; /* Allow buttons to wrap on very narrow screens */
+    }
+    .action-buttons2 button {
+        padding: 0.6rem 1.2rem;
+        font-size: clamp(0.7rem, 2.5vw, 0.9rem);
+    }
+
+    /* 7. Scale down the mini-carousel at the bottom */
+    .mini-album-card2 {
+        flex: 0 0 100px; /* Smaller cards */
+    }
+    .mini-carousel-nav2 {
+        display: none; /* Hide navigation arrows on mobile */
+    }
+}
+
+/* --- Further adjustments for very small screens (phones) --- */
+@media (max-width: 480px) {
+    .record-breaking-section2 {
+        padding: 1.2rem;
+    }
+    .record-breaking-content2 {
+        gap: 1rem;
+    }
+    /* Give even more space to the text on very narrow screens */
+    .text-content2 {
+        flex-basis: 60%;
+    }
+    .artist-image-container2 {
+        flex-basis: 40%;
+    }
+    .mini-album-card2 {
+        flex: 0 0 80px; /* Even smaller cards */
+    }
+}
+
+/* ================================================================ */
+/* FINAL MOBILE FIX for Record Breaking Albums Section (Stacked)    */
+/* This creates a compact, single-column layout and hides the       */
+/* singer's image on mobile, as per the latest screenshot.          */
+/* ================================================================ */
+
+/* This targets tablets and mobile phones */
+@media (max-width: 992px) {
+
+    /* Make the overall section more compact */
+    .record-breaking-section2 {
+        padding: 1.5rem 1rem; /* Reduced padding */
+        margin: 1rem auto;
+    }
+
+    /* 1. Stack the layout vertically */
+    .record-breaking-content2 {
+        flex-direction: column;
+        gap: 1rem; /* Reduced gap between stacked items */
+    }
+
+    /* 2. Hide the singer's image completely */
+    .artist-image-container2 {
+        display: none !important; /* Use !important to be certain it's hidden */
+    }
+
+    /* 3. Center all the text content */
+    .text-content2 {
+        text-align: center;
+        width: 100%; /* Ensure it takes the full width */
+    }
+
+    /* 4. Scale down fonts and reduce margins for a tighter look */
+    .section-super-title2 {
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+    }
+    .section-main-title2 {
+        font-size: 1.8rem; /* Significantly smaller title */
+        line-height: 1.2;
+        margin-bottom: 1.2rem;
+    }
+
+    /* 5. Scale down buttons and reduce spacing */
+    .action-buttons2 {
+        justify-content: center;
+        gap: 0.75rem; /* Tighter gap between buttons */
+        margin-bottom: 1.5rem; /* Less space below buttons */
+    }
+    .action-buttons2 button {
+        padding: 0.6rem 1.4rem; /* Smaller buttons */
+        font-size: 0.9rem;
+    }
+
+    /* 6. Scale down the mini-carousel */
+    .mini-album-carousel-wrapper2 {
+        max-width: 100%;
+        margin: 0 auto;
+    }
+    .mini-album-carousel2 {
+        gap: 1rem; /* Tighter gap between mini-albums */
+        padding-bottom: 0;
+    }
+    .mini-album-card2 {
+        flex: 0 0 110px; /* Smaller mini-album cards */
+    }
+    .mini-album-card2 .card-title2 {
+        font-size: 0.8rem;
+    }
+
+    /* Hide desktop navigation arrows */
+    .mini-carousel-nav2 {
+        display: none;
+    }
+}
+
+
+/* ================================================================= */
+/* FINAL OVERRIDE: Record Breaking Section Mobile Layout           */
+/* This forces a compact, two-column layout on mobile devices.       */
+/* ================================================================= */
+
+@media (max-width: 768px) {
+
+    /* --- Overall Section Compactness --- */
+    .record-breaking-section2 {
+        padding: 1rem !important; /* Force smaller padding */
+        margin: 1rem auto !important;
+        height: auto !important; /* Let content determine the height */
+    }
+
+    /* --- Force Two-Column Layout & Reduce Gaps --- */
+    .record-breaking-content2 {
+        display: flex !important;
+        flex-direction: row !important; /* Force side-by-side columns */
+        align-items: center !important;
+        gap: 0.75rem !important; /* Force a smaller gap between columns */
+    }
+
+    /* --- Configure the Left (Text) Column --- */
+    .text-content2 {
+        flex: 1 1 60% !important; /* Give it more space */
+        min-width: 0 !important; /* CRITICAL: Allows the column to shrink */
+        text-align: left !important;
+    }
+
+    /* --- Force the Right (Image) Column to be VISIBLE --- */
+    .artist-image-container2 {
+        display: flex !important; /* Force the container to be visible */
+        flex: 1 1 40% !important;
+        min-width: 0 !important; /* CRITICAL: Allows the column to shrink */
+    }
+
+    .artist-image-container2 img {
+        width: 100% !important;
+        height: auto !important; /* Ensures the image scales proportionally */
+        display: block !important;
+    }
+
+    /* --- Reduce Text Size and Margins --- */
+    .section-super-title2 {
+        font-size: 0.8rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+    .section-main-title2 {
+        font-size: clamp(1.2rem, 5vw, 1.6rem) !important;
+        line-height: 1.2 !important;
+        margin-bottom: 1rem !important;
+    }
+    .section-description2 {
+        display: none !important; /* Hide description to save space */
+    }
+
+    /* --- Reduce Button Size and Gaps --- */
+    .action-buttons2 {
+        gap: 0.5rem !important;
+        margin-bottom: 1rem !important;
+        flex-wrap: wrap !important;
+    }
+    .action-buttons2 button {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    /* --- Reduce Mini Carousel Size --- */
+    .mini-album-carousel2 {
+        gap: 0.5rem !important;
+        padding-bottom: 0 !important;
+    }
+    .mini-album-card2 {
+        flex: 0 0 75px !important; /* Make mini-album cards smaller */
+    }
+}
+
+
+/*
+  This CSS section ensures the "Record Breaking Albums" layout
+  matches the provided image on all screen sizes, including
+  mobile and tablet.
+*/
+
+/* --- Final Mobile & Tablet Fix for a Two-Column Layout --- */
+/* This targets devices up to 768px wide (phones and tablets) */
+@media (max-width: 768px) {
+
+    /* Force a compact, two-column layout */
+    .record-breaking-content2 {
+        display: flex !important;
+        flex-direction: row !important; /* Force side-by-side columns */
+        align-items: center !important;
+        gap: 0.75rem !important; /* Reduce gap between columns */
+    }
+
+    /* Configure the Left (Text) Column */
+    .text-content2 {
+        flex: 1 1 60% !important; /* Give it more space */
+        min-width: 0 !important; /* Critical for shrinking */
+        text-align: left !important;
+    }
+
+    /* Configure the Right (Image) Column to be Visible */
+    .artist-image-container2 {
+        display: flex !important; /* Force the container to be visible */
+        flex: 1 1 40% !important; /* Allocate 40% of the space to the image */
+        min-width: 0 !important; /* Critical for shrinking */
+    }
+
+    .artist-image-container2 img {
+        width: 100% !important;
+        height: auto !important; /* Ensure proportional scaling */
+        display: block !important;
+    }
+
+    /* Reduce text size and margins for a better fit */
+    .section-super-title2 {
+        font-size: 0.8rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+
+    .section-main-title2 {
+        font-size: clamp(1.2rem, 5vw, 1.6rem) !important;
+        line-height: 1.2 !important;
+        margin-bottom: 1rem !important;
+    }
+
+    /* Hide the description paragraph as it's not in the image */
+    .section-description2 {
+        display: none !important;
+    }
+
+    /* Adjust buttons and carousel for the new layout */
+    .action-buttons2 {
+        gap: 0.5rem !important;
+        margin-bottom: 1rem !important;
+        flex-wrap: wrap !important;
+    }
+
+    .action-buttons2 button {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    .mini-album-carousel2 {
+        gap: 0.5rem !important;
+    }
+
+    .mini-album-card2 {
+        flex: 0 0 75px !important;
+    }
+
+    .mini-carousel-nav2 {
+        display: none !important; /* Hide navigation arrows on mobile */
+    }
+}
+
+/* ================================================================ */
+/* CORRECTED STYLES: Record Breaking Albums Section                 */
+/* This creates a proportional, two-column layout on ALL screens.   */
+/* ================================================================ */
+
+/* --- Base Styles (Desktop First) --- */
+.record-breaking-section2 {
+    width: 98%;
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #0d0f22;
+    border-radius: 20px;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.record-breaking-content2 {
+    display: flex;
+    flex-direction: row; /* This is the key: ALWAYS a row */
+    align-items: center;
+    gap: 2rem;
+}
+
+.text-content2 {
+    flex: 1 1 55%; /* Give more space to text */
+    min-width: 0; /* Prevents flex item overflow */
+    text-align: left;
+}
+
+.artist-image-container2 {
+    flex: 1 1 45%; /* Give less space to the image */
+    min-width: 0;
+    display: flex;
+}
+
+.artist-image-container2 img {
+    max-width: 100%;
+    height: auto; /* Ensures the image scales proportionally */
+    border-radius: 15px;
+    display: block;
+}
+
+.section-super-title2 {
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: #a7a7a7;
+    margin-bottom: 0.5rem;
+}
+
+.section-main-title2 {
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+}
+
+/* The description is not in the screenshot; hiding it saves space */
+.section-description2 {
+    display: none;
+}
+
+.action-buttons2 {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap; /* Allows buttons to wrap on smaller screens */
+}
+
+.listen-now-btn2 {
+    padding: 0.8rem 1.8rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: linear-gradient(90deg, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+}
+
+.add-to-queue-btn2 {
+    padding: 0.8rem 1.8rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    color: white;
+    border: 2px solid white;
+}
+
+/* Mini Carousel Styles (largely unchanged) */
+.mini-album-carousel-wrapper2 {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+}
+
+.mini-album-carousel2 {
+    display: flex;
+    gap: 1.5rem;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding: 1rem 0;
+    scrollbar-width: none;
+}
+.mini-album-carousel2::-webkit-scrollbar {
+    display: none;
+}
+
+.mini-album-card2 {
+    flex: 0 0 140px;
+    aspect-ratio: 1 / 1;
+}
+
+.mini-carousel-nav2 {
+    display: none; /* Hidden on all screen sizes for a cleaner look */
+}
+
+
+/* --- Responsive Scaling for Tablet & Mobile (screens up to 992px) --- */
+@media (max-width: 992px) {
+    .record-breaking-section2 {
+        padding: 1.5rem;
+    }
+
+    .record-breaking-content2 {
+        gap: 1.5rem;
+    }
+
+    .section-main-title2 {
+        font-size: clamp(1.8rem, 5vw, 2.5rem);
+    }
+
+    .section-super-title2 {
+        font-size: clamp(0.9rem, 2vw, 1.1rem);
+    }
+
+    .action-buttons2 {
+        gap: 0.75rem;
+        margin-bottom: 2rem;
+    }
+
+    .action-buttons2 button {
+        padding: 0.6rem 1.2rem;
+        font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+    }
+
+    .mini-album-card2 {
+        flex: 0 0 100px; /* Smaller cards */
+    }
+}
+
+
+/* --- Further Adjustments for Small Phones (screens up to 480px) --- */
+@media (max-width: 480px) {
+    .record-breaking-section2 {
+        padding: 1.2rem;
+    }
+
+    .record-breaking-content2 {
+        gap: 1rem;
+    }
+
+    /* Give text a bit more room on very narrow screens */
+    .text-content2 {
+        flex-basis: 60%;
+    }
+    .artist-image-container2 {
+        flex-basis: 40%;
+    }
+
+    .mini-album-card2 {
+        flex: 0 0 80px; /* Even smaller cards */
+    }
+}
+
+
+/* ================================================================ */
+/* FINAL FIX: Record Breaking Albums Section Layout & Order         */
+/* This forces the layout from your screenshot on all screen sizes. */
+/* ================================================================ */
+
+/* This targets tablets and mobile phones */
+@media (max-width: 992px) {
+
+    /* 1. Force the two-column layout */
+    .record-breaking-content2 {
+        display: flex !important;
+        flex-direction: row !important; /* Keeps items side-by-side */
+        align-items: center !important;
+    }
+
+    /* 2. Force the correct order */
+    .text-content2 {
+        order: 1 !important; /* Ensures text content appears first (left) */
+        text-align: left !important;
+    }
+
+    .artist-image-container2 {
+        order: 2 !important; /* Ensures the image appears second (right) */
+        display: flex !important; /* Overrides any 'display: none' rules */
+    }
+}
+
 /* ================================================================= */
 /* FINAL MOBILE LAYOUT: Record Breaking Section (Two-Column)     */
 /* This forces the desktop-style layout on mobile devices.           */
@@ -10284,6 +12269,233 @@ font-weight: 500;
 }
 .mini-album-carousel-wrapper2{
     max-width:510px;
+}
+
+
+
+/* --- START: Record Breaking Albums Popup Styles --- */
+/* This section handles the full-screen overlay popup */
+#record-breaking-popup-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    z-index: 10000;
+    /* This makes it a flex container when it's visible */
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    overflow-y: auto;
+}
+/* A class is added by JS to show it */
+#record-breaking-popup-overlay.flex {
+    display: flex;
+}
+
+/* The popup content panel */
+#record-breaking-popup-overlay .new-playlist-popup-container {
+    background-color: #121212;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    width: 100%;
+    max-width: 90%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Header within the popup */
+#record-breaking-popup-overlay .flex.justify-between.items-center.p-4.border-b.border-gray-700.flex-shrink-0 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #4a4a4a;
+    flex-shrink: 0;
+}
+
+/* Title in the popup header */
+#record-breaking-popup-overlay h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+/* Close button in the popup header */
+#record-breaking-popup-overlay button#close-record-breaking-popup {
+    background: none;
+    border: none;
+    color: #a7a7a7;
+    font-size: 1.875rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+#record-breaking-popup-overlay button#close-record-breaking-popup:hover {
+    color: #ffffff;
+}
+
+/* The grid container for album cards */
+#record-breaking-popup-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+/* The individual cards inside the popup */
+.record-breaking-popup-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    cursor: pointer;
+    text-align: center;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.record-breaking-popup-card:hover {
+    transform: translateY(-5px);
+    opacity: 0.9;
+}
+.record-breaking-popup-card img {
+    width: 100%;
+    aspect-ratio: 1/1;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+.record-breaking-popup-card .card-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* --- Mobile-Specific Full-Screen Layout --- */
+@media (max-width: 768px) {
+    #record-breaking-popup-overlay {
+        padding: 0;
+    }
+    #record-breaking-popup-overlay .new-playlist-popup-container {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 0;
+    }
+    #record-breaking-popup-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+        padding: 0.75rem;
+    }
+    .record-breaking-popup-card .card-title {
+        font-size: 0.8rem;
+    }
+   
+    
+}
+
+.record-breaking-popup-container .p-4.border-b {
+  display: none;
+}
+
+/* Ensure the main grid container is responsive */
+.record-breaking-popup-container .grid {
+  display: grid;
+  /* Creates a 3-column grid with equal-sized columns */
+  grid-template-columns: repeat(3, 1fr);
+  /* Adds a gap between the grid items for spacing */
+  gap: 8px; /* Adjust this value to match the image's spacing */
+  padding: 8px; /* Adjust this value to match the image's padding */
+  overflow-y: auto;
+}
+
+/* Style for each individual movie card */
+.record-breaking-popup-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  /* Ensures the card itself doesn't have a visible title */
+  gap: 0;
+}
+
+/* Styling for the movie poster image */
+.record-breaking-popup-card img {
+  width: 100%;
+  /* Maintain the poster's aspect ratio from the image */
+  aspect-ratio: 184/259;
+  object-fit: cover;
+  border-radius: 8px; /* Adds a slight border-radius to match the image */
+}
+
+/* Hide the text title below the image */
+.record-breaking-popup-card .card-title {
+  display: none;
+}
+
+/* --- Corrected CSS for Scrollable Content --- */
+
+/* The main popup content container */
+#record-breaking-popup-overlay .new-playlist-popup-container {
+    /* ... (other styles) ... */
+    display: flex; /* Make the container a flexbox */
+    flex-direction: column; /* Stack children vertically */
+    /* Add this line to allow the container to shrink if needed, 
+       so it doesn't push the playbar down. */
+    height: 100%;
+    
+}
+
+/* The grid container for the albums */
+#record-breaking-popup-grid {
+    display: grid;
+    /* ... (other grid styles) ... */
+    
+    /* The most important change: allow this part to scroll */
+    overflow-y: auto; 
+    /* The `auto` value means a scrollbar will appear only when needed. */
+    
+    /* The flex-grow property allows the grid to take up available vertical space */
+    flex-grow: 1; 
+    
+    /* A bottom padding ensures there's space for the last row above the playbar */
+    padding-bottom: 167px; /* Adjust this value to match the playbar's height */
+}
+
+/* --- CSS to Hide Scrollbar --- */
+
+/* The main container that handles the scrolling */
+#record-breaking-popup-grid {
+    overflow-y: auto;
+    
+    /* For Webkit-based browsers (Chrome, Safari, Edge) */
+    &::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* For Firefox */
+    scrollbar-width: none;
+    
+    /* For Internet Explorer and Edge (older versions) */
+    -ms-overflow-style: none;
+}
+
+
+#record-breaking-popup-overlay {
+  
+    z-index: 1000;
+  
+}
+
+@media (max-width:480px){
+     #record-breaking-popup-overlay{
+        
+    top: -50px;
+    position: absolute;
+}
 }
 
 /*for artist popup */
@@ -10713,5 +12925,6 @@ font-weight: 500;
 #carousel-play-btn .circle {
     stroke: rgb(223,188,115) !important; /* Forces the border to be golden */
 }
+
 
 

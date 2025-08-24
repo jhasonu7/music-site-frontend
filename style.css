@@ -12936,4 +12936,13 @@ font-weight: 500;
 .record-breaking-section2 .mini-album-card .card-title {
     display: none;
 }
+.card{
+    padding: 0px;
+}
+.mini-album-card::after {
+    content: '';
+    position: absolute;
+    inset: 1;
+    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 70%);
+}
 

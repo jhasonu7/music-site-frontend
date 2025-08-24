@@ -9019,8 +9019,7 @@ function showSlide(index, animate = true) {
     dots.forEach(dot => dot.classList.remove('active'));
     dots[index].classList.add('active');
 
-    // --- START: New Advanced Dynamic Styling Logic ---
-    const applyDynamicStyles = () => {
+  const applyDynamicStyles = () => {
         try {
             const colorThief = new ColorThief();
             // Get a palette of 5 colors from the image
@@ -9034,8 +9033,8 @@ function showSlide(index, animate = true) {
             // Apply the vibrant color to the title.
             songTitleEl.style.color = vibrantColor;
             
-            // The artist details will remain white for best contrast and hierarchy.
-            songDetailsEl.style.color = '#E0E0E0';
+            // MODIFIED: The artist details will now be golden.
+            songDetailsEl.style.color = 'rgb(223, 188, 115)';
             
             // Both will have a strong dark shadow to ensure they are readable on any background.
             songTitleEl.style.textShadow = '0 4px 20px rgba(0, 0, 0, 0.8)';
@@ -9045,7 +9044,8 @@ function showSlide(index, animate = true) {
             console.error("ColorThief error:", error);
             // Fallback to default white text if there's an error
             songTitleEl.style.color = '#FFFFFF';
-            songDetailsEl.style.color = '#E0E0E0';
+            // MODIFIED: The artist details will use the golden fallback color.
+            songDetailsEl.style.color = 'rgb(223, 188, 115)';
         }
     };
 

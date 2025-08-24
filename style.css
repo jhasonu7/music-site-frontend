@@ -13045,7 +13045,7 @@ font-weight: 500;
 
         /* 2. Apply a stronger and taller dark gradient */
         /* This gradient is very dark at the bottom and extends 60% of the way up before fading. */
-        background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 60%, transparent) !important;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 30%, transparent) !important;
 
         /* 3. Remove the top border for a clean, fading look */
         border-top: none !important;

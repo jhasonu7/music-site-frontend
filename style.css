@@ -13089,3 +13089,28 @@ font-weight: 500;
     width: 24px;
     height: 24px;
 }
+
+
+/* Default state for footer links (icon and text) */
+.unique-nav-link {
+    /* Sets the color to a nice golden hue. SVG icons will inherit this. */
+    color: rgb(223, 188, 115);
+    /* A subtle transition for a smooth color change on hover/activation */
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+/* Hover state for footer links */
+.unique-nav-link:hover {
+    /* On hover, make the color slightly brighter */
+    color: #fff5e1; /* A lighter, pale gold */
+}
+
+/* Active (clicked) state for footer links */
+.unique-nav-link.unique-active {
+    /* Set the color back to the primary golden hue for consistency */
+    color: rgb(223, 188, 115);
+    /* Make the text bolder */
+    font-weight: 700;
+    /* Add a subtle glow effect to make it look "bold" and stand out */
+    text-shadow: 0 0 8px rgba(223, 188, 115, 0.7);
+}

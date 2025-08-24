@@ -13064,3 +13064,28 @@ font-weight: 500;
 .card-title {
     color: rgb(223,188,115);
 }
+/* Add these rules inside your @media (max-width: 768px) block */
+
+.user-avatar-container,
+.hamburgerContainer {
+    background-color: rgba(0, 0, 0, 0.4); /* Dark, semi-transparent background */
+    border-radius: 50%; /* Makes the background circular */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px; /* Adds some space around the icons */
+}
+
+/* This overrides the default transparent background and adjusts the border */
+.user-avatar-container {
+    border: 2px solid rgb(223, 188, 115); /* Thinner border for a cleaner look */
+    width: 44px;  /* Adjust size to account for padding */
+    height: 44px;
+}
+
+/* This ensures the hamburger icon itself fits nicely */
+.hamburgerContainer img,
+.hamburgerContainer svg {
+    width: 24px;
+    height: 24px;
+}

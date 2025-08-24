@@ -9745,3 +9745,10 @@ tr.playing td:nth-child(1) {
     position: absolute;
 }
 }
+
+@media (max-width: 768px) {
+    .record-breaking-section {
+ 
+        margin: -0.8rem auto !important;
+    }
+}

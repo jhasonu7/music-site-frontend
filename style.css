@@ -9752,3 +9752,7 @@ tr.playing td:nth-child(1) {
         margin: -0.8rem auto !important;
     }
 }
+.AlbumPlaylists {
+    position: relative;
+    top: 30px;
+}

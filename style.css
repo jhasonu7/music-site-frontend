@@ -9741,7 +9741,7 @@ tr.playing td:nth-child(1) {
 @media (max-width:480px){
      #record-breaking-popup-overlay{
         
-    top: -47px;
+    top: -40px;
     position: absolute;
 }
 }

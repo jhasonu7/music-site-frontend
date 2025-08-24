@@ -3704,6 +3704,75 @@ async function fetchAlbums() {
     }
 }
 
+
+/**
+ * Populates the new "Record Breaking Albums" section with data from the "Popular Albums" list.
+ */
+function populateRecordBreakingSection() {
+    const container = document.getElementById('record-breaking-albums-container');
+    if (!container) return;
+
+    // --- THIS IS THE CORRECTION ---
+    // Define the specific IDs from your "Popular Albums" section in index.html
+    const popularAlbumIds = [
+        '687a08e6b29a102ef22ed746',
+        '68651d36cab7938b8ca9db34',
+        '68836d2dda78931723317151',
+        '6879064984384901a6506164',
+        '68836e34da78931723317155',
+        '6871f5a419d863c7966eeef5',
+        '6878ffad84384901a650615b',
+        '6871f28b19d863c7966eeef3',
+         '68836dafda78931723317153',
+         '686d4a35d1372a1d73924abc',
+         '686d4a35d1372a1d73924cde',
+         '6885390563f554c11b55608a',
+         '6885436a63f554c11b5560b4'
+    ];
+
+    // Filter your main album list to get only these specific albums, preserving their order
+    const albumsToShow = popularAlbumIds.map(id => 
+        allAlbumsData.find(album => album.id === id)
+    ).filter(album => album); // Filter out any undefined albums if an ID wasn't found
+
+    container.innerHTML = ''; // Clear any existing content
+
+    albumsToShow.forEach(album => {
+        const card = document.createElement('div');
+        card.className = 'mini-album-card card'; // Added 'card' class for click listener
+        card.dataset.albumId = album.id;
+
+        card.innerHTML = `
+            <img src="${album.coverArt}" alt="${album.title}">
+            <div class="card-title">${album.title}</div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+
+/**
+ * Sets up the navigation arrows for the new mini-carousel.
+ */
+function setupMiniCarouselScroll() {
+    const container = document.getElementById('record-breaking-albums-container');
+    const prevBtn = document.querySelector('.mini-carousel-nav.prev');
+    const nextBtn = document.querySelector('.mini-carousel-nav.next');
+
+    if (!container || !prevBtn || !nextBtn) return;
+
+    const scrollAmount = container.querySelector('.mini-album-card').offsetWidth + 24; // Card width + gap
+
+    prevBtn.addEventListener('click', () => {
+        container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    });
+
+    nextBtn.addEventListener('click', () => {
+        container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    });
+}
+
+
 // ---------------------------
 // Search message helpers
 // ---------------------------
@@ -5066,6 +5135,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (typeof fetchAlbums === 'function') {
             await fetchAlbums(); // This call includes attachEventListenersToHtmlCards()
             console.log("DOMContentLoaded: fetchAlbums completed and listeners attached.");
+
+              populateRecordBreakingSection();
+            setupMiniCarouselScroll();
+            attachEventListenersToHtmlCards();
                 await loadPlayerState();
                 await loadLatestLikedSongAsFallback(); 
             // Setup horizontal scroll for all three card sections
@@ -5078,7 +5151,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             setupHorizontalScroll('explore-popular-artists-cards');
             console.log("DOMContentLoaded: Horizontal scroll setup for all card sections.");
 
-        } else {
+        } 
+        else {
             console.warn("fetchAlbums function not found. Card event listeners might not be attached.");
         }
 
@@ -9114,3 +9188,84 @@ audio.addEventListener('play', updateAllPlayButtonStates);
 
 
 });
+
+
+// --- START: Record Breaking Albums Popup Logic (Final Code) ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Get references to all the necessary elements
+    const listenNowBtn = document.querySelector('.listen-now-btn');
+    const popupOverlay = document.getElementById('record-breaking-popup-overlay');
+    const closePopupBtn = document.getElementById('close-record-breaking-popup');
+    const popupGrid = document.getElementById('record-breaking-popup-grid');
+
+    // Function to open the popup
+    const openRecordBreakingPopup = () => {
+        if (!popupOverlay || !popupGrid) return;
+
+        // 1. Clear any old content from the grid
+        popupGrid.innerHTML = '';
+
+        // 2. Find the original mini-carousel albums
+        const originalCards = document.querySelectorAll('#record-breaking-albums-container .mini-album-card');
+
+        // 3. Create a new card in the popup for each original card
+        originalCards.forEach(originalCard => {
+            const albumId = originalCard.dataset.albumId;
+            const album = allAlbumsData.find(a => a.id === albumId);
+
+            if (album) {
+                const newCard = document.createElement('div');
+                newCard.className = 'record-breaking-popup-card';
+                // Set the data-album-id so we know which album to open on click
+                newCard.dataset.albumId = album.id;
+                newCard.innerHTML = `
+                    <img src="${album.coverArt}" alt="${album.title}">
+                    <div class="card-title">${album.title}</div>
+                `;
+
+                // 4. Add a click listener to the new card
+                newCard.addEventListener('click', () => {
+                    // Find the full album data and open the details overlay
+                    const albumToOpen = allAlbumsData.find(a => a.id === album.id);
+                    if (albumToOpen) {
+                        openAlbumDetails(albumToOpen);
+                        // REMOVED THE FOLLOWING LINE:
+                        // closeRecordBreakingPopup(); // Close the grid popup after opening the album
+                    }
+                });
+
+                popupGrid.appendChild(newCard);
+            }
+        });
+
+        // 5. Show the popup
+        popupOverlay.classList.remove('hidden');
+        popupOverlay.classList.add('flex'); // Use flex to center the content
+        document.body.classList.add('popup-active'); // Prevent background scrolling
+    };
+
+    // Function to close the popup
+    const closeRecordBreakingPopup = () => {
+        if (!popupOverlay) return;
+        popupOverlay.classList.add('hidden');
+        popupOverlay.classList.remove('flex');
+        document.body.classList.remove('popup-active');
+    };
+
+    // Attach the event listeners
+    if (listenNowBtn) {
+        listenNowBtn.addEventListener('click', openRecordBreakingPopup);
+    }
+    if (closePopupBtn) {
+        closePopupBtn.addEventListener('click', closeRecordBreakingPopup);
+    }
+    // Also close the popup if the user clicks on the dark background
+    if (popupOverlay) {
+        popupOverlay.addEventListener('click', (e) => {
+            if (e.target === popupOverlay) {
+                closeRecordBreakingPopup();
+            }
+        });
+    }
+});
+// --- END: Record Breaking Albums Popup Logic ---

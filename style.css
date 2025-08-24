@@ -13050,4 +13050,7 @@ font-weight: 500;
         /* 3. Remove the top border for a clean, fading look */
         border-top: none !important;
     }
+    .album-overlay {
+        height:100%;
+    }
 }

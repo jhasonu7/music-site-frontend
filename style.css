@@ -12932,4 +12932,8 @@ font-weight: 500;
         top: -62px;
     }
 }
+/* Hides the title text on the mini-albums in the second section */
+.record-breaking-section2 .mini-album-card .card-title {
+    display: none;
+}
 

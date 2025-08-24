@@ -9756,3 +9756,17 @@ tr.playing td:nth-child(1) {
     position: relative;
     top: 30px;
 }
+.record-breaking-section{
+background-color: #733867;
+}
+.section-main-title {
+font-weight: 500;
+    color: #ffe088;
+}
+
+.section-super-title {
+    color: #b9ee8b;
+}
+.add-to-queue-btn {
+    color: #75f695;
+}

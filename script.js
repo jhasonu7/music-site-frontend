@@ -3750,6 +3750,48 @@ function populateRecordBreakingSection() {
     });
 }
 
+function populateRecordBreakingSection2() {
+    const container = document.getElementById('record-breaking-albums-container2');
+    if (!container) return;
+
+    // --- THIS IS THE CORRECTION ---
+    // Define the specific IDs from your "Popular Albums" section in index.html
+    const popularAlbumIds = [
+        '687212d419d863c7966eeefa',
+        
+        '6879023b84384901a650615d',
+        '686e29e3a8b53196ce754861',
+        '687904e784384901a6506160',
+        '6879058d84384901a6506162',
+        '6879064984384901a6506164',
+        '688209e3af4598687700e7cc',
+        '687a2595b29a102ef22ed757',
+        '687a2595b29a102ef22ed756',
+        '687a2595b29a102ef22ed754',
+
+        '687a2595b29a102ef22ed753',
+        '68821087af4598687700e7d0'
+    ];
+
+    // Filter your main album list to get only these specific albums, preserving their order
+    const albumsToShow = popularAlbumIds.map(id => 
+        allAlbumsData.find(album => album.id === id)
+    ).filter(album => album); // Filter out any undefined albums if an ID wasn't found
+
+    container.innerHTML = ''; // Clear any existing content
+
+    albumsToShow.forEach(album => {
+        const card2 = document.createElement('div');
+        card2.className = 'mini-album-card2 card2'; // Added 'card2' class for click listener
+        card2.dataset.albumId = album.id;
+
+        card2.innerHTML = `
+            <img src="${album.coverArt}" alt="${album.title}">
+            <div class="card-title2">${album.title}</div>
+        `;
+        container.appendChild(card2);
+    });
+}
 
 /**
  * Sets up the navigation arrows for the new mini-carousel.
@@ -3772,6 +3814,25 @@ function setupMiniCarouselScroll() {
     });
 }
 
+function setupMiniCarouselScroll2() {
+    const container = document.getElementById('record-breaking-albums-container2');
+    const prevBtn = document.querySelector('.mini-carousel-nav2.prev2');
+    const nextBtn = document.querySelector('.mini-carousel-nav2.next2');
+
+    if (!container || !prevBtn || !nextBtn) return;
+
+    // Check if there are any cards before trying to measure one
+    const firstCard = container.querySelector('.mini-album-card2').offsetWidth + 24;
+
+
+    prevBtn.addEventListener('click', () => {
+        container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    });
+
+    nextBtn.addEventListener('click', () => {
+        container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    });
+}
 
 // ---------------------------
 // Search message helpers
@@ -5137,7 +5198,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log("DOMContentLoaded: fetchAlbums completed and listeners attached.");
 
               populateRecordBreakingSection();
+              populateRecordBreakingSection2();
             setupMiniCarouselScroll();
+            setupMiniCarouselScroll2();
             attachEventListenersToHtmlCards();
                 await loadPlayerState();
                 await loadLatestLikedSongAsFallback(); 
@@ -8885,7 +8948,7 @@ function updateAllPlayButtonStates() {
                     const bestColor = getBestPaletteColor(palette);
                     const vibrantColor = `rgb(${bestColor[0]}, ${bestColor[1]}, ${bestColor[2]})`;
                     pauseIcon.setAttribute('fill', vibrantColor);
-                    circle.setAttribute('stroke', vibrantColor);
+                    circle.setAttribute('stroke', rgb(223,188,115));
                 } catch (e) {
                     pauseIcon.setAttribute('fill', '#1ED760'); // Fallback color
                     circle.setAttribute('stroke', '#1ED760');
@@ -8898,7 +8961,7 @@ function updateAllPlayButtonStates() {
             playIcon.classList.remove('hidden');
             pauseIcon.classList.add('hidden');
             playIcon.setAttribute('fill', 'white');
-            circle.setAttribute('stroke', 'white');
+            circle.setAttribute('stroke', '#957e50');
         }
     }
 }
@@ -9264,6 +9327,86 @@ document.addEventListener('DOMContentLoaded', () => {
         popupOverlay.addEventListener('click', (e) => {
             if (e.target === popupOverlay) {
                 closeRecordBreakingPopup();
+            }
+        });
+    }
+});
+// --- END: Record Breaking Albums Popup Logic ---
+
+// --- START: Record Breaking Albums Popup Logic (Final Code) ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Get references to all the necessary elements
+    const listenNowBtn = document.querySelector('.listen-now-btn2');
+    const popupOverlay = document.getElementById('record-breaking-popup-overlay2');
+    const closePopupBtn = document.getElementById('close-record-breaking-popup2');
+    const popupGrid = document.getElementById('record-breaking-popup-grid2');
+
+    // Function to open the popup
+    const openRecordBreakingPopup2 = () => {
+        if (!popupOverlay || !popupGrid) return;
+
+        // 1. Clear any old content from the grid
+        popupGrid.innerHTML = '';
+
+        // 2. Find the original mini-carousel albums
+        const originalCards = document.querySelectorAll('#record-breaking-albums-container2 .mini-album-card2');
+
+        // 3. Create a new card in the popup for each original card
+        originalCards.forEach(originalCard => {
+            const albumId = originalCard.dataset.albumId;
+            const album = allAlbumsData.find(a => a.id === albumId);
+
+            if (album) {
+                const newCard = document.createElement('div');
+                newCard.className = 'record-breaking-popup-card2';
+                // Set the data-album-id so we know which album to open on click
+                newCard.dataset.albumId = album.id;
+                newCard.innerHTML = `
+                    <img src="${album.coverArt}" alt="${album.title}">
+                    <div class="card-title2">${album.title}</div>
+                `;
+
+                // 4. Add a click listener to the new card
+                newCard.addEventListener('click', () => {
+                    // Find the full album data and open the details overlay
+                    const albumToOpen = allAlbumsData.find(a => a.id === album.id);
+                    if (albumToOpen) {
+                        openAlbumDetails(albumToOpen);
+                        // REMOVED THE FOLLOWING LINE:
+                        // closeRecordBreakingPopup2(); // Close the grid popup after opening the album
+                    }
+                });
+
+                popupGrid.appendChild(newCard);
+            }
+        });
+
+        // 5. Show the popup
+        popupOverlay.classList.remove('hidden');
+        popupOverlay.classList.add('flex'); // Use flex to center the content
+        document.body.classList.add('popup-active2'); // Prevent background scrolling
+    };
+
+    // Function to close the popup
+    const closeRecordBreakingPopup2 = () => {
+        if (!popupOverlay) return;
+        popupOverlay.classList.add('hidden');
+        popupOverlay.classList.remove('flex');
+        document.body.classList.remove('popup-active2');
+    };
+
+    // Attach the event listeners
+    if (listenNowBtn) {
+        listenNowBtn.addEventListener('click', openRecordBreakingPopup2);
+    }
+    if (closePopupBtn) {
+        closePopupBtn.addEventListener('click', closeRecordBreakingPopup2);
+    }
+    // Also close the popup if the user clicks on the dark background
+    if (popupOverlay) {
+        popupOverlay.addEventListener('click', (e) => {
+            if (e.target === popupOverlay) {
+                closeRecordBreakingPopup2();
             }
         });
     }

@@ -3780,17 +3780,20 @@ function populateRecordBreakingSection2() {
 
     container.innerHTML = ''; // Clear any existing content
 
-    albumsToShow.forEach(album => {
-        const card2 = document.createElement('div');
-        card2.className = 'mini-album-card2 card2'; // Added 'card2' class for click listener
-        card2.dataset.albumId = album.id;
+   // REPLACEMENT CODE for the loop inside populateRecordBreakingSection2
+albumsToShow.forEach(album => {
+    const card = document.createElement('div');
+    // Use the same classes as the first section
+    card.className = 'mini-album-card card'; 
+    card.dataset.albumId = album.id;
 
-        card2.innerHTML = `
-            <img src="${album.coverArt}" alt="${album.title}">
-            <div class="card-title2">${album.title}</div>
-        `;
-        container.appendChild(card2);
-    });
+    card.innerHTML = `
+        <img src="${album.coverArt}" alt="${album.title}">
+        // Use the same title class as the first section
+        <div class="card-title">${album.title}</div> 
+    `;
+    container.appendChild(card);
+});
 }
 
 /**

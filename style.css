@@ -13054,3 +13054,7 @@ font-weight: 500;
         height:100%;
     }
 }
+
+.carousel-dot.active{
+    background-color: rgb(223,188,115);
+}

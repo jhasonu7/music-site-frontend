@@ -9474,10 +9474,6 @@ function isPopupVisible(elementId) {
     return !element.classList.contains('hidden');
 }
 
-/**
- * The main handler for the 'popstate' event (back button press).
- * It checks for open popups in order of priority and closes the top-most one.
- */
 // In script.js
 
 /**
@@ -9487,16 +9483,16 @@ function isPopupVisible(elementId) {
 function handleBackButton() {
     console.log("Back button pressed, handling app state.");
 
-    // --- NEW: Prioritized check for active navigation tabs like 'Premium' ---
+    // Check for active navigation tabs like 'Premium'
     if (isPremiumTabActive()) {
         console.log("Closing 'Premium' tab via back button.");
         navigateTo('home'); // Navigate back to the home screen
         history.pushState({ managed: true }, document.title); // Re-capture the next back press
         return; // Stop here
     }
-    // --- END of NEW block ---
 
     // This array defines the popups and their closing functions in order of PRIORITY.
+    // It now correctly uses your named functions for closing.
     const popupsToClose = [
         { id: 'song-options-popup', closeFunc: closeSongOptionsPopup },
         { id: 'add-to-playlist-overlay', closeFunc: window.closeAddToPlaylistOverlay },
@@ -9504,25 +9500,17 @@ function handleBackButton() {
         { id: 'unique-search-popup', closeFunc: () => navigateTo('home') },
         { id: 'full-screen-player', closeFunc: hideFullScreenPlayer },
         { id: 'playlist-details-overlay', closeFunc: closePlaylistDetailsOverlay },
-        { id: 'likedSongsOverlay', closeFunc: () => {
-            const el = document.getElementById('likedSongsOverlay');
-            if (el) el.classList.remove('open');
-        }},
-        { id: 'record-breaking-popup-overlay', closeFunc: () => {
-             const el = document.getElementById('record-breaking-popup-overlay');
-             if(el) el.classList.remove('flex');
-        }},
-        { id: 'record-breaking-popup-overlay2', closeFunc: () => {
-             const el = document.getElementById('record-breaking-popup-overlay2');
-             if(el) el.classList.remove('flex');
-        }},
+        { id: 'likedSongsOverlay', closeFunc: () => document.getElementById('likedSongsOverlay').classList.remove('open') },
+        { id: 'record-breaking-popup-overlay', closeFunc: () => document.getElementById('record-breaking-popup-overlay').classList.remove('flex') },
+        { id: 'record-breaking-popup-overlay2', closeFunc: () => document.getElementById('record-breaking-popup-overlay2').classList.remove('flex') },
         { id: 'library-popup', closeFunc: () => navigateTo('home') },
         { id: 'albumOverlay', closeFunc: closeAlbumOverlay },
-        { id: 'popup-overlay', closeFunc: closePopup } // Main authentication popup
+        { id: 'popup-overlay', closeFunc: closePopup }
     ];
 
     // Iterate through the list and close the first visible popup found.
     for (const popup of popupsToClose) {
+        // The isPopupVisible helper function correctly checks the state
         if (document.getElementById(popup.id) && isPopupVisible(popup.id)) {
             console.log(`Closing popup via back button: ${popup.id}`);
             popup.closeFunc();
@@ -9531,6 +9519,8 @@ function handleBackButton() {
         }
     }
     
-    console.log("No active popups found. Allowing default browser back navigation.");
-    window.history.back();
+    // CRITICAL FIX: The line below was causing the infinite loop and has been removed.
+    // window.history.back(); // <--- REMOVED THIS LINE
+    
+    console.log("No active popups found. The app will stay on the current page.");
 }

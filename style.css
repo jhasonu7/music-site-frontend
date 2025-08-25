@@ -13119,4 +13119,9 @@ font-weight: 500;
 .record-breaking-section2 .mini-album-card2 .card-title2 {
     display: none;
 }
-
+@media (max-width: 768px) {
+    .artist-image-container2 {
+        position: relative;
+        top: -38px;
+    }
+}

@@ -2760,7 +2760,7 @@ if (albumCover) {
     nextTrackBtn.removeEventListener('click', nextTrack);
     nextTrackBtn.addEventListener('click', nextTrack);
     closeOverlayBtn.removeEventListener('click', closeAlbumOverlay);
-    closeOverlayBtn.addEventListener('click', closeAlbumOverlay);
+   closeOverlayBtn.addEventListener('click', () => history.back());
 
     // Show the overlay with a smooth animation
     albumOverlay.classList.remove('hidden');
@@ -5294,7 +5294,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // NEW: Add minimize button listener for full-screen player
         if (minimizePlayerBtn) {
-            minimizePlayerBtn.addEventListener('click', hideFullScreenPlayer);
+             minimizePlayerBtn.addEventListener('click', () => history.back());
             console.log("DOMContentLoaded: minimizePlayerBtn click listener attached.");
         }
 
@@ -6866,10 +6866,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }, 2000);
 
-    // --- Event Listeners ---
-    if (closePopupButton) {
-        closePopupButton.addEventListener('click', closePopup);
-    }
+   if (closePopupButton) {
+    closePopupButton.addEventListener('click', () => history.back());
+   }
+
     if (testUserCountBtn) {
         testUserCountBtn.addEventListener('click', () => getUserCount(testUserCountBtn));
     }
@@ -8169,8 +8169,8 @@ document.addEventListener('DOMContentLoaded', () => {
             likedOverlay.setAttribute('aria-hidden', 'true');
         }
     };
-    document.getElementById('closeLikedSongs').addEventListener('click', closeLikedSongs);
-    if(compactCloseBtn) compactCloseBtn.addEventListener('click', closeLikedSongs);
+   document.getElementById('closeLikedSongs').addEventListener('click', () => history.back());
+if(compactCloseBtn) compactCloseBtn.addEventListener('click', () => history.back());
 
 
     searchInput.addEventListener('input', () => {
@@ -9468,47 +9468,76 @@ function isPopupVisible(elementId) {
  * The main handler for the 'popstate' event (back button press).
  * It checks for open popups in order of priority and closes the top-most one.
  */
-function handleBackButton() {
-    console.log("Back button pressed, handling app state.");
+// =======================================================
+// MOBILE BACK BUTTON & HISTORY MANAGEMENT (Corrected)
+// =======================================================
 
-    // This array defines the popups and their closing functions in order of priority.
-    // The most temporary or "top-level" popups should come first.
+// A helper to check if a popup is currently visible to the user.
+function isPopupVisible(elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) return false;
+    
+    // Check for common 'hidden' classes used in the project
+    if (element.classList.contains('hidden') || element.classList.contains('unique-hidden') || element.classList.contains('invisible')) {
+        return false;
+    }
+    
+    // Check for 'active', 'open', or 'show' classes that indicate visibility
+    if (element.classList.contains('active') || element.classList.contains('open') || element.classList.contains('show')) {
+        return true;
+    }
+    
+    // Check computed style for display property
+    const style = window.getComputedStyle(element);
+    if (style.display === 'none' || style.visibility === 'hidden') {
+        return false;
+    }
+
+    return true; // Assume visible if no hiding rules are met.
+}
+
+/**
+ * The main handler for the 'popstate' event (back button press).
+ * This function is now the single source of truth for closing popups via back navigation.
+ */
+function handleBackButton() {
+    console.log("Back button event detected. Checking for open popups...");
+
+    // This array defines the popups and their direct closing functions in order of priority.
     const popupsToClose = [
         { id: 'song-options-popup', closeFunc: closeSongOptionsPopup },
         { id: 'add-to-playlist-overlay', closeFunc: window.closeAddToPlaylistOverlay },
         { id: 'new-playlist-popup-overlay', closeFunc: () => document.getElementById('new-playlist-popup-overlay').classList.add('hidden') },
-        { id: 'mobile-search-overlay', closeFunc: () => navigateTo('home') }, // Use navigateTo to properly close search
-        { id: 'unique-search-popup', closeFunc: () => navigateTo('home') },
+        { id: 'mobile-search-overlay', closeFunc: () => document.getElementById('unique-search-popup').classList.add('unique-hidden') },
+        { id: 'unique-search-popup', closeFunc: () => document.getElementById('unique-search-popup').classList.add('unique-hidden') },
         { id: 'full-screen-player', closeFunc: hideFullScreenPlayer },
         { id: 'playlist-details-overlay', closeFunc: closePlaylistDetailsOverlay },
         { id: 'likedSongsOverlay', closeFunc: () => document.getElementById('likedSongsOverlay').classList.remove('open') },
-        { id: 'record-breaking-popup-overlay', closeFunc: () => document.getElementById('record-breaking-popup-overlay').classList.remove('flex') },
-        { id: 'record-breaking-popup-overlay2', closeFunc: () => document.getElementById('record-breaking-popup-overlay2').classList.remove('flex') },
-        { id: 'library-popup', closeFunc: () => navigateTo('home') },
+        { id: 'record-breaking-popup-overlay', closeFunc: () => {
+            const popup = document.getElementById('record-breaking-popup-overlay');
+            if (popup) popup.classList.remove('flex');
+        }},
+        { id: 'record-breaking-popup-overlay2', closeFunc: () => {
+            const popup = document.getElementById('record-breaking-popup-overlay2');
+            if (popup) popup.classList.remove('flex');
+        }},
+        { id: 'library-popup', closeFunc: () => document.getElementById('library-popup').classList.add('hidden') },
         { id: 'albumOverlay', closeFunc: closeAlbumOverlay },
-        { id: 'popup-overlay', closeFunc: closePopup } // Main authentication popup
+        { id: 'popup-overlay', closeFunc: closePopup } // Main auth popup
     ];
 
-    // Iterate through the list and close the first visible popup found.
+    // Find the first visible popup in our priority list and close it.
     for (const popup of popupsToClose) {
-        if (document.getElementById(popup.id) && isPopupVisible(popup.id)) {
-            console.log(`Closing popup via back button: ${popup.id}`);
+        if (isPopupVisible(popup.id)) {
+            console.log(`Closing popup via history: ${popup.id}`);
             popup.closeFunc();
-            
-            // After closing, we push a new state to "catch" the next back button press.
-            // This prevents the browser from navigating to the previous page immediately.
-            history.pushState({ managed: true }, document.title);
-            return; // Stop after handling the top-most popup.
+            return; // Stop after closing the top-most popup.
         }
     }
-    
-    console.log("No active popups found. Allowing default browser back navigation.");
-    // If no popups were found, you can optionally force navigation or just let the browser handle it.
-    // For safety, it's best to let the browser go to the actual previous page if no popups are open.
-    window.history.back();
+    console.log("No managed popups were open. Allowing default browser behavior.");
 }
 
-// Attach the main handler to the window's popstate event.
+// Attach the handler to the window's popstate event.
 window.addEventListener('popstate', handleBackButton);
 
 /**
@@ -9516,6 +9545,7 @@ window.addEventListener('popstate', handleBackButton);
  * This should be called every time a popup or overlay is opened.
  */
 function pushHistoryStateForPopup() {
-    history.pushState({ managed: true }, document.title);
-    console.log("Pushed history state for popup management.");
+    // We push a simple state object to create a new entry in the browser's history.
+    history.pushState({ swarifyPopup: true }, "");
+    console.log("Pushed history state for a new popup.");
 }

@@ -4347,7 +4347,133 @@ function firstClickEmbedHandler() {
 
 
 /**
+ * NEW: Toggles the visibility and layout of the main playbar details
+ * based on screen width and album overlay state.
+ * This function now ensures the main playbar is *always* visible,
+ * but its internal layout adapts.
+ */
+function toggleMainPlaybarView() {
+    console.log(`toggleMainPlaybarView called. window.innerWidth: ${window.innerWidth}`);
+    if (!mainPlayBar) {
+        console.error("toggleMainPlaybarView: Main play bar element not found.");
+        return;
+    }
 
+    const isAlbumOverlayActive = albumOverlay && albumOverlay.classList.contains('active');
+    // isPlayingEmbeddedContent refers to the *currently playing* album, not the one in the overlay
+    const isPlayingEmbeddedContent = playingAlbum && (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc);
+
+    // Apply specific styles for desktop size screens
+    if (window.innerWidth >= 768) { // Desktop breakpoint
+        mainPlayBar.style.setProperty('left', '25%', 'important');
+        mainPlayBar.style.setProperty('width', '75%', 'important');
+        console.log("toggleMainPlaybarView: mainPlayBar set for desktop (left: 25% !important, width: 75% !important).");
+
+        // Full controls should only be visible on desktop if a non-embedded album overlay is active.
+        // If an embedded album is playing, or no album is playing, or a controllable album is playing but its overlay is closed,
+        // the playbar should be simplified.
+        const shouldShowFullControls = isAlbumOverlayActive && !isPlayingEmbeddedContent;
+
+        if (shouldShowFullControls) {
+            console.log("toggleMainPlaybarView: Desktop - showing FULL controls (non-embedded album overlay active).");
+            // Show all elements for full player
+            mainPlayBar.classList.remove('flex-col', 'space-y-4');
+            mainPlayBar.classList.add('flex-row', 'justify-between', 'space-x-4');
+
+            const elementsToToggleVisibility = [
+                progressBar, currentTimeSpan, totalTimeSpan, volumeBar,
+                nextTrackBtn, prevTrackBtn, rewindBtn, fastForwardBtn,
+                repeatBtn, shuffleBtn
+            ];
+            elementsToToggleVisibility.forEach(el => {
+                if (el) el.style.display = ''; // Revert to default display (flex or block)
+            });
+
+            if (playerControls) playerControls.style.display = 'flex';
+            if (document.getElementById('progress-time-group')) document.getElementById('progress-time-group').style.display = 'flex';
+            if (document.querySelector('.flex.items-center.space-x-4.w-full.md\\:w-auto.md\\:flex-shrink-0.justify-end')) { // Volume group
+                document.querySelector('.flex.items-center.space-x-4.w-full.md\\:w-auto.md\\:flex-shrink-0.justify-end').style.display = 'flex';
+            }
+            if (playerLeft) {
+                playerLeft.style.flexGrow = '1';
+                playerLeft.style.flexShrink = '1';
+                playerLeft.style.overflow = 'visible';
+                if (currentSongTitle) currentSongTitle.style.whiteSpace = 'nowrap';
+                if (currentArtistName) currentArtistName.style.whiteSpace = 'nowrap';
+            }
+        } else {
+            console.log("toggleMainPlaybarView: Desktop - showing SIMPLIFIED controls (album overlay not active or embedded content playing).");
+            // Simplify playbar for desktop when no non-embedded album overlay is open
+            // or when an embedded album is playing in the background, or nothing is playing.
+            mainPlayBar.classList.remove('flex-col', 'space-y-4');
+            mainPlayBar.classList.add('flex-row', 'justify-between', 'space-x-4');
+
+            const elementsToToggleVisibility = [
+                progressBar, currentTimeSpan, totalTimeSpan, volumeBar,
+                nextTrackBtn, prevTrackBtn, rewindBtn, fastForwardBtn,
+                repeatBtn, shuffleBtn
+            ];
+            elementsToToggleVisibility.forEach(el => {
+                if (el) el.style.display = 'none'; // Hide non-essential elements
+            });
+
+            if (playerControls) playerControls.style.display = 'flex'; // Still show play/pause controls
+            if (playPauseBtn) playPauseBtn.style.display = 'block'; // Ensure play/pause is visible
+            if (document.getElementById('progress-time-group')) document.getElementById('progress-time-group').style.display = 'none';
+            if (document.querySelector('.flex.items-center.space-x-4.w-full.md\\:w-auto.md\\:flex-shrink-0.justify-end')) { // Volume group
+                document.querySelector('.flex.items-center.space-x-4.w-full.md\\:w-auto.md\\:flex-shrink-0.justify-end').style.display = 'none';
+            }
+            if (playerLeft) {
+                playerLeft.style.flexGrow = '1';
+                playerLeft.style.flexShrink = '1';
+                playerLeft.style.overflow = 'hidden';
+                if (currentSongTitle) currentSongTitle.style.whiteSpace = 'nowrap';
+                if (currentArtistName) currentArtistName.style.whiteSpace = 'nowrap';
+            }
+        }
+
+    } else { // Mobile/Tablet
+        mainPlayBar.style.setProperty('left', '0', 'important');
+        mainPlayBar.style.setProperty('width', '100%', 'important');
+        console.log("toggleMainPlaybarView: mainPlayBar set for mobile/tablet (left: 0 !important, width: 100% !important).");
+
+        // Mobile compact layout (always simplified, as full player is a separate overlay)
+        mainPlayBar.classList.remove('flex-col', 'space-y-4');
+        mainPlayBar.classList.add('flex-row', 'justify-between', 'space-x-4');
+
+        const elementsToToggleVisibility = [
+            progressBar, currentTimeSpan, totalTimeSpan, volumeBar,
+            nextTrackBtn, prevTrackBtn, rewindBtn, fastForwardBtn,
+            repeatBtn, shuffleBtn
+        ];
+        elementsToToggleVisibility.forEach(el => {
+            if (el) el.style.display = 'none';
+        });
+
+        if (playerControls) playerControls.style.display = 'flex';
+        if (playPauseBtn) playPauseBtn.style.display = 'block';
+        if (document.getElementById('progress-time-group')) document.getElementById('progress-time-group').style.display = 'none';
+        if (document.querySelector('.flex.items-center.space-x-4.w-full.md\\:w-auto.md\\:flex-shrink-0.justify-end')) {
+            document.querySelector('.flex.items-center.space-x-4.w-full.md\\:w-auto.md\\:flex-shrink-0.justify-end').style.display = 'none';
+        }
+        if (playerLeft) {
+            playerLeft.style.flexGrow = '1';
+            playerLeft.style.flexShrink = '1';
+            playerLeft.style.overflow = 'hidden';
+            if (currentSongTitle) currentSongTitle.style.whiteSpace = 'nowrap';
+            if (currentArtistName) currentArtistName.style.whiteSpace = 'nowrap';
+        }
+        console.log("toggleMainPlaybarView: Mobile/Tablet - showing simplified controls.");
+    }
+
+    // Ensure album art is visible and YouTube player div is removed if present in compact view
+    if (currentAlbumArt) currentAlbumArt.style.display = 'block';
+    const dynamicPlayerContainer = playerLeft.querySelector('#youtube-player-container');
+    if (dynamicPlayerContainer) dynamicPlayerContainer.remove();
+
+    console.log("toggleMainPlaybarView: Main play bar layout adjusted based on screen size and overlay state.");
+    updatePlayerUI(); // Always update the UI of the player whenever its visibility might change
+}
 
 /**
  * NEW: Manages the visibility of the fixed top playing heading.

@@ -1390,7 +1390,7 @@ function closeAllPopups() {
 
 // A centralized navigation function
 function navigateTo(target) {
-    if (target === 'search' || target === 'library'||target==='premium'||target==='home') {
+    if (target === 'search' || target === 'library') {
         pushHistoryStateForPopup(); // <<< ADD THIS LINE
     }
 
@@ -4230,7 +4230,6 @@ function createSuggestionsContainer(inputElement) {
 // Small popup wiring (Corrected to open popup first)
 // ---------------------------
 function openSearchPopup() {
-    pushHistoryStateForPopup();
     const mobileOverlay = document.getElementById('mobile-search-overlay');
     const smallPopup = document.getElementById('unique-search-popup');
     const overlayBackdrop = document.getElementById('overlay');
@@ -7734,16 +7733,7 @@ function updatePopupLikeState() {
         heartIcon.style.fill = 'white'; // Unfilled color
     }
 }
-// In script.js
 
-/**
- * Checks if the "Premium" tab in the footer navigation is currently active.
- * @returns {boolean} - True if the premium tab is active, false otherwise.
- */
-function isPremiumTabActive() {
-  const premiumLink = document.querySelector('.unique-nav-link[data-target="premium"]');
-  return premiumLink && premiumLink.classList.contains('unique-active');
-}
 // NEW: Function to open the song options popup
 // --- START: REPLACEMENT for openSongOptionsPopup function ---
 // --- START: REPLACEMENT for openSongOptionsPopup function ---
@@ -9474,53 +9464,88 @@ function isPopupVisible(elementId) {
     return !element.classList.contains('hidden');
 }
 
-// In script.js
-
 /**
  * The main handler for the 'popstate' event (back button press).
  * It checks for open popups in order of priority and closes the top-most one.
  */
-function handleBackButton() {
-    console.log("Back button pressed, handling app state.");
+// =======================================================
+// MOBILE BACK BUTTON & HISTORY MANAGEMENT (Corrected)
+// =======================================================
 
-    // Check for active navigation tabs like 'Premium'
-    if (isPremiumTabActive()) {
-        console.log("Closing 'Premium' tab via back button.");
-        navigateTo('home'); // Navigate back to the home screen
-        history.pushState({ managed: true }, document.title); // Re-capture the next back press
-        return; // Stop here
+// A helper to check if a popup is currently visible to the user.
+function isPopupVisible(elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) return false;
+    
+    // Check for common 'hidden' classes used in the project
+    if (element.classList.contains('hidden') || element.classList.contains('unique-hidden') || element.classList.contains('invisible')) {
+        return false;
+    }
+    
+    // Check for 'active', 'open', or 'show' classes that indicate visibility
+    if (element.classList.contains('active') || element.classList.contains('open') || element.classList.contains('show')) {
+        return true;
+    }
+    
+    // Check computed style for display property
+    const style = window.getComputedStyle(element);
+    if (style.display === 'none' || style.visibility === 'hidden') {
+        return false;
     }
 
-    // This array defines the popups and their closing functions in order of PRIORITY.
-    // It now correctly uses your named functions for closing.
+    return true; // Assume visible if no hiding rules are met.
+}
+
+/**
+ * The main handler for the 'popstate' event (back button press).
+ * This function is now the single source of truth for closing popups via back navigation.
+ */
+function handleBackButton() {
+    console.log("Back button event detected. Checking for open popups...");
+
+    // This array defines the popups and their direct closing functions in order of priority.
     const popupsToClose = [
         { id: 'song-options-popup', closeFunc: closeSongOptionsPopup },
         { id: 'add-to-playlist-overlay', closeFunc: window.closeAddToPlaylistOverlay },
         { id: 'new-playlist-popup-overlay', closeFunc: () => document.getElementById('new-playlist-popup-overlay').classList.add('hidden') },
-        { id: 'unique-search-popup', closeFunc: () => navigateTo('home') },
+        { id: 'mobile-search-overlay', closeFunc: () => document.getElementById('unique-search-popup').classList.add('unique-hidden') },
+        { id: 'unique-search-popup', closeFunc: () => document.getElementById('unique-search-popup').classList.add('unique-hidden') },
         { id: 'full-screen-player', closeFunc: hideFullScreenPlayer },
         { id: 'playlist-details-overlay', closeFunc: closePlaylistDetailsOverlay },
         { id: 'likedSongsOverlay', closeFunc: () => document.getElementById('likedSongsOverlay').classList.remove('open') },
-        { id: 'record-breaking-popup-overlay', closeFunc: () => document.getElementById('record-breaking-popup-overlay').classList.remove('flex') },
-        { id: 'record-breaking-popup-overlay2', closeFunc: () => document.getElementById('record-breaking-popup-overlay2').classList.remove('flex') },
-        { id: 'library-popup', closeFunc: () => navigateTo('home') },
+        { id: 'record-breaking-popup-overlay', closeFunc: () => {
+            const popup = document.getElementById('record-breaking-popup-overlay');
+            if (popup) popup.classList.remove('flex');
+        }},
+        { id: 'record-breaking-popup-overlay2', closeFunc: () => {
+            const popup = document.getElementById('record-breaking-popup-overlay2');
+            if (popup) popup.classList.remove('flex');
+        }},
+        { id: 'library-popup', closeFunc: () => document.getElementById('library-popup').classList.add('hidden') },
         { id: 'albumOverlay', closeFunc: closeAlbumOverlay },
-        { id: 'popup-overlay', closeFunc: closePopup }
+        { id: 'popup-overlay', closeFunc: closePopup } // Main auth popup
     ];
 
-    // Iterate through the list and close the first visible popup found.
+    // Find the first visible popup in our priority list and close it.
     for (const popup of popupsToClose) {
-        // The isPopupVisible helper function correctly checks the state
-        if (document.getElementById(popup.id) && isPopupVisible(popup.id)) {
-            console.log(`Closing popup via back button: ${popup.id}`);
+        if (isPopupVisible(popup.id)) {
+            console.log(`Closing popup via history: ${popup.id}`);
             popup.closeFunc();
-            history.pushState({ managed: true }, document.title);
-            return; // Stop after handling the top-most popup.
+            return; // Stop after closing the top-most popup.
         }
     }
-    
-    // CRITICAL FIX: The line below was causing the infinite loop and has been removed.
-    // window.history.back(); // <--- REMOVED THIS LINE
-    
-    console.log("No active popups found. The app will stay on the current page.");
+    console.log("No managed popups were open. Allowing default browser behavior.");
+}
+
+// Attach the handler to the window's popstate event.
+window.addEventListener('popstate', handleBackButton);
+
+/**
+ * Pushes a new state to the browser's history.
+ * This should be called every time a popup or overlay is opened.
+ */
+function pushHistoryStateForPopup() {
+    // We push a simple state object to create a new entry in the browser's history.
+    history.pushState({ swarifyPopup: true }, "");
+    console.log("Pushed history state for a new popup.");
 }

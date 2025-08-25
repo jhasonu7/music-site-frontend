@@ -13442,8 +13442,8 @@ bottom:-11px;
         justify-content: center !important;
         
         /* 1. Set a fixed size for the button */
-        width: 32px !important;
-        height: 32px !important;
+        width: 28px !important;
+        height: 28px !important;
         
         /* 2. Create the bold, white circular border */
         border: 2px solid #FFFFFF !important;

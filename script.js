@@ -1390,6 +1390,10 @@ function closeAllPopups() {
 
 // A centralized navigation function
 function navigateTo(target) {
+    if (target === 'search' || target === 'library') {
+        pushHistoryStateForPopup(); // <<< ADD THIS LINE
+    }
+
     // Step 1: Always close everything first to ensure a clean state
     closeAllPopups();
 
@@ -1639,6 +1643,7 @@ function darkenColor(rgbArray, factor) {
 
 // --- REPLACEMENT for openPlaylistDetailsOverlay function ---
 async function openPlaylistDetailsOverlay(playlist) {
+     pushHistoryStateForPopup();
     console.log("Opening new playlist overlay for:", playlist.name);
     currentPlaylistForView = playlist;
 
@@ -2497,6 +2502,7 @@ function updatePlayingTrackIndicator() {
 
 
 function openAlbumDetails(albumData, highlightTrackTitle = null) {
+    pushHistoryStateForPopup();
     console.log("openAlbumDetails called with albumData:", albumData);
 
     const isOpeningEmbeddedAlbum = !!(albumData.rawHtmlEmbed || albumData.fullSoundcloudEmbed || albumData.audiomackEmbed || albumData.iframeSrc);
@@ -2764,6 +2770,7 @@ if (albumCover) {
 
     document.body.style.overflow = 'hidden';
     updateFixedTopHeadingVisibility();
+
 }
 
 
@@ -6812,6 +6819,7 @@ document.addEventListener('DOMContentLoaded', async () => {
      * Opens the main authentication popup.
      */
     window.openPopup = () => {
+         pushHistoryStateForPopup();
         if (popupOverlay) popupOverlay.classList.add('active');
         popupOverlay.classList.remove('invisible', 'opacity-0');
         document.body.classList.add('no-scroll');
@@ -7731,6 +7739,7 @@ function updatePopupLikeState() {
 // --- START: REPLACEMENT for openSongOptionsPopup function ---
 
 function openSongOptionsPopup(song) {
+     pushHistoryStateForPopup();
     const popupBackdrop = document.getElementById('song-options-popup');
     const popupPanel = document.querySelector('.song-options-panel');
     const popupSongCover = document.getElementById('popup-song-cover');
@@ -8786,6 +8795,7 @@ function updatePlaylistPlayButtons() {
  * NEW: Shows the full-screen player overlay and sets dynamic background color.
  */
 function showFullScreenPlayer() {
+      pushHistoryStateForPopup();
     if (!fullScreenPlayer) return;
 
     fullScreenPlayer.classList.add('active');
@@ -9263,6 +9273,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to open the popup
     const openRecordBreakingPopup = () => {
+         pushHistoryStateForPopup();
         if (!popupOverlay || !popupGrid) return;
 
         // 1. Clear any old content from the grid
@@ -9343,6 +9354,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to open the popup
     const openRecordBreakingPopup2 = () => {
+         pushHistoryStateForPopup();
         if (!popupOverlay || !popupGrid) return;
 
         // 1. Clear any old content from the grid
@@ -9412,3 +9424,98 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 // --- END: Record Breaking Albums Popup Logic ---
+// =======================================================
+// MOBILE BACK BUTTON & HISTORY MANAGEMENT
+// =======================================================
+
+/**
+ * A helper function to check if a popup is currently visible.
+ * It checks for common visibility patterns like 'hidden' classes or 'active' states.
+ * @param {string} elementId - The ID of the popup element to check.
+ * @returns {boolean} - True if the popup is visible, false otherwise.
+ */
+function isPopupVisible(elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) return false;
+    
+    // Check for common 'hidden' classes used throughout your project
+    if (element.classList.contains('hidden') || element.classList.contains('unique-hidden')) {
+        return false;
+    }
+    
+    // Check for 'active' or 'open' classes that indicate visibility
+    if (element.classList.contains('active') || element.classList.contains('open') || element.classList.contains('show')) {
+        return true;
+    }
+    
+    // Check the computed style for 'display' or 'visibility' properties
+    const style = window.getComputedStyle(element);
+    if (style.display === 'none' || style.visibility === 'hidden') {
+        return false;
+    }
+    
+    // A specific check for the main authentication popup
+    if (elementId === 'popup-overlay' && element.classList.contains('invisible')) {
+        return false;
+    }
+
+    // Fallback assumption: if no hiding rules are met, it might be visible.
+    // This covers cases where an element is shown by just removing a 'hidden' class without adding an 'active' one.
+    return !element.classList.contains('hidden');
+}
+
+/**
+ * The main handler for the 'popstate' event (back button press).
+ * It checks for open popups in order of priority and closes the top-most one.
+ */
+function handleBackButton() {
+    console.log("Back button pressed, handling app state.");
+
+    // This array defines the popups and their closing functions in order of priority.
+    // The most temporary or "top-level" popups should come first.
+    const popupsToClose = [
+        { id: 'song-options-popup', closeFunc: closeSongOptionsPopup },
+        { id: 'add-to-playlist-overlay', closeFunc: window.closeAddToPlaylistOverlay },
+        { id: 'new-playlist-popup-overlay', closeFunc: () => document.getElementById('new-playlist-popup-overlay').classList.add('hidden') },
+        { id: 'mobile-search-overlay', closeFunc: () => navigateTo('home') }, // Use navigateTo to properly close search
+        { id: 'unique-search-popup', closeFunc: () => navigateTo('home') },
+        { id: 'full-screen-player', closeFunc: hideFullScreenPlayer },
+        { id: 'playlist-details-overlay', closeFunc: closePlaylistDetailsOverlay },
+        { id: 'likedSongsOverlay', closeFunc: () => document.getElementById('likedSongsOverlay').classList.remove('open') },
+        { id: 'record-breaking-popup-overlay', closeFunc: () => document.getElementById('record-breaking-popup-overlay').classList.remove('flex') },
+        { id: 'record-breaking-popup-overlay2', closeFunc: () => document.getElementById('record-breaking-popup-overlay2').classList.remove('flex') },
+        { id: 'library-popup', closeFunc: () => navigateTo('home') },
+        { id: 'albumOverlay', closeFunc: closeAlbumOverlay },
+        { id: 'popup-overlay', closeFunc: closePopup } // Main authentication popup
+    ];
+
+    // Iterate through the list and close the first visible popup found.
+    for (const popup of popupsToClose) {
+        if (document.getElementById(popup.id) && isPopupVisible(popup.id)) {
+            console.log(`Closing popup via back button: ${popup.id}`);
+            popup.closeFunc();
+            
+            // After closing, we push a new state to "catch" the next back button press.
+            // This prevents the browser from navigating to the previous page immediately.
+            history.pushState({ managed: true }, document.title);
+            return; // Stop after handling the top-most popup.
+        }
+    }
+    
+    console.log("No active popups found. Allowing default browser back navigation.");
+    // If no popups were found, you can optionally force navigation or just let the browser handle it.
+    // For safety, it's best to let the browser go to the actual previous page if no popups are open.
+    window.history.back();
+}
+
+// Attach the main handler to the window's popstate event.
+window.addEventListener('popstate', handleBackButton);
+
+/**
+ * Pushes a new state to the browser's history.
+ * This should be called every time a popup or overlay is opened.
+ */
+function pushHistoryStateForPopup() {
+    history.pushState({ managed: true }, document.title);
+    console.log("Pushed history state for popup management.");
+}

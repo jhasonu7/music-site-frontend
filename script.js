@@ -3780,20 +3780,17 @@ function populateRecordBreakingSection2() {
 
     container.innerHTML = ''; // Clear any existing content
 
-   // REPLACEMENT CODE for the loop inside populateRecordBreakingSection2
-albumsToShow.forEach(album => {
-    const card = document.createElement('div');
-    // Use the same classes as the first section
-    card.className = 'mini-album-card card'; 
-    card.dataset.albumId = album.id;
+    albumsToShow.forEach(album => {
+        const card2 = document.createElement('div');
+        card2.className = 'mini-album-card2 card2'; // Added 'card2' class for click listener
+        card2.dataset.albumId = album.id;
 
-    card.innerHTML = `
-        <img src="${album.coverArt}" alt="${album.title}">
-        // Use the same title class as the first section
-        <div class="card-title">${album.title}</div> 
-    `;
-    container.appendChild(card);
-});
+        card2.innerHTML = `
+            <img src="${album.coverArt}" alt="${album.title}">
+            <div class="card-title2">${album.title}</div>
+        `;
+        container.appendChild(card2);
+    });
 }
 
 /**
@@ -9019,7 +9016,8 @@ function showSlide(index, animate = true) {
     dots.forEach(dot => dot.classList.remove('active'));
     dots[index].classList.add('active');
 
-  const applyDynamicStyles = () => {
+    // --- START: New Advanced Dynamic Styling Logic ---
+    const applyDynamicStyles = () => {
         try {
             const colorThief = new ColorThief();
             // Get a palette of 5 colors from the image
@@ -9033,8 +9031,8 @@ function showSlide(index, animate = true) {
             // Apply the vibrant color to the title.
             songTitleEl.style.color = vibrantColor;
             
-            // MODIFIED: The artist details will now be golden.
-            songDetailsEl.style.color = 'rgb(223, 188, 115)';
+            // The artist details will remain white for best contrast and hierarchy.
+            songDetailsEl.style.color = '#E0E0E0';
             
             // Both will have a strong dark shadow to ensure they are readable on any background.
             songTitleEl.style.textShadow = '0 4px 20px rgba(0, 0, 0, 0.8)';
@@ -9044,8 +9042,7 @@ function showSlide(index, animate = true) {
             console.error("ColorThief error:", error);
             // Fallback to default white text if there's an error
             songTitleEl.style.color = '#FFFFFF';
-            // MODIFIED: The artist details will use the golden fallback color.
-            songDetailsEl.style.color = 'rgb(223, 188, 115)';
+            songDetailsEl.style.color = '#E0E0E0';
         }
     };
 
@@ -9344,50 +9341,51 @@ document.addEventListener('DOMContentLoaded', () => {
     const closePopupBtn = document.getElementById('close-record-breaking-popup2');
     const popupGrid = document.getElementById('record-breaking-popup-grid2');
 
-   // in script.js, find the existing openRecordBreakingPopup2 function and replace it with this one
+    // Function to open the popup
+    const openRecordBreakingPopup2 = () => {
+        if (!popupOverlay || !popupGrid) return;
 
-const openRecordBreakingPopup2 = () => {
-    if (!popupOverlay || !popupGrid) return;
+        // 1. Clear any old content from the grid
+        popupGrid.innerHTML = '';
 
-    // 1. Clear any old content from the grid
-    popupGrid.innerHTML = '';
+        // 2. Find the original mini-carousel albums
+        const originalCards = document.querySelectorAll('#record-breaking-albums-container2 .mini-album-card2');
 
-    // 2. Find the original mini-carousel albums with the CORRECTED class name
-    const originalCards = document.querySelectorAll('#record-breaking-albums-container2 .mini-album-card'); // <<< THIS IS THE FIX
+        // 3. Create a new card in the popup for each original card
+        originalCards.forEach(originalCard => {
+            const albumId = originalCard.dataset.albumId;
+            const album = allAlbumsData.find(a => a.id === albumId);
 
-    // 3. Create a new card in the popup for each original card
-    originalCards.forEach(originalCard => {
-        const albumId = originalCard.dataset.albumId;
-        const album = allAlbumsData.find(a => a.id === albumId);
+            if (album) {
+                const newCard = document.createElement('div');
+                newCard.className = 'record-breaking-popup-card2';
+                // Set the data-album-id so we know which album to open on click
+                newCard.dataset.albumId = album.id;
+                newCard.innerHTML = `
+                    <img src="${album.coverArt}" alt="${album.title}">
+                    <div class="card-title2">${album.title}</div>
+                `;
 
-        if (album) {
-            const newCard = document.createElement('div');
-            // This class was also updated for consistency in the previous step,
-            // but we'll correct it here too to be safe.
-            newCard.className = 'record-breaking-popup-card'; 
-            newCard.dataset.albumId = album.id;
-            newCard.innerHTML = `
-                <img src="${album.coverArt}" alt="${album.title}">
-                <div class="card-title">${album.title}</div>
-            `;
+                // 4. Add a click listener to the new card
+                newCard.addEventListener('click', () => {
+                    // Find the full album data and open the details overlay
+                    const albumToOpen = allAlbumsData.find(a => a.id === album.id);
+                    if (albumToOpen) {
+                        openAlbumDetails(albumToOpen);
+                        // REMOVED THE FOLLOWING LINE:
+                        // closeRecordBreakingPopup2(); // Close the grid popup after opening the album
+                    }
+                });
 
-            // 4. Add a click listener to the new card
-            newCard.addEventListener('click', () => {
-                const albumToOpen = allAlbumsData.find(a => a.id === album.id);
-                if (albumToOpen) {
-                    openAlbumDetails(albumToOpen);
-                }
-            });
+                popupGrid.appendChild(newCard);
+            }
+        });
 
-            popupGrid.appendChild(newCard);
-        }
-    });
-
-    // 5. Show the popup
-    popupOverlay.classList.remove('hidden');
-    popupOverlay.classList.add('flex');
-    document.body.classList.add('popup-active2');
-};
+        // 5. Show the popup
+        popupOverlay.classList.remove('hidden');
+        popupOverlay.classList.add('flex'); // Use flex to center the content
+        document.body.classList.add('popup-active2'); // Prevent background scrolling
+    };
 
     // Function to close the popup
     const closeRecordBreakingPopup2 = () => {

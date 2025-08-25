@@ -13114,3 +13114,9 @@ font-weight: 500;
     /* Add a subtle glow effect to make it look "bold" and stand out */
     text-shadow: 0 0 8px rgba(223, 188, 115, 0.7);
 }
+
+/* Hides the title text on the mini-albums in the second section */
+.record-breaking-section2 .mini-album-card2 .card-title2 {
+    display: none;
+}
+

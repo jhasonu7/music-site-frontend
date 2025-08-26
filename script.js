@@ -3000,20 +3000,24 @@ async function closeAlbumOverlay(instant = false) {
             });
 
         } else {
-            // --- ANIMATED CLOSE (For Custom Overlay Button) ---
-            albumOverlay.classList.remove('active');
-            albumOverlay.addEventListener('transitionend', () => {
-                albumOverlay.classList.remove('show');
-                if (albumFullEmbedContainer) {
-                    albumFullEmbedContainer.innerHTML = '';
-                    albumFullEmbedContainer.style.display = 'none';
-                }
-                const similarAlbumsSection = document.getElementById('similar-albums-section');
-                if (similarAlbumsSection) {
-                    similarAlbumsSection.classList.add('hidden');
-                }
-            }, { once: true });
+    // --- ANIMATED CLOSE (For Custom Overlay Button) ---
+    albumOverlay.classList.remove('active');
+
+    // Use a reliable setTimeout instead of the unpredictable 'transitionend' event.
+    // The timeout duration should be slightly longer than your CSS transition time (which is 0.4s).
+    setTimeout(() => {
+        albumOverlay.classList.remove('show');
+        
+        if (albumFullEmbedContainer) {
+            albumFullEmbedContainer.innerHTML = '';
+            albumFullEmbedContainer.style.display = 'none';
         }
+        const similarAlbumsSection = document.getElementById('similar-albums-section');
+        if (similarAlbumsSection) {
+            similarAlbumsSection.classList.add('hidden');
+        }
+    }, 500); // 500ms is a safe delay for a 400ms animation.
+}
         
         updateBodyForPopups();
         updateFixedTopHeadingVisibility();

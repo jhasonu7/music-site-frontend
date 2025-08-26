@@ -93,9 +93,8 @@ styleSheet.innerText = `
         z-index: 1002; /* Ensure it's above the interaction layer */
         pointer-events: auto;
         overflow-y: auto;
-        background: rgb(13,13,13);
-        backdrop-filter: blur(5px);
-        -webkit-backdrop-filter: blur(5px);
+     background: transparent;
+       
         border-radius: 25px;
         padding: 20px 0;
         box-sizing: border-box;
@@ -117,10 +116,10 @@ styleSheet.innerText = `
   @media (max-width: 768px) { 
     #vertical-heart-strip {
     position: absolute;
-    top: 231px;
-    left: 32px;
-    width: 27px;
-    height: calc(100% - 210px);
+           top: 234px;
+        left: 31px;
+        width: 33px;
+        height: calc(98% - 218px);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -141,8 +140,8 @@ styleSheet.innerText = `
    #vertical-heart-strip1 {
         position: absolute;
         top: 248px; /* Position below the top info mask */
-        right: 75px;
-        width: 27px;
+        right: 70px;
+        width: 32px;
         height: calc(100% - 210px);
         display: flex;
         flex-direction: column;
@@ -151,9 +150,8 @@ styleSheet.innerText = `
         z-index: 1002; /* Ensure it's above the interaction layer */
         pointer-events: auto;
         overflow-y: auto;
-        background: rgb(13,13,13);
-        backdrop-filter: blur(5px);
-        -webkit-backdrop-filter: blur(5px);
+background: transparent;
+      
         border-radius: 25px;
         padding: 20px 0;
         box-sizing: border-box;
@@ -175,10 +173,10 @@ styleSheet.innerText = `
   @media (max-width: 768px) { 
     #vertical-heart-strip1 {
     position: absolute;
-    top: 231px;
-    right: 32px;
-    width: 27px;
-    height: calc(100% - 210px);
+     top: 233px; /* Position below the top info mask */
+        right: 53px;
+        width: 33px;
+        height: calc(97% - 210px);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2322,20 +2320,11 @@ function hideFullScreenPlayer() {
 }
 
 
-/**
- * NEW: Manages the visibility of the fixed top playing heading.
- * This function should be called whenever the `playingAlbum` state changes
- * or on scroll events.
- */
 // Corrected logic for updateFixedTopHeadingVisibility
 function updateFixedTopHeadingVisibility() {
     // Only proceed if the necessary elements exist
     const rightPanel = document.querySelector('.right');
     const fixedTopPlayingHeading = document.getElementById('fixed-top-playing-heading');
-    if (!fixedTopPlayingHeading) {
-        console.warn("updateFixedTopHeadingVisibility: fixedTopPlayingHeading element not found. Skipping update.");
-        return;
-    }
     const albumOverlay = document.getElementById('albumOverlay');
     if (!rightPanel || !fixedTopPlayingHeading || !albumOverlay) {
         return;
@@ -2625,7 +2614,12 @@ async function openAlbumDetails(albumData, highlightTrackTitle = null) {
  * @param {Object} albumData - The data for the album to display.
  * @param {boolean} [shouldFetchRecommendations=true] - Set to false to prevent fetching new recommendations.
  */
-// In script.js
+/**
+ * Fetches and displays similar albums specifically for the embedded album view.
+ * @param {Object} albumToRecommendFor - The album object to get recommendations for.
+ */
+
+// REPLACE your existing populateAlbumOverlayUI function with this one
 
 async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = true) {
 
@@ -2645,20 +2639,58 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
         albumOverlay.classList.add('embedded-view');
         albumOverlay.classList.remove('tracklist-view');
 
+        // Clear previous content
         albumFullEmbedContainer.innerHTML = '';
+
+        // Create and append the iframe for the embedded player
         const embedContent = albumData.soundcloudEmbed || albumData.fullSoundcloudEmbed || albumData.rawHtmlEmbed || albumData.audiomackEmbed || (albumData.iframeSrc ? `<iframe src="${albumData.iframeSrc}" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>` : '');
         albumFullEmbedContainer.innerHTML = embedContent;
         const iframe = albumFullEmbedContainer.querySelector('iframe');
         if (iframe) iframe.dataset.albumId = albumData.id;
-        
+
+        // Create and append the top mask header
         let topMaskDiv = document.createElement('div');
         topMaskDiv.id = 'embedded-overlay-top-mask';
         topMaskDiv.innerHTML = `<img src="${albumData.coverArt || 'https://placehold.co/80x80/4a4a4a/ffffff?text=Album'}" alt="Album Cover" class="embedded-header-cover"><div class="embedded-header-info"><div class="embedded-header-title">${albumData.title || 'Embedded Content'}</div><div class="embedded-header-artist">${albumData.artist || 'Various Artists'}</div></div>`;
         albumFullEmbedContainer.appendChild(topMaskDiv);
+
+        // Create and append the interaction layer for the first click
         const embedInteractionLayer = document.createElement('div');
         embedInteractionLayer.id = 'embed-interaction-layer';
         albumFullEmbedContainer.appendChild(embedInteractionLayer);
         embedInteractionLayer.addEventListener('click', firstClickEmbedHandler, { once: true });
+
+
+        // NEW: Add vertical strips for embedded albums (without hearts)
+        const verticalHeartStrip = document.createElement('div');
+        verticalHeartStrip.id = 'vertical-heart-strip';
+        albumFullEmbedContainer.appendChild(verticalHeartStrip);
+
+        const verticalHeartStrip1 = document.createElement('div');
+        verticalHeartStrip1.id = 'vertical-heart-strip1';
+        albumFullEmbedContainer.appendChild(verticalHeartStrip1);
+
+        console.log("Vertical strips added to embedded album overlay.");
+        
+        // --- START: NEW CODE to add recommendation section ---
+        // Create the HTML for the "You might also like" section
+        const similarSectionHTML = `
+            <div id="embedded-similar-albums-section" class="spotifyPlaylists">
+                <div class="section-heading">
+                    <h1>You might also like</h1>
+                </div>
+                <div class="cardcontainer" id="embedded-similar-albums-container">
+                    <!-- Similar albums will be loaded here -->
+                </div>
+            </div>
+        `;
+        // Append this new section to the main container
+        albumFullEmbedContainer.insertAdjacentHTML('beforeend', similarSectionHTML);
+        
+        // Fetch and display the recommendations for this new section
+        fetchAndDisplayEmbeddedSimilarAlbums(albumData);
+        // --- END: NEW CODE ---
+
         togglePlayerControls(false);
 
     } else {
@@ -2716,14 +2748,10 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
         };
     }
 
-    // --- THIS IS THE FIX ---
-    // This ensures that both back buttons (the main one and the one in the compact header)
-    // are correctly wired to our custom close function every time the overlay is populated.
     const closeButtons = document.querySelectorAll('.close-overlay');
     closeButtons.forEach(btn => {
         btn.onclick = closeAlbumOverlay;
     });
-    // --- END OF FIX ---
 
     updatePlayingTrackIndicator();
     updateAlbumPlayButtonIcon();
@@ -7505,11 +7533,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             setupMiniCarouselScroll();
             setupMiniCarouselScroll2();
             attachEventListenersToHtmlCards();
-               const albumOverlay = document.getElementById('albumOverlay'); // Get the album overlay element
-                if (!albumOverlay.classList.contains('show')) { // <-- WRAP THE FUNCTIONS IN THIS CHECK
-                    await loadPlayerState();
-                    await loadLatestLikedSongAsFallback();
-                }
+             // This reliably checks if you are on the homepage
+if (window.location.pathname === '/' || window.location.pathname === '') {
+    await loadPlayerState();
+    await loadLatestLikedSongAsFallback();
+}
             // Setup horizontal scroll for all three card sections
             setupHorizontalScroll('trending-songs-cards');
             setupHorizontalScroll('popular-albums-cards');
@@ -9540,3 +9568,49 @@ audio.addEventListener('play', updateAllPlayButtonStates);
 
     window.addEventListener('popstate', handleBackButton);
 });
+
+
+
+// ADD this new function anywhere in your script.js file
+
+/**
+ * Fetches and displays similar albums specifically for the embedded album view.
+ * @param {Object} albumToRecommendFor - The album object to get recommendations for.
+ */
+// REPLACE this function in your script.js
+
+async function fetchAndDisplayEmbeddedSimilarAlbums(albumToRecommendFor) {
+    const container = document.getElementById('embedded-similar-albums-container');
+    const section = document.getElementById('embedded-similar-albums-section');
+    if (!container || !section) {
+        return;
+    }
+
+    container.innerHTML = '<p style="color: #b3b3b3; grid-column: 1 / -1; text-align: center;">Loading recommendations...</p>';
+
+    try {
+        const artistQuery = encodeURIComponent(albumToRecommendFor.artist || '');
+        const genreQuery = encodeURIComponent(albumToRecommendFor.genre || '');
+        const currentAlbumId = encodeURIComponent(albumToRecommendFor.id || '');
+        
+        // UPDATED: Changed limit from 6 to 16
+        const fetchURL = `${BACKEND_BASE_URL}/api/recommendations?artist=${artistQuery}&genre=${genreQuery}&exclude=${currentAlbumId}&limit=16`;
+
+        const response = await fetch(fetchURL);
+        const similarAlbums = await response.json();
+
+        if (Array.isArray(similarAlbums) && similarAlbums.length > 0) {
+            container.innerHTML = '';
+            similarAlbums.forEach(album => {
+                const cardHtml = createAlbumCardHtml(album);
+                container.insertAdjacentHTML('beforeend', cardHtml);
+            });
+            attachEventListenersToHtmlCards();
+        } else {
+            container.innerHTML = `<p style="color: #b3b3b3; text-align: center; grid-column: 1 / -1;">No similar albums found.</p>`;
+        }
+    } catch (error) {
+        console.error('ERROR fetching embedded similar albums:', error);
+        container.innerHTML = `<p style="color: #ff4d4d; grid-column: 1 / -1; text-align: center;">Could not load recommendations.</p>`;
+    }
+}

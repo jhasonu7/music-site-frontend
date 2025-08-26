@@ -13538,5 +13538,7 @@ bottom:-11px;
     opacity: 0;
     transition: opacity 0.2s ease-in-out;
 }
-
+#album-full-embed-container {
+    height: 84vh;
+}
 

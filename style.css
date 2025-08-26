@@ -13541,4 +13541,92 @@ bottom:-11px;
 #album-full-embed-container {
     height: 84vh;
 }
+/* Add this at the end of your style.css file */
+
+/* Make the embedded album container scrollable */
+#album-full-embed-container {
+    overflow-y: auto;
+    height: 100%;
+}
+
+/* Give the iframe a fixed height so there's room for content below it */
+#album-full-embed-container iframe {
+   height: 450px; 
+   flex-shrink: 0;
+}
+
+/* Container for the "You might also like" section in the embedded view */
+#embedded-similar-albums-section {
+    padding: 0px;
+    margin-top: 20px;
+}
+
+/* Grid layout for the recommendation cards */
+#embedded-similar-albums-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+}
+
+
+/* ======================================================== */
+/* FINAL FIX: 2-Column Recommendation Cards on Mobile       */
+/* Place this at the very end of your style.css file.     */
+/* ======================================================== */
+
+@media (max-width: 768px) {
+    /* This targets both recommendation containers on mobile */
+    #similar-albums-container,
+    #embedded-similar-albums-container {
+        /* This is the key change: it forces a 2-column grid layout */
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+
+/* ======================================================= */
+/* HIDE ALL SCROLLBARS ON MOBILE                           */
+/* Place this at the very end of your style.css file.      */
+/* ======================================================= */
+@media (max-width: 768px) {
+  /* For Chrome, Safari, and other WebKit browsers */
+  .right::-webkit-scrollbar,
+  .album-overlay-content::-webkit-scrollbar,
+  #album-overlay-scroll-content::-webkit-scrollbar,
+  #album-full-embed-container::-webkit-scrollbar,
+  .library::-webkit-scrollbar,
+  .liked-content::-webkit-scrollbar,
+  #playlist-scroll-content::-webkit-scrollbar,
+  #record-breaking-popup-grid::-webkit-scrollbar,
+  #record-breaking-popup-grid2::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* For Firefox and IE/Edge */
+  .right,
+  .album-overlay-content,
+  #album-overlay-scroll-content,
+  #album-full-embed-container,
+  .library,
+  .liked-content,
+  #playlist-scroll-content,
+  #record-breaking-popup-grid,
+  #record-breaking-popup-grid2 {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  .section-heading h1 {
+    top:-56px;
+  }
+
+     #embedded-similar-albums-container{
+        padding-bottom: 169px;
+        height:159vh;
+      }
+}
+
+
+
+
 

@@ -11,7 +11,42 @@
 })();
 
 
+// ADD THIS at the top of your script
+const imageCache = new Set();
 
+function preloadImage(url) {
+    if (!url || imageCache.has(url)) {
+        return; // Don't preload if URL is invalid or already cached
+    }
+    const img = new Image();
+    img.src = url;
+    imageCache.add(url);
+}
+// MODIFY the attachEventListenersToHtmlCards function
+function attachEventListenersToHtmlCards() {
+    console.log("Attaching event listeners to existing HTML cards.");
+    const albumCards = document.querySelectorAll('.card'); 
+    albumCards.forEach(card => {
+        card.removeEventListener('click', handleCardClick);
+        card.addEventListener('click', handleCardClick);
+
+        // --- ADD THIS MOUSEOVER LISTENER ---
+        card.addEventListener('mouseover', () => {
+            const albumId = card.dataset.albumId;
+            const albumData = allAlbumsData.find(a => a.id === albumId);
+            if (albumData && albumData.coverArt) {
+                preloadImage(albumData.coverArt);
+            }
+        });
+        // --- END OF ADDITION ---
+    });
+
+    const playButtons = document.querySelectorAll('.card-play-button');
+    playButtons.forEach(button => {
+        button.removeEventListener('click', handlePlayButtonClick);
+        button.addEventListener('click', handlePlayButtonClick);
+    });
+}
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual ngrok static domain if you are using ngrok for your backend.
 // If your backend is hosted directly (e.g., on Render, Heroku), use that URL.
@@ -168,6 +203,8 @@ styleSheet.innerText = `
 `;
 document.head.appendChild(styleSheet);
 
+
+
 let processedCarouselSongs = []; // <<< ADD THIS LINE
 
 // --- DOM Elements (assuming these exist in your HTML) ---
@@ -181,6 +218,8 @@ const exploreMoreAlbumsCardsContainer = document.getElementById('explore-more-al
 
 
 // --- Global Variables ---
+let isInitialPageLoad = true;
+let albumHistoryStack = []; 
 let currentAlbum = null; // Stores the currently loaded album data (for the overlay)
 let currentTrackIndex = 0; // Index of the currently playing track within currentAlbum.tracks
 let isRepeat = false; // Flag for repeat mode
@@ -190,6 +229,10 @@ let allAlbumsData = []; // This will store albums fetched from the backend for s
 
 
 const PLAYER_STATE_KEY = 'swarify_player_state'; // KEY FOR STORING PLAYER STATE
+
+
+
+
 
 /**
  * Converts an RGB color value to HSL. This helps us find colors
@@ -1653,14 +1696,19 @@ async function openPlaylistDetailsOverlay(playlist) {
     
     // Reset scroll position and state
     scrollContent.scrollTop = 0;
-    overlay.classList.remove('is-scrolled');
+    overlay.classList.remove('is-covered');
     
     overlay.classList.remove('hidden');
-    setTimeout(() => {
+    overlay.classList.remove('is-covered');
+
+    requestAnimationFrame(() => {
+    overlay.classList.add('is-active');
+});
+    document.body.style.overflow = 'hidden';
+
+     setTimeout(() => {
         overlay.classList.add('active');
     }, 10);
-    
-    document.body.style.overflow = 'hidden';
 
     // Get all necessary elements
     const backgroundGradient = document.getElementById('playlist-background-gradient');
@@ -1935,7 +1983,10 @@ async function fetchAndRenderRecommendedSongs(playlistId) {
 
 // In script.js, REPLACE the entire fetchAndDisplaySimilarAlbums function
 
-async function fetchAndDisplaySimilarAlbums(currentAlbum) {
+// In script.js
+
+// REPLACEMENT for the fetchAndDisplaySimilarAlbums function
+async function fetchAndDisplaySimilarAlbums(albumToRecommendFor) { // 1. Argument is renamed for clarity
     const container = document.getElementById('similar-albums-container');
     const section = document.getElementById('similar-albums-section');
     if (!container || !section) {
@@ -1943,42 +1994,44 @@ async function fetchAndDisplaySimilarAlbums(currentAlbum) {
         return;
     }
 
-    // This makes the section visible. The new CSS ensures it has space to appear.
     section.style.display = '';
     section.classList.remove('hidden');
     container.innerHTML = '<p style="color: #b3b3b3; grid-column: 1 / -1; text-align: center;">Loading recommendations...</p>';
 
     try {
-        const artistQuery = encodeURIComponent(currentAlbum.artist || '');
-        const genreQuery = encodeURIComponent(currentAlbum.genre || '');
-        const currentAlbumId = encodeURIComponent(currentAlbum.id || '');
+        const artistQuery = encodeURIComponent(albumToRecommendFor.artist || '');
+        const genreQuery = encodeURIComponent(albumToRecommendFor.genre || '');
+        const currentAlbumId = encodeURIComponent(albumToRecommendFor.id || '');
         
         const fetchURL = `${BACKEND_BASE_URL}/api/recommendations?artist=${artistQuery}&genre=${genreQuery}&exclude=${currentAlbumId}&limit=12`;
 
         const response = await fetch(fetchURL);
         const similarAlbums = await response.json();
 
+        // --- THE FIX ---
+        // 2. Before updating the UI, we check if the album we fetched for is still the one being displayed.
+        // `currentAlbum` is the global variable representing the currently visible album.
+        if (!currentAlbum || currentAlbum.id !== albumToRecommendFor.id) {
+            console.log("Aborting stale recommendation update. The user has already navigated to a different album.");
+            return; // Exit the function to prevent overwriting the correct recommendations.
+        }
+        // --- END OF FIX ---
+
         if (Array.isArray(similarAlbums) && similarAlbums.length > 0) {
-            // SUCCESS: Render the album cards
             container.innerHTML = '';
             similarAlbums.forEach(album => {
                 const cardHtml = createAlbumCardHtml(album);
                 container.insertAdjacentHTML('beforeend', cardHtml);
             });
-            // Re-attach listeners to ALL cards, including the new ones.
             attachEventListenersToHtmlCards();
         } else {
-            // NO RESULTS: Display a clear message.
-            console.log("Backend returned an empty list of recommendations.");
             container.innerHTML = `<p style="color: #b3b3b3; text-align: center; grid-column: 1 / -1;">No similar albums found.</p>`;
         }
     } catch (error) {
-        // ERROR: Display an error message.
         console.error('ERROR fetching similar albums:', error);
         container.innerHTML = `<p style="color: #ff4d4d; grid-column: 1 / -1; text-align: center;">Could not load recommendations.</p>`;
     }
 }
-
 async function playTrack(track, indexInAlbum, initialSeekTime = 0) {
     if (!isPlayingFromLikedSongs) {
         isPlayingFromLikedSongs = false;
@@ -2256,7 +2309,7 @@ function showFullScreenPlayer() {
 function hideFullScreenPlayer() {
     if (!fullScreenPlayer) return;
     fullScreenPlayer.classList.remove('active');
-    document.body.style.overflow = ''; // Restore body scrolling
+ updateBodyForPopups();
     console.log("Full-screen player hidden.");
 
     // If the album overlay (tracklist) is open, ensure it's still visible
@@ -2274,49 +2327,64 @@ function hideFullScreenPlayer() {
  * This function should be called whenever the `playingAlbum` state changes
  * or on scroll events.
  */
-
+// Corrected logic for updateFixedTopHeadingVisibility
 function updateFixedTopHeadingVisibility() {
+    // Only proceed if the necessary elements exist
+    const rightPanel = document.querySelector('.right');
+    const fixedTopPlayingHeading = document.getElementById('fixed-top-playing-heading');
     if (!fixedTopPlayingHeading) {
-        console.warn("updateFixedTopHeadingVisibility: fixedTopPlayingHeading element not found.");
+        console.warn("updateFixedTopHeadingVisibility: fixedTopPlayingHeading element not found. Skipping update.");
+        return;
+    }
+    const albumOverlay = document.getElementById('albumOverlay');
+    if (!rightPanel || !fixedTopPlayingHeading || !albumOverlay) {
         return;
     }
 
-    // Determine which album should be shown in the fixed top heading:
-    // - If the album overlay is open and a currentAlbum is set, show currentAlbum (the opened one).
-    // - Otherwise, if something is playing, show playingAlbum.
-    // - Otherwise, hide/clear the header.
-    let albumToShow = null;
-    try {
-        if (albumOverlay && albumOverlay.classList && albumOverlay.classList.contains('show') && currentAlbum) {
-            albumToShow = currentAlbum;
-        } else if (playingAlbum) {
-            albumToShow = playingAlbum;
-        }
-    } catch (e) {
-        console.warn("updateFixedTopHeadingVisibility: error determining album to show", e);
-    }
-
-    // Update header content if there is an album to show
-    if (albumToShow) {
-        if (fixedTopAlbumArt) fixedTopAlbumArt.src = albumToShow.coverArt || 'https://placehold.co/40x40/4a4a4a/ffffff?text=Album';
-        if (fixedTopAlbumTitle) fixedTopAlbumTitle.textContent = albumToShow.title || 'Unknown Album';
-    } else {
-        // No album to show; set defaults
-        if (fixedTopAlbumArt) fixedTopAlbumArt.src = 'https://placehold.co/40x40/4a4a4a/ffffff?text=Album';
-        if (fixedTopAlbumTitle) fixedTopAlbumTitle.textContent = '';
-    }
-
-    const scrollThreshold = topBar ? topBar.offsetHeight : 0; // Show after scrolling past top bar
-
-    // Show the heading only when there's an album to show AND the user has scrolled past the threshold
-    // AND we are NOT on a desktop screen (where the main playbar is already full-width).
-    if (albumToShow && rightPanel && rightPanel.scrollTop > scrollThreshold && window.innerWidth < 768) {
-        fixedTopPlayingHeading.classList.add('visible');
-        fixedTopPlayingHeading.classList.remove('hidden'); // Ensure 'hidden' is removed if present
-        console.log("Fixed top heading set to VISIBLE for album:", albumToShow.title);
-    } else {
+    // Determine if the album overlay is currently open
+    const isAlbumOverlayOpen = albumOverlay.classList.contains('show');
+    const isFullScreenPlayerOpen = document.getElementById('full-screen-player').classList.contains('active');
+    
+    // **Stronger Condition**: The fixed header should not appear when the album overlay or full-screen player is open.
+    if (isAlbumOverlayOpen || isFullScreenPlayerOpen) {
         fixedTopPlayingHeading.classList.remove('visible');
-        console.log("Fixed top heading set to HIDDEN (via CSS transition).");
+        return;
+    }
+    
+    // The fixed header should only appear on mobile/tablet screens
+    const isMobileOrTablet = window.innerWidth <= 768;
+    if (!isMobileOrTablet) {
+        fixedTopPlayingHeading.classList.remove('visible');
+        return;
+    }
+
+    // Determine if an album is currently playing to display in the header
+    let albumToShow = null;
+    if (playingAlbum) {
+        albumToShow = playingAlbum;
+    }
+
+    // If no album is playing, hide the header
+    if (!albumToShow) {
+        fixedTopPlayingHeading.classList.remove('visible');
+        return;
+    }
+
+    // Set the scroll threshold for showing the header (e.g., 200px down)
+    const scrollThreshold = 200;
+
+    if (rightPanel.scrollTop > scrollThreshold) {
+        // Update the header content with the playing album's details
+        const albumArt = fixedTopPlayingHeading.querySelector('.album-art-small');
+        if (albumArt) albumArt.src = albumToShow.coverArt;
+        const albumTitle = fixedTopPlayingHeading.querySelector('.album-title-small');
+        if (albumTitle) albumTitle.textContent = albumToShow.title;
+        
+        // Add the 'visible' class to show the header with a smooth transition
+        fixedTopPlayingHeading.classList.add('visible');
+    } else {
+        // Remove the 'visible' class to hide the header
+        fixedTopPlayingHeading.classList.remove('visible');
     }
 }
 
@@ -2500,280 +2568,241 @@ function updatePlayingTrackIndicator() {
 
 
 
+// In script.js
 
-function openAlbumDetails(albumData, highlightTrackTitle = null) {
-    pushHistoryStateForPopup();
-    console.log("openAlbumDetails called with albumData:", albumData);
+// REPLACEMENT for the openAlbumDetails function
+// In script.js
 
-    const isOpeningEmbeddedAlbum = !!(albumData.rawHtmlEmbed || albumData.fullSoundcloudEmbed || albumData.audiomackEmbed || albumData.iframeSrc);
-
-    // Get existing iframe in the full embed container to check if it's the same album
-    const existingMatchingIframe = albumFullEmbedContainer.querySelector(`iframe[data-album-id="${albumData.id}"]`);
-    const isSameEmbeddedAlbumAlreadyLoaded = !!existingMatchingIframe && isOpeningEmbeddedAlbum;
-
-    if (isSameEmbeddedAlbumAlreadyLoaded) {
-        // Make sure only the matching iframe is visible to avoid showing stale/other embeds.
-        albumFullEmbedContainer.querySelectorAll('iframe').forEach(iframe => {
-            iframe.style.display = (iframe.dataset.albumId === albumData.id) ? 'block' : 'none';
-        });
+// REPLACEMENT for the openAlbumDetails function
+async function openAlbumDetails(albumData, highlightTrackTitle = null) {
+    
+    if (currentAlbum && albumData.id !== currentAlbum.id) {
+        const scrollContent = document.getElementById('album-overlay-scroll-content');
+        const recommendationsContainer = document.getElementById('similar-albums-container');
+        const currentState = {
+            albumData: currentAlbum,
+            scrollTop: scrollContent ? scrollContent.scrollTop : 0,
+            recommendationsHtml: recommendationsContainer ? recommendationsContainer.innerHTML : ''
+        };
+        albumHistoryStack.push(currentState);
+        console.log('Saved previous album and its recommendations to history.');
     }
+    
+    // --- FIX: Add a new browser history entry ONLY when navigating forward ---
+    history.pushState({ albumId: albumData.id }, albumData.title, `/album/${albumData.id}`);
 
-    // --- Critical DOM element checks ---
-    if (!albumOverlay || !topBar || !rightPanel || !mainPlayBar || !albumFullEmbedContainer || !closeOverlayBtn) {
-        console.error("Error: A critical UI element for the album overlay is missing.");
-        return;
-    }
-   albumDetailsContent = document.getElementById('album-overlay-scroll-content'); // Assign to the global variable
-    if (!albumDetailsContent) {
-        console.error("Error: albumDetails element (main content) not found.");
-        return;
-    }
+    // This function now only handles the UI update
+    await populateAlbumOverlayUI(albumData);
 
-    // Determine if we are switching between different embedded albums
-    const isSwitchingEmbeds = playingAlbum && isOpeningEmbeddedAlbum && playingAlbum.id !== albumData.id &&
-        (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc);
+    albumOverlay.classList.remove('hidden');
+    setTimeout(() => {
+        albumOverlay.classList.add('show', 'active');
+        document.body.style.overflow = 'hidden';
+    }, 10);
+    
+    updatePlayerUI();
+    setupAlbumSearchListeners();
+    updateFixedTopHeadingVisibility();
+}
+// ADD THIS NEW FUNCTION to script.js
+/**
+ * Populates the album overlay with content, correctly handling both
+ * tracklist albums and embedded albums. This is the new single source of truth.
+ * @param {Object} albumData - The data for the album to display.
+ */
+// In script.js
 
-    if (isOpeningEmbeddedAlbum && !isSameEmbeddedAlbumAlreadyLoaded) {
-        if (isSwitchingEmbeds) {
-            // Hide the UI of the currently playing album before adding the new one
-            for (const child of albumFullEmbedContainer.children) {
-                if (child instanceof HTMLElement) {
-                    child.style.display = 'none';
-                }
-            }
-        } else {
-            albumFullEmbedContainer.innerHTML = ''; // Clear for a fresh embed
-        }
-    } else if (!isOpeningEmbeddedAlbum) {
-        // If opening a non-embedded album, just hide the embed container
-        albumFullEmbedContainer.style.display = 'none';
-    }
+/**
+ * Populates the album overlay with content, correctly handling both
+ * tracklist albums and embedded albums. This is the new single source of truth.
+ * @param {Object} albumData - The data for the album to display.
+ */
+// In script.js
 
-    // Reset track index if a new album is opened
-    if (!playingAlbum || playingAlbum.id !== albumData.id) {
-        currentTrackIndex = 0;
-    }
+/**
+ * Populates the album overlay with content, correctly handling both
+ * tracklist albums and embedded albums.
+ * @param {Object} albumData - The data for the album to display.
+ * @param {boolean} [shouldFetchRecommendations=true] - Set to false to prevent fetching new recommendations.
+ */
+// In script.js
 
+async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = true) {
+
+    console.log(`Populating UI for album: "${albumData.title}"`);
     currentAlbum = albumData;
 
-    // Populate album info
-    albumDetailsCover.src = albumData.coverArt || 'https://placehold.co/160x160/000000/FFFFFF?text=Album';
-    albumDetailsTitle.textContent = albumData.title || 'Unknown Title';
-    albumDetailsArtist.textContent = albumData.artist || 'Unknown Artist';
-    albumDetailsMeta.textContent = `Album • ${albumData.year || 'Year N/A'} • ${albumData.genre || 'Genre N/A'}`;
+    const isEmbeddedAlbum = !!(albumData.rawHtmlEmbed || albumData.fullSoundcloudEmbed || albumData.audiomackEmbed || albumData.iframeSrc);
 
-    albumDetailsTracksBody.innerHTML = ''; // Clear existing tracks
-    albumFullEmbedContainer.style.display = 'none'; // Hide by default
+    const albumDetailsContent = document.getElementById('album-overlay-scroll-content');
+    const albumFullEmbedContainer = document.getElementById('album-full-embed-container');
 
-    // --- Main Logic: Embedded vs. Non-Embedded ---
-    if (isOpeningEmbeddedAlbum) {
+    if (albumDetailsContent) albumDetailsContent.scrollTop = 0;
+
+    if (isEmbeddedAlbum) {
         albumDetailsContent.style.display = 'none';
-        albumFullEmbedContainer.style.display = 'block'; // Use block for embeds
-        albumOverlay.classList.add('embedded-view'); // Add class for specific styling
+        albumFullEmbedContainer.style.display = 'block';
+        albumOverlay.classList.add('embedded-view');
         albumOverlay.classList.remove('tracklist-view');
 
-        if (!isSameEmbeddedAlbumAlreadyLoaded) {
-            const embedContent = albumData.soundcloudEmbed || albumData.fullSoundcloudEmbed || albumData.rawHtmlEmbed || albumData.audiomackEmbed || (albumData.iframeSrc ? `<iframe src="${albumData.iframeSrc}" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>` : '');
+        albumFullEmbedContainer.innerHTML = '';
+        const embedContent = albumData.soundcloudEmbed || albumData.fullSoundcloudEmbed || albumData.rawHtmlEmbed || albumData.audiomackEmbed || (albumData.iframeSrc ? `<iframe src="${albumData.iframeSrc}" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>` : '');
+        albumFullEmbedContainer.innerHTML = embedContent;
+        const iframe = albumFullEmbedContainer.querySelector('iframe');
+        if (iframe) iframe.dataset.albumId = albumData.id;
+        
+        let topMaskDiv = document.createElement('div');
+        topMaskDiv.id = 'embedded-overlay-top-mask';
+        topMaskDiv.innerHTML = `<img src="${albumData.coverArt || 'https://placehold.co/80x80/4a4a4a/ffffff?text=Album'}" alt="Album Cover" class="embedded-header-cover"><div class="embedded-header-info"><div class="embedded-header-title">${albumData.title || 'Embedded Content'}</div><div class="embedded-header-artist">${albumData.artist || 'Various Artists'}</div></div>`;
+        albumFullEmbedContainer.appendChild(topMaskDiv);
+        const embedInteractionLayer = document.createElement('div');
+        embedInteractionLayer.id = 'embed-interaction-layer';
+        albumFullEmbedContainer.appendChild(embedInteractionLayer);
+        embedInteractionLayer.addEventListener('click', firstClickEmbedHandler, { once: true });
+        togglePlayerControls(false);
 
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = embedContent;
-            const originalIframe = tempDiv.querySelector('iframe');
-
-            if (originalIframe) {
-                originalIframe.dataset.albumId = albumData.id;
-                albumFullEmbedContainer.appendChild(originalIframe);
-                albumFullEmbedContainer.querySelectorAll('iframe').forEach(iframe => {
-                    iframe.style.display = (iframe === originalIframe) ? 'block' : 'none';
-                });
-            } else {
-                albumFullEmbedContainer.innerHTML = embedContent;
-            }
-
-            // Create and populate the top mask header
-            let topMaskDiv = document.createElement('div');
-            topMaskDiv.id = 'embedded-overlay-top-mask';
-            topMaskDiv.innerHTML = `
-                <img src="${albumData.coverArt || 'https://placehold.co/80x80/4a4a4a/ffffff?text=Album'}" alt="Album Cover" class="embedded-header-cover">
-                <div class="embedded-header-info">
-                    <div class="embedded-header-title">${albumData.title || 'Embedded Content'}</div>
-                    <div class="embedded-header-artist">${albumData.artist || 'Various Artists'}</div>
-                    <div class="embedded-header-meta">Album • ${albumData.year || 'Year N/A'} • ${albumData.genre || 'Genre N/A'}</div>
-                </div>`;
-            albumFullEmbedContainer.appendChild(topMaskDiv);
-
-            // Create the interaction layer to capture the first click
-            const embedInteractionLayer = document.createElement('div');
-            embedInteractionLayer.id = 'embed-interaction-layer';
-            albumFullEmbedContainer.appendChild(embedInteractionLayer);
-
-            const firstClickHandler = (e) => {
-                const rect = embedInteractionLayer.getBoundingClientRect();
-                const y = e.clientY - rect.top;
-                if (y <= 180) { // Exclude clicks in the top header area
-                    return;
-                }
-                firstClickEmbedHandler(); // This function should remove the layer
-                embedInteractionLayer.removeEventListener('click', firstClickHandler);
-            };
-            embedInteractionLayer.addEventListener('click', firstClickHandler);
-
-            // Create and populate the vertical heart strip
-            const verticalHeartStrip = document.createElement('div');
-            verticalHeartStrip.id = 'vertical-heart-strip';
-            for (let i = 0; i < 15; i++) {
-                const heartContainer = document.createElement('div');
-                heartContainer.className = 'heart-icon-container';
-                heartContainer.innerHTML = `<svg class="heart-icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
-                heartContainer.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    e.currentTarget.querySelector('.heart-icon').classList.toggle('liked');
-                });
-                verticalHeartStrip.appendChild(heartContainer);
-            }
-            albumFullEmbedContainer.appendChild(verticalHeartStrip);
-
-        }
-
-        const topBarHeight = topBar.offsetHeight;
-        albumOverlay.style.top = `${topBarHeight}px`;
-        togglePlayerControls(false); // Disable main controls for embedded content
-
-    } 
-    else { // This block handles non-embedded albums
+    } else {
         albumDetailsContent.style.display = 'block';
         albumFullEmbedContainer.style.display = 'none';
-        albumOverlay.classList.add('tracklist-view');
         albumOverlay.classList.remove('embedded-view');
-         // --- Populate Header Info ---
+        albumOverlay.classList.add('tracklist-view');
+
         const albumCover = document.getElementById('albumDetails-cover');
         const albumTitle = document.getElementById('albumDetails-title');
         const albumArtist = document.getElementById('albumDetails-artist');
         const albumMeta = document.getElementById('albumDetails-meta');
+        const tracksBody = document.getElementById('albumDetails-tracks');
         const compactTitle = document.getElementById('compact-header-title');
-
-    // Inside your openAlbumDetails function in script.js
-
-if (albumCover) {
-    // THIS IS THE CRUCIAL FIX FOR THE COLOR
-    albumCover.crossOrigin = "Anonymous"; 
-
-    albumCover.src = albumData.coverArt || 'https://placehold.co/180x180/000/fff?text=Album';
-    
-    const setDynamicColor = () => {
-        try {
-            const colorThief = new ColorThief();
-            // This function should create a VIBRANT color, not a dark one.
-            const finalColor = createVibrantBackgroundColor(colorThief.getColor(albumCover));
-            const rgbColor = `rgb(${finalColor[0]}, ${finalColor[1]}, ${finalColor[2]})`;
-            albumOverlay.style.setProperty('--album-dominant-color', rgbColor);
-        } catch (e) {
-            console.error("ColorThief error:", e);
-            albumOverlay.style.setProperty('--album-dominant-color', '#444444'); // Fallback
-        }
-    };
-
-    if (albumCover.complete) setDynamicColor();
-    else albumCover.onload = setDynamicColor;
-}
-
-        if (albumTitle) albumTitle.textContent = albumData.title || 'Unknown Title';
-        if (albumArtist) albumArtist.textContent = albumData.artist || 'Unknown Artist';
-        if (albumMeta) albumMeta.textContent = `Album • ${albumData.year || 'N/A'} • ${albumData.tracks ? albumData.tracks.length : 0} songs`;
+        
+        albumCover.src = albumData.coverArt || 'https://placehold.co/250x250/000/fff?text=Album';
+        albumTitle.textContent = albumData.title || 'Unknown Title';
+        albumArtist.textContent = albumData.artist || 'Unknown Artist';
+        albumMeta.textContent = `Album • ${albumData.year || 'N/A'} • ${albumData.tracks ? albumData.tracks.length : 0} songs`;
         if (compactTitle) compactTitle.textContent = albumData.title || 'Unknown Title';
 
-        // --- Populate Tracklist ---
-        const tracksBody = document.getElementById('albumDetails-tracks');
-        if (tracksBody) {
-            tracksBody.innerHTML = ''; // Clear previous tracks
-            if (albumData.tracks && albumData.tracks.length > 0) {
-                albumData.tracks.forEach((track, index) => {
-                    const row = document.createElement('tr');
-                    row.dataset.trackIndex = index;
-                    // Replace this line
-                row.innerHTML = `
-                    <td class="track-title-cell">
-                        <div class="track-title">${track.title || 'Untitled'}</div>
-                        <div class="track-artist">${track.artist || albumData.artist || 'Various Artists'}</div>
-                    </td>
-                    <td class="track-options-cell">
-                        <button class="track-options-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
-                        </button>
-                    </td>`;
-
+        tracksBody.innerHTML = '';
+        if (albumData.tracks && albumData.tracks.length > 0) {
+            albumData.tracks.forEach((track, index) => {
+                const row = tracksBody.insertRow();
+                row.dataset.trackIndex = index;
+                row.innerHTML = `<td class="track-title-cell"><div class="track-title">${track.title || 'Untitled'}</div><div class="track-artist">${track.artist || albumData.artist}</div></td><td class="track-options-cell"><button class="track-options-btn">...</button></td>`;
                 row.addEventListener('click', (e) => {
                     if (e.target.closest('.track-options-btn')) return;
                     playTrack(albumData.tracks[index], index);
                 });
-                tracksBody.appendChild(row);
             });
         }
+        
+        if (shouldFetchRecommendations) {
+            await fetchAndDisplaySimilarAlbums(albumData);
         }
-         fetchAndDisplaySimilarAlbums(albumData);
-        // Enable player controls for tracklist albums
+        
         togglePlayerControls(true);
     }
-
-    // --- Common Logic for Both Album Types ---
-    const playButton = document.getElementById('album-play');
-    const compactPlayButton = document.getElementById('compact-header-play-btn');
-    const closeButtons = document.querySelectorAll('.close-overlay');
     
-    const playClickHandler = () => {
-         if (albumData.tracks && albumData.tracks.length > 0) {
-            const isPlayingThisAlbum = playingAlbum && playingAlbum.id === albumData.id;
-            if (isPlayingThisAlbum) {
-                togglePlayback();
+    const albumPlayButton = document.getElementById('album-play');
+    if (albumPlayButton) {
+        albumPlayButton.onclick = () => {
+            if (currentAlbum && currentAlbum.tracks && currentAlbum.tracks.length > 0) {
+                const isPlayingThisAlbum = playingAlbum && playingAlbum.id === currentAlbum.id;
+                if (isPlayingThisAlbum) {
+                    togglePlayback();
+                } else {
+                    playTrack(currentAlbum.tracks[0], 0);
+                }
             } else {
-                playTrack(albumData.tracks[0], 0);
+                console.log("Play button clicked, but no playable tracks found for this album.");
+            }
+        };
+    }
+
+    // --- THIS IS THE FIX ---
+    // This ensures that both back buttons (the main one and the one in the compact header)
+    // are correctly wired to our custom close function every time the overlay is populated.
+    const closeButtons = document.querySelectorAll('.close-overlay');
+    closeButtons.forEach(btn => {
+        btn.onclick = closeAlbumOverlay;
+    });
+    // --- END OF FIX ---
+
+    updatePlayingTrackIndicator();
+    updateAlbumPlayButtonIcon();
+    setupAlbumScrollListener();
+}
+// In script.js
+
+// In script.js
+// In script.js
+
+// REPLACEMENT for the restoreAlbumDetails function
+async function restoreAlbumDetails(previousState) {
+    const { albumData, scrollTop, recommendationsHtml } = previousState || {};
+
+    if (!albumData) {
+        console.error("Restore error: albumData is missing from the history state. Cannot restore view.");
+        if(albumOverlay) {
+            albumHistoryStack = [];
+            closeAlbumOverlay();
+        }
+        return; 
+    }
+
+    console.log(`Restoring album "${albumData.title}" from history.`);
+
+    // --- FIX: UPDATE the browser history entry instead of adding a new one ---
+    history.replaceState({ albumId: albumData.id }, albumData.title, `/album/${albumData.id}`);
+
+    await populateAlbumOverlayUI(albumData, false);
+
+    const container = document.getElementById('similar-albums-container');
+    const section = document.getElementById('similar-albums-section');
+    if (container && section && recommendationsHtml) {
+        console.log("Restoring recommendations from cached HTML.");
+        section.style.display = '';
+        section.classList.remove('hidden');
+        container.innerHTML = recommendationsHtml;
+        attachEventListenersToHtmlCards(); 
+    } else {
+        console.log("No cached recommendations found, fetching new ones.");
+        await fetchAndDisplaySimilarAlbums(albumData);
+    }
+
+    const scrollContent = document.getElementById('album-overlay-scroll-content');
+    if (scrollContent) {
+        setTimeout(() => {
+            scrollContent.scrollTop = scrollTop;
+        }, 50); 
+    }
+}
+// ADD THIS ENTIRE NEW FUNCTION
+
+/**
+ * Reads the browser's URL and displays the correct view (home or album).
+ * This is the core of our client-side router.
+ */
+function handleRouteChange() {
+    const path = window.location.pathname;
+    console.log("Handling route change for path:", path);
+
+    if (path.startsWith('/album/')) {
+        // If the URL is for an album (e.g., /album/12345)
+        const albumId = path.split('/')[2];
+        const albumData = allAlbumsData.find(a => a.id === albumId);
+
+        if (albumData) {
+            // We found the album, so make sure its overlay is open.
+            // This handles cases where a user directly lands on an album URL.
+            if (!albumOverlay.classList.contains('show')) {
+                 openAlbumDetails(albumData);
             }
         }
-    };
-
-    if (playButton) playButton.onclick = playClickHandler;
-    if (compactPlayButton) compactPlayButton.onclick = playClickHandler;
-    closeButtons.forEach(btn => btn.onclick = closeAlbumOverlay);
-
-    setupAlbumScrollListener();
-    
-
-    // Show the Overlay
-    albumOverlay.classList.remove('hidden');
-    setTimeout(() => albumOverlay.classList.add('show'), 10);
-    document.body.style.overflow = 'hidden';
-
-
-        
-
-    // --- Final UI Updates & Event Listeners ---
-    updateAlbumPlayButtonIcon();
-    updatePlayerUI();
- setupAlbumScrollListener();
-
-  setupAlbumScrollListener();
-    
-    // Add this new line right after it:
-    setupAlbumSearchListeners(); 
-    // Attach/re-attach common event listeners
-    prevTrackBtn.removeEventListener('click', prevTrack);
-    prevTrackBtn.addEventListener('click', prevTrack);
-    nextTrackBtn.removeEventListener('click', nextTrack);
-    nextTrackBtn.addEventListener('click', nextTrack);
-    closeOverlayBtn.removeEventListener('click', closeAlbumOverlay);
-   closeOverlayBtn.addEventListener('click', () => history.back());
-
-    // Show the overlay with a smooth animation
-    albumOverlay.classList.remove('hidden');
-    setTimeout(() => {
-        albumOverlay.classList.add('show', 'active');
-    }, 50); // Small delay for smoother transition
-
-    document.body.style.overflow = 'hidden';
-    updateFixedTopHeadingVisibility();
-
+    } else {
+        // If the URL is the home page ("/"), close the album overlay.
+        if (albumOverlay.classList.contains('show')) {
+            closeAlbumOverlay();
+        }
+    }
 }
-
-
 
 // START: Add these two new functions to script.js
 
@@ -2895,91 +2924,74 @@ async function handleAlbumPlayButtonClick() {
 }
 
 /**
- * Function to close the album overlay.
- * Playback is NOT stopped by this function. Playback continues in the background.
+ * Function to close the album overlay or navigate back to a previous album view.
+ * This now includes smooth transitions for both actions.
  */
-/**
- * Function to close the album overlay with a smooth animation.
- */
-function closeAlbumOverlay() {
-    console.log("closeAlbumOverlay called.");
+// In script.js
+
+// In script.js
+
+// REPLACEMENT for the closeAlbumOverlay function
+async function closeAlbumOverlay(instant = false) {
+    const scrollContent = document.getElementById('album-overlay-scroll-content');
+
+    // --- Case 1: Navigating BACK to a previous album in history ---
+    if (albumHistoryStack.length > 0) {
+        const previousState = albumHistoryStack.pop();
+        if (scrollContent) scrollContent.classList.add('is-transitioning');
+        await new Promise(resolve => setTimeout(resolve, 200));
+        await restoreAlbumDetails(previousState);
+        if (scrollContent) scrollContent.classList.remove('is-transitioning');
+        return;
+    }
+
+    // --- Case 2: Closing the overlay completely (no history left) ---
+    console.log("Closing album overlay completely.");
     if (albumOverlay) {
-        // --- START: Corrected Animation Logic ---
-        
-        // 1. Remove the .show class to trigger the fade-out and scale-down animation
-        albumOverlay.classList.remove('show', 'active'); 
+        currentAlbum = null;
+        history.replaceState(null, "", "/"); // This cleans the URL
 
-        // 2. Wait for the animation (300ms) to finish before adding the 'hidden' class
-        setTimeout(() => {
-            albumOverlay.classList.add('hidden'); // This sets display: none after the animation
-            console.log("albumOverlay is now hidden after animation.");
-        }, 300); // This duration MUST match the transition duration in your CSS
-
-        // --- END: Corrected Animation Logic ---
-
-        document.body.style.overflow = ''; // Re-enable scrolling
-        
-        // The rest of the function remains the same...
-        albumOverlay.style.removeProperty('background-color');
-        albumOverlay.style.removeProperty('border-radius');
-        // ... and so on for all the style removals
-        
-        const isEmbeddedAlbumPlayingInBackground = playingAlbum && (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc);
-
-        if (isEmbeddedAlbumPlayingInBackground) {
-            togglePlayerControls(false);
-            if (progressBar) progressBar.disabled = true;
-        } else {
-            if (currentAlbumArt) currentAlbumArt.style.display = 'block';
-            const dynamicPlayerContainer = playerLeft.querySelector('#youtube-player-container');
-            if (dynamicPlayerContainer) dynamicPlayerContainer.remove();
-            togglePlayerControls(true);
-            if (progressBar) progressBar.disabled = false;
-        }
-
-        updateFixedTopHeadingVisibility();
-
-        if (albumDetailsContent) {
-            albumDetailsContent.style.paddingBottom = '20px';
-        }
-
-        const existingInteractionLayer = albumFullEmbedContainer.querySelector('#embed-interaction-layer');
-        if (existingInteractionLayer) {
-            existingInteractionLayer.remove();
-        }
-
-        if (closeOverlayBtn) {
-            closeOverlayBtn.removeEventListener('click', closeAlbumOverlay);
-        }
-
-        if (albumOverlayProgressBarInterval) {
-            clearInterval(albumOverlayProgressBarInterval);
-            albumOverlayProgressBarInterval = null;
-        }
-
-        if (albumFullEmbedContainer) {
-            if (isEmbeddedAlbumPlayingInBackground) {
-                albumFullEmbedContainer.style.display = 'none';
-            } else {
-                while (albumFullEmbedContainer.firstChild) {
-                    albumFullEmbedContainer.removeChild(albumFullEmbedContainer.firstChild);
-                }
+        if (instant) {
+            // --- INSTANT CLOSE (For Device Back Button) ---
+            albumOverlay.style.transition = 'none'; // Disable animations
+            albumOverlay.classList.remove('active', 'show'); // Hide immediately
+            
+            // Perform cleanup that was previously in 'transitionend'
+            if (albumFullEmbedContainer) {
+                albumFullEmbedContainer.innerHTML = '';
                 albumFullEmbedContainer.style.display = 'none';
             }
-        }
+            const similarAlbumsSection = document.getElementById('similar-albums-section');
+            if (similarAlbumsSection) {
+                similarAlbumsSection.classList.add('hidden');
+            }
+            
+            // Restore transitions for next time
+            requestAnimationFrame(() => {
+                albumOverlay.style.transition = '';
+            });
 
-         const similarAlbumsSection = document.getElementById('similar-albums-section');
-        const similarAlbumsContainer = document.getElementById('similar-albums-container');
-        if (similarAlbumsSection) {
-           similarAlbumsSection.classList.add('hidden');
+        } else {
+            // --- ANIMATED CLOSE (For Custom Overlay Button) ---
+            albumOverlay.classList.remove('active');
+            albumOverlay.addEventListener('transitionend', () => {
+                albumOverlay.classList.remove('show');
+                if (albumFullEmbedContainer) {
+                    albumFullEmbedContainer.innerHTML = '';
+                    albumFullEmbedContainer.style.display = 'none';
+                }
+                const similarAlbumsSection = document.getElementById('similar-albums-section');
+                if (similarAlbumsSection) {
+                    similarAlbumsSection.classList.add('hidden');
+                }
+            }, { once: true });
         }
-        if (similarAlbumsContainer) {
-            // Clear the content to prevent showing old recommendations
-            similarAlbumsContainer.innerHTML = '';
-        }
+        
+        updateBodyForPopups();
+        updateFixedTopHeadingVisibility();
     }
-    toggleMainPlaybarView();
 }
+
 
 /**
  * Closes all major app popups and overlays.
@@ -3907,7 +3919,7 @@ window.closeAllSearchUi = function() {
         mobileOverlay.classList.remove('open');
         mobileOverlay.setAttribute('aria-hidden', 'true');
         mobileOverlay.querySelector('#mobile-overlay-results').innerHTML = '';
-        document.body.style.overflow = 'auto'; // Re-enable scrolling
+      updateBodyForPopups();
     }
     if (smallPopup) {
         smallPopup.classList.add('unique-hidden');
@@ -5136,375 +5148,7 @@ function setupHorizontalScroll(containerId) {
     updateScrollButtonVisibility(containerId);
 }
 
-// --- Initial Setup on DOM Content Loaded ---
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log("DOM Content Loaded: Script execution started.");
-    // Hide player bar initially
-    if (mainPlayBar) {
-        mainPlayBar.style.display = 'none'; // Keep this to hide it until a song plays
-        console.log("DOMContentLoaded: mainPlayBar initially hidden.");
-    }
 
-    // Add padding to the player-left container for better spacing of the album cover/mini-player
-    if (playerLeft) {
-        // This is now the album art + song info container
-        playerLeft.style.padding = '0'; // The HTML already has padding on the main-play-bar-inner
-        // Ensure playerLeft can grow but also shrink if content is too long
-        playerLeft.style.minWidth = '0'; // Allow flex item to shrink below its content size
-        console.log("DOMContentLoaded: playerLeft padding reset to 0 and min-width set to 0.");
-    }
-
-    // Apply consistent styling to the player image (album cover)
-    if (currentAlbumArt) { // Changed from playerImg
-        currentAlbumArt.style.width = '64px'; // Matches new HTML
-        currentAlbumArt.style.height = '64px'; // Matches new HTML
-        currentAlbumArt.style.borderRadius = '8px';
-        currentAlbumArt.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.4)';
-        currentAlbumArt.style.objectFit = 'cover'; // Ensure image covers the area
-        currentAlbumArt.style.display = 'block'; // Ensure it's visible by default
-        console.log("DOMContentLoaded: currentAlbumArt styling applied.");
-    }
-
-    // showMessageBox('Initializing app...', 'info', 5000); // Initial loading message - REMOVED AS PER USER REQUEST
-    try {
-        // Attempt to handle Spotify callback on page load
-        await handleSpotifyCallback();
-        console.log("DOMContentLoaded: handleSpotifyCallback called.");
-
-        // Load YouTube Iframe API
-        loadYoutubeIframeAPI();
-        console.log("DOMContentLoaded: loadYoutubeIframeAPI called.");
-
-        // Set initial UI state for login (e.g., if no Spotify token found)
-        updateLoginUI();
-        console.log("DOMContentLoaded: updateLoginUI called.");
-
-        // Fetch and display initial content (these are placeholders now)
-        // Ensure these functions actually exist in your project
-        if (typeof fetchAndDisplayTrendingSongs === 'function') {
-            fetchAndDisplayTrendingSongs();
-        } else {
-            console.warn("fetchAndDisplayTrendingSongs function not found.");
-        }
-        if (typeof fetchAndDisplayPopularAlbums === 'function') {
-            fetchAndDisplayPopularAlbums();
-        } else {
-            console.warn("fetchAndDisplayPopularAlbums function not found.");
-        }
-        if (typeof fetchAndDisplayPopularArtists === 'function') {
-            fetchAndDisplayPopularArtists();
-        } else {
-            console.warn("fetchAndDisplayPopularArtists function not found.");
-        }
-        console.log("DOMContentLoaded: Initial content display functions called (if defined).");
-
-        // IMPORTANT: Fetch and attach listeners after everything else
-        // Ensure fetchAlbums is defined and correctly populates cardcontainers
-        if (typeof fetchAlbums === 'function') {
-            await fetchAlbums(); // This call includes attachEventListenersToHtmlCards()
-            console.log("DOMContentLoaded: fetchAlbums completed and listeners attached.");
-
-              populateRecordBreakingSection();
-              populateRecordBreakingSection2();
-            setupMiniCarouselScroll();
-            setupMiniCarouselScroll2();
-            attachEventListenersToHtmlCards();
-                await loadPlayerState();
-                await loadLatestLikedSongAsFallback(); 
-            // Setup horizontal scroll for all three card sections
-            setupHorizontalScroll('trending-songs-cards');
-            setupHorizontalScroll('popular-albums-cards');
-            setupHorizontalScroll('popular-artists-cards');
-            // Also for the "more" sections in the overlay
-            setupHorizontalScroll('more-trending-songs-cards');
-            setupHorizontalScroll('explore-popular-albums-cards');
-            setupHorizontalScroll('explore-popular-artists-cards');
-            console.log("DOMContentLoaded: Horizontal scroll setup for all card sections.");
-
-        } 
-        else {
-            console.warn("fetchAlbums function not found. Card event listeners might not be attached.");
-        }
-
-        // Set initial volume for the native audio element
-        if (volumeBar) {
-            audio.volume = parseFloat(volumeBar.value);
-            console.log("DOMContentLoaded: Initial native audio volume set.");
-        }
-
-        // NEW: Add an event listener to the entire mainPlayBar to open the full-screen player on mobile/tablet
-        if (mainPlayBar) {
-            mainPlayBar.addEventListener('click', async (event) => {
-                // Check if the click originated from a control button, if so, let it handle the event
-                const isControlClick = event.target.closest('#play-pause-btn') ||
-                                       event.target.closest('#prev-track-btn') ||
-                                       event.target.closest('#next-track-btn') ||
-                                       event.target.closest('#rewind-btn') ||
-                                       event.target.closest('#fast-forward-btn') ||
-                                       event.target.closest('#progress-bar') ||
-                                       event.target.closest('#volume-bar') ||
-                                       event.target.closest('#repeat-btn') ||
-                                       event.target.closest('#shuffle-btn');
-
-                if (window.innerWidth <= 768 && !isControlClick) { // Only on mobile/tablet and if not a control button
-                    let albumToReopen = null;
-                    if (playingAlbum) {
-                        albumToReopen = playingAlbum;
-                        console.log("Compact playbar clicked (mobile). Actively playing album found.");
-
-                        // Check if the currently playing album is an embedded type
-                        const isEmbeddedPlaying = albumToReopen.rawHtmlEmbed || albumToReopen.fullSoundcloudEmbed || albumToReopen.audiomackEmbed || albumToReopen.iframeSrc;
-
-                        if (isEmbeddedPlaying) {
-                            console.log("Playing album is embedded. Redirecting to embedded album overlay.");
-                            openAlbumDetails(albumToReopen); // Re-open the album overlay for the embedded content
-                        } else {
-                            console.log("Playing album is controllable. Opening full-screen player.");
-                            showFullScreenPlayer(); // Show the full-screen player for controllable tracks
-                        }
-                    } else if (currentAlbum) {
-                        albumToReopen = currentAlbum;
-                        console.log("Compact playbar clicked (mobile). No actively playing album, opening last viewed album details.");
-                        // If no album is *playing*, but there's a *current* album (last viewed),
-                        // we should open its details, regardless of embed status.
-                        openAlbumDetails(albumToReopen);
-                    } else {
-                        console.log("Compact playbar clicked (mobile), but no current or playing album to open.");
-                        return;
-                    }
-                } else if (window.innerWidth > 768 && !isControlClick) { // Desktop behavior
-                    console.log("Main playbar clicked (desktop). Not a control button click.");
-                    let albumToReopen = null;
-                    if (playingAlbum) {
-                        albumToReopen = playingAlbum;
-                        console.log("Desktop playbar clicked. Actively playing album found. Redirecting to album details.");
-                        openAlbumDetails(albumToReopen);
-                    } else if (currentAlbum) {
-                        albumToReopen = currentAlbum;
-                        console.log("Desktop playbar clicked. No actively playing album, opening last viewed album details.");
-                        openAlbumDetails(albumToReopen);
-                    } else {
-                        console.log("Desktop playbar clicked, but no current or playing album to open.");
-                        return;
-                    }
-                }
-            });
-            console.log("DOMContentLoaded: mainPlayBar click listener attached.");
-        }
-
-        // NEW: Add minimize button listener for full-screen player
-        if (minimizePlayerBtn) {
-             minimizePlayerBtn.addEventListener('click', () => history.back());
-            console.log("DOMContentLoaded: minimizePlayerBtn click listener attached.");
-        }
-
-
-        // NEW: Add resize event listener to manage playbar view and scroll button visibility on window resize
-        window.addEventListener('resize', () => {
-            toggleMainPlaybarView(); // This now handles desktop vs mobile layout
-            // Update scroll button visibility for all relevant sections on resize
-            updateScrollButtonVisibility('trending-songs-cards');
-            updateScrollButtonVisibility('popular-albums-cards');
-            updateScrollButtonVisibility('popular-artists-cards');
-            updateScrollButtonVisibility('more-trending-songs-cards');
-            updateScrollButtonVisibility('explore-popular-albums-cards');
-            updateScrollButtonVisibility('explore-popular-artists-cards');
-            updateFixedTopHeadingVisibility(); // Update fixed top heading visibility on resize
-            // Also reposition the user dropdown on resize if it's open
-            if (isUserDropdownOpen) {
-                toggleUserDropdown(true); // Re-calculate and apply position
-            }
-        });
-        console.log("DOMContentLoaded: window resize listener attached for playbar view and scroll buttons.");
-
-        // Initial call to set the correct playbar view on load
-        toggleMainPlaybarView(); // Call without argument, it will determine based on window.innerWidth
-        console.log("DOMContentLoaded: Initial toggleMainPlaybarView called.");
-
-        // NEW: Scroll event listener for the fixed top heading
-        if (rightPanel && fixedTopPlayingHeading) {
-            rightPanel.addEventListener('scroll', () => {
-                updateFixedTopHeadingVisibility(); // Call the dedicated function on scroll
-            });
-            console.log("DOMContentLoaded: rightPanel scroll listener attached for fixed top heading.");
-        }
-
-    }
-    catch (error) {
-        console.error("DOMContentLoaded: An error occurred during initial setup:", error);
-
-    }
-    console.log("DOMContentLoaded: Script execution finished.");
-
-    const searchInput = document.getElementById('search-input');
-    const voiceSearchBtn = document.getElementById('voice-search-btn'); // Assuming these audio elements are defined in your HTML and globally accessible
-
-    const voiceStartSound = new Audio('https://files.catbox.moe/z41l8g.mp3'); // Replace with your actual path
-    const voiceEndSound = new Audio('https://files.catbox.moe/v08732.mp3'); // Replace with your actual path
-
-    let isListening = false; // To prevent multiple recognition instances
-
-    // Check for Web Speech API compatibility
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (SpeechRecognition && voiceSearchBtn) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false; // Listen for a single utterance
-        recognition.lang = 'en-US'; // Set language
-        recognition.interimResults = false; // Only return final results
-        recognition.maxAlternatives = 1; // Get the most likely result
-
-        voiceSearchBtn.addEventListener('click', () => {
-            if (isListening) {
-                recognition.stop();
-                return;
-            }
-
-            // Stop any ongoing playback when voice search is initiated
-            stopAllPlaybackUI();
-
-            recognition.start();
-            // Assuming playSound function is defined elsewhere
-            // playSound(voiceStartSound); // Play start sound
-            voiceSearchBtn.classList.add('listening'); // Add visual cue
-            searchInput.placeholder = "Listening...";
-            isListening = true;
-            console.log("Voice search started.");
-        });
-
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            console.log("Speech recognition result:", transcript);
-            searchInput.value = transcript; // Set the transcript to the search input
-
-            // Trigger the search logic
-            if (transcript.trim().length > 0) {
-                clearTimeout(debounceTimer); // Clear any existing debounce
-                searchAndOpenAlbum(transcript.trim().toLowerCase());
-            } else {
-                closeAlbumOverlay();
-                clearSearchMessage();
-            }
-        };
-
-        recognition.onend = () => {
-            console.log("Speech recognition ended.");
-            if (isListening) { // If it ended without manual stop, means no speech detected or timed out
-                // Assuming playSound function is defined elsewhere
-                // playSound(voiceEndSound); // Play end sound
-                voiceSearchBtn.classList.remove('listening'); // Remove visual cue
-                searchInput.placeholder = "Search...";
-                isListening = false;
-            }
-        };
-
-        recognition.onerror = (event) => {
-            console.error("Speech recognition error:", event.error);
-            showMessageBox(`Voice search error: ${event.error}`, 'error');
-            // Assuming playSound function is defined elsewhere
-            // playSound(voiceEndSound); // Play end sound
-            voiceSearchBtn.classList.remove('listening'); // Remove visual cue
-            searchInput.placeholder = "Search...";
-            isListening = false;
-        };
-    } else if (voiceSearchBtn) {
-        // If SpeechRecognition is not supported, hide the button or inform the user
-        voiceSearchBtn.style.display = 'none';
-        console.warn("Web Speech API not supported in this browser.");
-        showMessageBox("Your browser does not support voice search.", 'info', 5000);
-    }
-
-  // --- New: Centralized Footer Navigation Listeners ---
-    const navLinks = document.querySelectorAll('.unique-footer-nav .unique-nav-link');
-    navLinks.forEach(link => {
-        link.addEventListener('click', (event) => {
-            event.preventDefault();
-            const target = link.dataset.target || link.getAttribute('href').substring(1);
-            if (target) {
-                navigateTo(target);
-            }
-        });
-    });
-    
-
-   navigateTo('home');
-
-   
-
-
-    // NEW: Add click listener to the "New playlist" item in the `add-popup-overlay`
-  // in script.js, inside the 'DOMContentLoaded' listener
-
-const newPlaylistPopupItem = document.querySelector('#add-popup-overlay .swarify-add-popup-item:last-child');
-if (newPlaylistPopupItem) {
-    newPlaylistPopupItem.addEventListener('click', (e) => {
-        e.preventDefault();
-        const song = getCurrentSongForLike();
-        if (!isLoggedIn()) {
-            showMessageBox("You need to log in to create a playlist.", 'error');
-            return;
-        }
-
-        // --- FIX: Add this line ---
-        if (song) {
-            localStorage.setItem('songToAddAfterCreatingPlaylist', JSON.stringify(song));
-        }
-        // --- End of Fix ---
-
-        // Close the main add popup first
-        addPopupOverlay.classList.remove('active');
-        // Show the new playlist name popup
-        if(newPlaylistPopupOverlay) {
-            newPlaylistPopupOverlay.classList.remove('hidden');
-            setTimeout(() => newPlaylistNameInput.focus(), 10);
-        }
-    });
-}
-
-    // NEW: Add listeners for the "Create Playlist" popup buttons
-    if (createNewPlaylistBtn) {
-        createNewPlaylistBtn.addEventListener('click', () => {
-            const playlistName = newPlaylistNameInput.value.trim() || 'My new playlist';
-            createPlaylist(playlistName);
-            newPlaylistPopupOverlay.classList.add('hidden');
-            newPlaylistNameInput.value = '';
-        });
-    }
-
-    if (cancelNewPlaylistBtn) {
-        cancelNewPlaylistBtn.addEventListener('click', () => {
-            newPlaylistPopupOverlay.classList.add('hidden');
-            newPlaylistNameInput.value = '';
-        });
-    }
-
-    // NEW: Add listener for the library link in the footer
-    const libraryLink = document.getElementById('your-library-link');
-    if(libraryLink) {
-        libraryLink.addEventListener('click', async (e) => {
-            e.preventDefault();
-            await fetchUserPlaylists(); // Fetch and render playlists when library is opened
-            document.getElementById('library-popup').classList.remove('hidden');
-        });
-    }
-    
-    // NEW: Add listener for the close button on the playlist details overlay
-    if (closePlaylistDetailsBtn) {
-        closePlaylistDetailsBtn.addEventListener('click', () => {
-            playlistDetailsOverlay.classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        });
-    }
-
-
-
-
- window.addEventListener('beforeunload', savePlayerState);
-
-
-
-
-});
 
 // Placeholder for loadYoutubeIframeAPI function
 function loadYoutubeIframeAPI() {
@@ -6495,931 +6139,6 @@ async function completeUserProfile(identifier, name, dob, button) {
 }
 
 
-// --- DOM Content Loaded and Main Logic ---
-document.addEventListener('DOMContentLoaded', async () => {
-    // --- Centralized DOM Element References ---
-    const popupOverlay = document.getElementById('popup-overlay');
-    const popupContainer = document.getElementById('popup-container');
-
-    const initialChoiceScreen = document.getElementById('initial-choice-screen');
-    const loginScreen = document.getElementById('login-screen');
-    const signupScreen = document.getElementById('signup-screen');
-    const phoneSignupScreen = document.getElementById('phone-signup-screen');
-    const phoneLoginScreen = document.getElementById('phone-login-screen');
-    const phoneOtpInputScreen = document.getElementById('phone-otp-input-screen');
-    const otpVerificationScreen = document.getElementById('otp-verification-screen');
-    const emailOtpInputScreen = document.getElementById('email-otp-input-screen');
-    const createPasswordScreen = document.getElementById('create-password-screen');
-    const forgotPasswordInputScreen = document.getElementById('forgot-password-input-screen');
-    const completeProfileScreen = document.getElementById('complete-profile-screen'); // NEW
-
-    // All possible screens - Map them to an easy-to-use object
-    const screens = {
-        'initial-choice-screen': initialChoiceScreen,
-        'login-screen': loginScreen,
-        'signup-screen': signupScreen,
-        'phone-signup-screen': phoneSignupScreen,
-        'phone-login-screen': phoneLoginScreen,
-        'phone-otp-input-screen': phoneOtpInputScreen,
-        'otp-verification-screen': otpVerificationScreen,
-        'email-otp-input-screen': emailOtpInputScreen,
-        'create-password-screen': createPasswordScreen,
-        'forgot-password-input-screen': forgotPasswordInputScreen,
-        'complete-profile-screen': completeProfileScreen // NEW
-    };
-
-    const screenHistory = [];
-
-    // --- Buttons and Inputs ---
-    const closePopupButton = document.querySelector('#popup-container .close-button');
-    const testUserCountBtn = document.getElementById('test-user-count-btn');
-
-    // Initial Choice Screen elements
-    const initialSignupBtn = document.getElementById('initial-signup-btn');
-    const initialLoginLink = document.getElementById('initial-login-link');
-
-    // Login Screen elements
-    const loginBackBtn = document.getElementById('login-back-btn');
-    const loginContinueButton = document.getElementById('login-continue-button');
-    const loginEmailUsernameInput = document.getElementById('login-email-username');
-    const loginPasswordInput = document.getElementById('login-password');
-    const loginPhoneOtpBtn = document.getElementById('login-phone-otp-btn');
-    const loginPhonePasswordBtn = document.getElementById('login-phone-password-btn');
-    const loginSignupLink = document.getElementById('login-signup-link');
-    const forgotPasswordLink = document.getElementById('forgot-password-link');
-
-    // Signup Screen elements
-    const signupBackBtn = document.getElementById('signup-back-btn');
-    const signupNextButton = document.getElementById('signup-next-button');
-    const signupEmailInput = document.getElementById('signup-email');
-    const signupPasswordInput = document.getElementById('signup-password');
-    const signupUsePhoneLink = document.getElementById('signup-use-phone-link');
-    const signupLoginLink = document.getElementById('signup-login-link');
-
-    // Phone Signup Screen elements
-    const phoneSignupBackBtn = document.getElementById('phone-signup-back-btn');
-    const phoneSignupNextButton = document.getElementById('phone-signup-next-button');
-    const phonePhoneNumberSignupInput = document.getElementById('phone-number-signup');
-    const phoneSignupPasswordInput = document.getElementById('phone-signup-password');
-    const phoneSignupUseEmailLink = document.getElementById('phone-signup-use-email-link');
-    const phoneSignupLoginLink = document.getElementById('phone-signup-login-link');
-
-    // Phone Login Screen elements
-    const phoneLoginBackBtn = document.getElementById('phone-login-back-btn');
-    const phoneLoginContinueButton = document.getElementById('phone-login-continue-button');
-    const phonePhoneNumberLoginInput = document.getElementById('phone-number-login');
-    const phoneLoginPasswordInput = document.getElementById('phone-login-password');
-    const phoneLoginSignupLink = document.getElementById('phone-login-signup-link');
-    const phoneForgotPasswordLink = document.getElementById('phone-forgot-password-link');
-
-    // Phone OTP Input Screen elements
-    const phoneOtpBackBtn = document.getElementById('phone-otp-back-btn');
-    const otpPhoneNumberInput = document.getElementById('otp-phone-number-input');
-    const sendPhoneOtpButton = document.getElementById('send-otp-button');
-
-    // OTP Verification Screen elements
-    const otpVerificationBackBtn = document.getElementById('otp-verification-back-btn');
-    const phoneOtpCodeInput = document.getElementById('otp-code-input');
-    const verifyPhoneOtpButton = document.getElementById('verify-otp-button');
-    const resendPhoneOtpButton = document.getElementById('resend-otp-button');
-    const otpVerificationTitle = document.getElementById('otp-verification-title');
-    const otpVerificationMessage = document.getElementById('otp-verification-message');
-
-    // Email OTP specific elements
-    const emailOtpBackBtn = document.getElementById('email-otp-back-btn');
-    const emailOtpDisplayEmail = document.getElementById('email-otp-display-email');
-    const emailOtpCodeInput = document.getElementById('email-otp-code-input');
-    const verifyEmailOtpButton = document.getElementById('verify-email-otp-button');
-    const resendEmailOtpButton = document.getElementById('resend-email-otp-button');
-
-    // Forgot Password Input Screen elements
-    const forgotPasswordBackBtn = document.getElementById('forgot-password-back-btn');
-    const forgotPasswordIdentifierInput = document.getElementById('forgot-password-identifier-input');
-    const sendPasswordResetOtpButton = document.getElementById('send-password-reset-otp-button');
-    const forgotPasswordLoginLink = document.getElementById('forgot-password-login-link');
-
-    // Set Password Screen elements
-    const createPasswordBackBtn = document.getElementById('create-password-back-btn');
-    const newPasswordInput = document.getElementById('new-password');
-    const confirmPasswordInput = document.getElementById('confirm-password');
-    const setNewPasswordButton = document.getElementById('set-new-password-button');
-    const createPasswordTitle = document.getElementById('create-password-title');
-    const createPasswordMessage = document.getElementById('create-password-message');
-
-    // Complete Profile Screen elements (NEW)
-    const completeProfileBackBtn = document.getElementById('complete-profile-back-btn');
-    const profileNameInput = document.getElementById('profile-name-input');
-    const profileDobInput = document.getElementById('profile-dob-input');
-    const completeProfileSubmitButton = document.getElementById('complete-profile-submit-button');
-
-    // Top bar elements for UI update
-    const topSignupBtn = document.getElementById('top-signup-btn');
-    const topLoginBtn = document.getElementById('top-login-btn');
-    const userAvatarContainer = document.getElementById('user-avatar-container');
-    const userAvatar = document.getElementById('user-avatar');
-    const userDropdown = document.getElementById('user-dropdown');
-    const dropdownUsername = document.getElementById('dropdown-username');
-    const dropdownLogoutBtn = document.getElementById('dropdown-logout-btn');
-
-    // NEW: Tooltip element for hover effect
-    let userAvatarTooltip = null;
-
-    /**
-     * Creates or updates a tooltip for the user avatar on hover.
-     * @param {string} userName - The name to display in the tooltip.
-     */
-    const createOrUpdateUserTooltip = (userName) => {
-        if (!userAvatarTooltip) {
-            userAvatarTooltip = document.createElement('div');
-            userAvatarTooltip.id = 'user-avatar-tooltip';
-            userAvatarTooltip.classList.add('user-avatar-tooltip', 'hidden');
-            document.body.appendChild(userAvatarTooltip);
-        }
-        userAvatarTooltip.textContent = userName;
-    };
-
-    /**
-     * Shows the user avatar tooltip.
-     * @param {Event} e - The mouseover event.
-     */
-    const showUserTooltip = (e) => {
-        const userName = localStorage.getItem('loggedInUserName') || localStorage.getItem('loggedInUserEmail') || 'Guest';
-        createOrUpdateUserTooltip(userName);
-
-        const rect = userAvatarContainer.getBoundingClientRect();
-        // Position the tooltip above and centered with the avatar
-        userAvatarTooltip.style.left = `${rect.left + rect.width / 2}px`;
-        userAvatarTooltip.style.top = `${rect.top - userAvatarTooltip.offsetHeight - 5}px`; // Adjust 5px for spacing
-        userAvatarTooltip.classList.remove('hidden');
-        userAvatarTooltip.classList.add('show');
-    };
-
-    /**
-     * Hides the user avatar tooltip.
-     */
-    const hideUserTooltip = () => {
-        if (userAvatarTooltip) {
-            userAvatarTooltip.classList.remove('show');
-            userAvatarTooltip.classList.add('hidden');
-        }
-    };
-
-
-    /**
-     * Gets the ID of the currently active screen.
-     * @returns {string|null} The ID of the active screen, or null if none.
-     */
-    const getActiveScreenId = () => {
-        for (const id in screens) {
-            if (screens[id] && screens[id].classList.contains('active')) {
-                return id;
-            }
-        }
-        return null;
-    };
-
-    /**
-     * Shows a specific screen and hides all others within the popup.
-     * @param {string} screenToShowId - The ID of the screen to show.
-     * @param {boolean} [pushToHistory=true] - Whether to push the current screen to history.
-     */
-    window.showScreen = (screenToShowId, pushToHistory = true) => {
-        const screenToShow = screens[screenToShowId];
-        if (!screenToShow) {
-            console.error(`Screen with ID "${screenToShowId}" not found.`);
-            return;
-        }
-
-        const currentActiveScreenId = getActiveScreenId();
-        if (pushToHistory && currentActiveScreenId && currentActiveScreenId !== screenToShowId) {
-            screenHistory.push(currentActiveScreenId);
-            console.log('Screen pushed to history:', currentActiveScreenId, 'History:', screenHistory);
-        } else if (!pushToHistory) {
-            console.log('Not pushing to history. Current history:', screenHistory);
-        }
-
-        screenToShow.scrollTop = 0;
-
-        if (currentActiveScreenId && currentActiveScreenId !== screenToShowId) {
-            const currentActiveScreen = screens[currentActiveScreenId];
-            if (currentActiveScreen) {
-                currentActiveScreen.classList.remove('active');
-                currentActiveScreen.classList.add('slide-out-left');
-                currentActiveScreen.classList.add('opacity-0', 'pointer-events-none');
-
-                currentActiveScreen.addEventListener('transitionend', function handler() {
-                    currentActiveScreen.classList.remove('slide-out-left');
-                    currentActiveScreen.style.display = 'none';
-                    currentActiveScreen.removeEventListener('transitionend', handler);
-                }, { once: true });
-            }
-        }
-
-        screenToShow.style.display = 'flex';
-        screenToShow.classList.remove('opacity-0', 'pointer-events-none', 'slide-out-left');
-        screenToShow.classList.add('active');
-
-        if (!pushToHistory && currentActiveScreenId) {
-            screenToShow.classList.add('slide-in-right');
-            void screenToShow.offsetWidth;
-            screenToShow.classList.remove('slide-in-right');
-        } else {
-            screenToShow.style.transform = 'translateX(0)';
-        }
-
-        setTimeout(() => {
-            if (popupContainer) {
-                popupContainer.style.height = screenToShow.scrollHeight + 'px';
-            }
-        }, 50);
-    };
-
-    /**
-     * Navigates back to the previous screen in the history stack.
-     */
-    window.goBack = () => {
-        console.log('goBack called. Current history:', screenHistory);
-        if (screenHistory.length > 0) {
-            const prevScreenId = screenHistory.pop();
-            console.log('Popping from history:', prevScreenId, 'New history:', screenHistory);
-            showScreen(prevScreenId, false);
-        } else {
-            console.log('History empty, closing popup.');
-            closePopup();
-        }
-    };
-
-    window.showInitialChoiceScreen = () => {
-        screenHistory.length = 0;
-        console.log('showInitialChoiceScreen: History cleared.');
-        showScreen('initial-choice-screen', false);
-    };
-
-    window.showLoginScreen = () => {
-        showScreen('login-screen');
-        if (phoneOtpTimerInterval) { clearInterval(phoneOtpTimerInterval); }
-        phoneOtpResendAvailableTime = 0;
-    };
-
-    window.showSignupScreen = () => {
-        showScreen('signup-screen');
-        if (phoneOtpTimerInterval) { clearInterval(phoneOtpTimerInterval); }
-        phoneOtpResendAvailableTime = 0;
-    };
-
-    window.showPhoneSignup = () => {
-        showScreen('phone-signup-screen');
-        if (phoneOtpTimerInterval) { clearInterval(phoneOtpTimerInterval); }
-        phoneOtpResendAvailableTime = 0;
-    };
-
-    window.showPhoneLogin = () => {
-        showScreen('phone-login-screen');
-    };
-
-    window.showPhoneOtpInput = () => {
-        showScreen('phone-otp-input-screen');
-        if (phoneOtpTimerInterval) { clearInterval(phoneOtpTimerInterval); }
-        phoneOtpResendAvailableTime = 0;
-    };
-
-    window.showEmailOtpInputScreen = () => {
-        const pendingEmail = localStorage.getItem('pendingEmailVerification');
-        if (pendingEmail) {
-            if (emailOtpDisplayEmail) emailOtpDisplayEmail.textContent = pendingEmail;
-            showScreen('email-otp-input-screen');
-            if (emailOtpTimerInterval) { clearInterval(emailOtpTimerInterval); }
-            emailOtpResendAvailableTime = 0;
-        } else {
-            showMessageBox('No email found for OTP verification. Please try Google login again.', 'error');
-            showInitialChoiceScreen();
-        }
-    };
-
-    window.showCreatePasswordScreen = () => {
-        if (newPasswordInput) newPasswordInput.value = '';
-        if (confirmPasswordInput) confirmPasswordInput.value = '';
-        showScreen('create-password-screen');
-    };
-
-    window.showForgotPasswordInputScreen = () => {
-        if (forgotPasswordIdentifierInput) forgotPasswordIdentifierInput.value = '';
-        showScreen('forgot-password-input-screen');
-    };
-
-    // NEW: Function to show Complete Profile Screen
-    window.showCompleteProfileScreen = () => {
-        if (profileNameInput) profileNameInput.value = '';
-        if (profileDobInput) profileDobInput.value = '';
-        showScreen('complete-profile-screen');
-    };
-
-
-    /**
-     * Opens the main authentication popup.
-     */
-    window.openPopup = () => {
-         pushHistoryStateForPopup();
-        if (popupOverlay) popupOverlay.classList.add('active');
-        popupOverlay.classList.remove('invisible', 'opacity-0');
-        document.body.classList.add('no-scroll');
-        screenHistory.length = 0;
-        console.log('openPopup: History cleared.');
-        showScreen('initial-choice-screen', false);
-    };
-
-    /**
-     * Closes the main authentication popup.
-     */
-    window.closePopup = () => {
-    if (popupOverlay) {
-        popupOverlay.classList.remove('active');
-        popupOverlay.classList.add('invisible', 'opacity-0');
-        popupOverlay.classList.add('hidden'); // <-- ADD THIS LINE
-    }
-    document.body.classList.remove('no-scroll');
-    screenHistory.length = 0;
-        console.log('closePopup: History cleared and popup closed.');
-        for (const id in screens) {
-            const screen = screens[id];
-            if (screen) {
-                screen.classList.remove('active');
-                screen.classList.add('opacity-0', 'pointer-events-none');
-                screen.classList.remove('slide-out-left', 'slide-in-right');
-                screen.style.display = 'none';
-            }
-        }
-        localStorage.removeItem('pendingEmailVerification');
-        localStorage.removeItem('userEmailForPasswordSet');
-        localStorage.removeItem('passwordResetIdentifier');
-        localStorage.removeItem('identifierForProfileCompletion'); // NEW: Clear profile completion identifier
-        hideUserTooltip(); // Hide tooltip when popup closes
-    };
-
-    // --- Initial Load Logic ---
-    updateLoginUI();
-
-    setTimeout(() => {
-        const userToken = localStorage.getItem('userToken');
-        if (!userToken) {
-            openPopup();
-        }
-    }, 2000);
-
-   if (closePopupButton) {
-    closePopupButton.addEventListener('click', () => history.back());
-   }
-
-    if (testUserCountBtn) {
-        testUserCountBtn.addEventListener('click', () => getUserCount(testUserCountBtn));
-    }
-
-    // Top Bar Login/Signup Button Listeners
-    if (topSignupBtn) {
-        topSignupBtn.addEventListener('click', openPopup);
-    }
-    if (topLoginBtn) {
-        topLoginBtn.addEventListener('click', openPopup);
-    }
-
-    // User Avatar and Dropdown Listeners
-    if (userAvatarContainer && userDropdown) {
-        let isDropdownOpen = false;
-
-        userAvatarContainer.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent click from propagating to document
-
-            if (!isDropdownOpen) {
-                userDropdown.classList.add('show');
-                // Ensure dropdown username is updated when opened by click
-                const loggedInUserName = localStorage.getItem('loggedInUserName') || localStorage.getItem('loggedInUserEmail') || 'Guest';
-                if (dropdownUsername) dropdownUsername.textContent = loggedInUserName;
-                
-                isDropdownOpen = true;
-                // Add a click listener to the document to close dropdown when clicking outside
-                document.addEventListener('click', outsideClickHandler);
-            } else {
-                userDropdown.classList.remove('show');
-                isDropdownOpen = false;
-                document.removeEventListener('click', outsideClickHandler);
-            }
-        });
-
-        // Event listeners for the new tooltip on hover
-        userAvatarContainer.addEventListener('mouseover', showUserTooltip);
-        userAvatarContainer.addEventListener('mouseout', hideUserTooltip);
-
-
-        function outsideClickHandler(event) {
-            // Check if the click was outside the avatar container and the dropdown itself
-            const clickedOutside = !userAvatarContainer.contains(event.target) && !userDropdown.contains(event.target);
-            if (clickedOutside) {
-                userDropdown.classList.remove('show');
-                isDropdownOpen = false;
-                document.removeEventListener('click', outsideClickHandler);
-            }
-        }
-    }
-
-if (dropdownLogoutBtn) {
-    dropdownLogoutBtn.addEventListener('click', () => {
-        localStorage.removeItem('userToken');
-        localStorage.removeItem('loggedInUserEmail');
-        localStorage.removeItem('loggedInUserName');
-        localStorage.removeItem(PLAYER_STATE_KEY); // Remove last played song state
-
-        // Add these lines to fully reset the player
-        playingAlbum = null;
-        stopAllPlaybackUI();
-        if (mainPlayBar) mainPlayBar.style.display = 'none';
-        
-        showMessageBox('You have been logged out.', 'info');
-        updateLoginUI();
-        closePopup(); // Close popup after logout
-    });
-}
-
-    // Initial Choice Screen Listeners
-    if (initialSignupBtn) {
-        initialSignupBtn.addEventListener('click', showSignupScreen);
-    }
-    if (initialLoginLink) {
-        initialLoginLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showLoginScreen();
-        });
-    }
-
-    // Login Screen Listeners
-    if (loginBackBtn) {
-        loginBackBtn.addEventListener('click', goBack);
-    }
-    if (loginContinueButton) {
-        loginContinueButton.addEventListener('click', async () => {
-            const identifier = loginEmailUsernameInput ? loginEmailUsernameInput.value.trim() : '';
-            const password = loginPasswordInput ? loginPasswordInput.value.trim() : '';
-
-            if (!identifier || !password) {
-                showMessageBox('Please enter your email/username/phone and password.', 'error');
-                return;
-            }
-            await loginUser(identifier, password, loginContinueButton);
-            if (loginEmailUsernameInput) loginEmailUsernameInput.value = '';
-            if (loginPasswordInput) loginPasswordInput.value = '';
-        });
-    }
-
-    if (forgotPasswordLink) {
-        forgotPasswordLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showForgotPasswordInputScreen();
-        });
-    }
-
-    if (loginPhoneOtpBtn) {
-        loginPhoneOtpBtn.addEventListener('click', showPhoneOtpInput);
-    }
-    if (loginPhonePasswordBtn) {
-        loginPhonePasswordBtn.addEventListener('click', showPhoneLogin);
-    }
-    if (loginSignupLink) {
-        loginSignupLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showSignupScreen();
-        });
-    }
-
-    // Signup Screen Listeners
-    if (signupBackBtn) {
-        signupBackBtn.addEventListener('click', goBack);
-    }
-    if (signupNextButton) {
-        signupNextButton.addEventListener('click', async () => {
-            const email = signupEmailInput ? signupEmailInput.value.trim() : '';
-            const password = signupPasswordInput ? signupPasswordInput.value.trim() : '';
-
-            if (!email || !email.includes('@')) {
-                showMessageBox('Please enter a valid email address.', 'error');
-                return;
-            }
-            if (!password || password.length < 6) {
-                showMessageBox('Please enter a password with at least 6 characters.', 'error');
-                return;
-            }
-
-            await registerUser(email, password, null, signupNextButton);
-            if (signupEmailInput) signupEmailInput.value = '';
-            if (signupPasswordInput) signupPasswordInput.value = '';
-        });
-    }
-    if (signupUsePhoneLink) {
-        signupUsePhoneLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showPhoneSignup();
-        });
-    }
-    if (signupLoginLink) {
-        signupLoginLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showLoginScreen();
-        });
-    }
-
-    // Phone Signup Screen Listeners
-    if (phoneSignupBackBtn) {
-        phoneSignupBackBtn.addEventListener('click', goBack);
-    }
-    if (phoneSignupNextButton) {
-        phoneSignupNextButton.addEventListener('click', async () => {
-            const phoneNumber = phonePhoneNumberSignupInput ? phonePhoneNumberSignupInput.value.trim() : '';
-            const password = phoneSignupPasswordInput ? phoneSignupPasswordInput.value.trim() : '';
-
-            if (!phoneNumber) {
-                showMessageBox('Please enter a phone number.', 'error');
-                return;
-            }
-            if (!password || password.length < 6) {
-                showMessageBox('Please enter a password with at least 6 characters.', 'error');
-                return;
-            }
-
-            await registerUser(null, password, phoneNumber, phoneSignupNextButton);
-            if (phonePhoneNumberSignupInput) phonePhoneNumberSignupInput.value = '';
-            if (phoneSignupPasswordInput) phoneSignupPasswordInput.value = '';
-        });
-    }
-    if (phoneSignupUseEmailLink) {
-        phoneSignupUseEmailLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showSignupScreen();
-        });
-    }
-    if (phoneSignupLoginLink) {
-        phoneSignupLoginLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showLoginScreen();
-        });
-    }
-
-    // Phone Login Screen Listeners
-    if (phoneLoginBackBtn) {
-        phoneLoginBackBtn.addEventListener('click', goBack);
-    }
-    if (phoneLoginContinueButton) {
-        phoneLoginContinueButton.addEventListener('click', async () => {
-            const phoneNumber = phonePhoneNumberLoginInput ? phonePhoneNumberLoginInput.value.trim() : '';
-            const password = phoneLoginPasswordInput ? phoneLoginPasswordInput.value.trim() : '';
-
-            if (!phoneNumber || !password) {
-                showMessageBox('Please enter a phone number and a password.', 'error');
-                return;
-            }
-            await loginUser(phoneNumber, password, phoneLoginContinueButton);
-            if (phonePhoneNumberLoginInput) phonePhoneNumberLoginInput.value = '';
-            if (phoneLoginPasswordInput) phoneLoginPasswordInput.value = '';
-        });
-    }
-
-    if (phoneForgotPasswordLink) {
-        phoneForgotPasswordLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showForgotPasswordInputScreen();
-        });
-    }
-
-    if (phoneLoginSignupLink) {
-        phoneLoginSignupLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showSignupScreen();
-        });
-    }
-
-    // Phone OTP Input Screen Listeners
-    if (phoneOtpBackBtn) {
-        phoneOtpBackBtn.addEventListener('click', goBack);
-    }
-    if (sendPhoneOtpButton) {
-        sendPhoneOtpButton.addEventListener('click', async () => {
-            const phoneNumber = otpPhoneNumberInput ? otpPhoneNumberInput.value.trim() : '';
-            if (!phoneNumber) {
-                showMessageBox('Please enter your phone number to send OTP.', 'error');
-                return;
-            }
-            currentOtpContext = 'login';
-            await sendPhoneOtp(phoneNumber, sendPhoneOtpButton);
-        });
-    }
-
-    // OTP Verification Screen Listeners
-    if (otpVerificationBackBtn) {
-        otpVerificationBackBtn.addEventListener('click', goBack);
-    }
-    if (verifyPhoneOtpButton) {
-        verifyPhoneOtpButton.addEventListener('click', async () => {
-            const otpCode = phoneOtpCodeInput ? phoneOtpCodeInput.value.trim() : '';
-
-            if (!otpCode) {
-                showMessageBox('Please enter the OTP.', 'error');
-                return;
-            }
-
-            if (currentOtpContext === 'passwordReset') {
-                const identifier = localStorage.getItem('passwordResetIdentifier');
-                if (!identifier) {
-                    showMessageBox('No identifier found for password reset. Please restart the process.', 'error');
-                    closePopup();
-                    return;
-                }
-                await verifyPasswordResetOtp(identifier, otpCode, verifyPhoneOtpButton);
-            } else {
-                const phoneNumber = otpPhoneNumberInput ? otpPhoneNumberInput.value.trim() : '';
-                if (!phoneNumber) {
-                    showMessageBox('No phone number found. Please go back and re-enter.', 'error');
-                    return;
-                }
-                await verifyPhoneOtp(phoneNumber, otpCode, verifyPhoneOtpButton);
-            }
-            if (phoneOtpCodeInput) phoneOtpCodeInput.value = '';
-        });
-    }
-    if (resendPhoneOtpButton) {
-        resendPhoneOtpButton.addEventListener('click', async () => {
-            if (phoneOtpResendAvailableTime <= 0) {
-                if (currentOtpContext === 'passwordReset') {
-                    const identifier = localStorage.getItem('passwordResetIdentifier');
-                    if (!identifier) {
-                        showMessageBox('No identifier found to resend OTP. Please restart the process.', 'error');
-                        return;
-                    }
-                    await sendPasswordResetOtp(identifier, resendPhoneOtpButton);
-                } else {
-                    const phoneNumber = otpPhoneNumberInput ? otpPhoneNumberInput.value.trim() : '';
-                    if (!phoneNumber) {
-                        showMessageBox('No phone number found to resend OTP. Please go back and re-enter.', 'error');
-                        return;
-                    }
-                    await sendPhoneOtp(phoneNumber, resendPhoneOtpButton);
-                }
-            } else {
-                showMessageBox('Please wait before resending OTP.', 'info');
-            }
-        });
-    }
-
-    // Email OTP Input Screen Listeners
-    if (emailOtpBackBtn) {
-        emailOtpBackBtn.addEventListener('click', goBack);
-    }
-    if (verifyEmailOtpButton) {
-        verifyEmailOtpButton.addEventListener('click', async () => {
-            const email = localStorage.getItem('pendingEmailVerification');
-            const otpCode = emailOtpCodeInput ? emailOtpCodeInput.value.trim() : '';
-
-            if (!email || !otpCode) {
-                showMessageBox('Email and OTP are required.', 'error');
-                return;
-            }
-            await verifyEmailOtp(email, otpCode, verifyEmailOtpButton);
-            if (emailOtpCodeInput) emailOtpCodeInput.value = '';
-        });
-    }
-    if (resendEmailOtpButton) {
-        resendEmailOtpButton.addEventListener('click', async () => {
-            if (emailOtpResendAvailableTime <= 0) {
-                const email = localStorage.getItem('pendingEmailVerification');
-                if (!email) {
-                    showMessageBox('No email found to resend OTP. Please try Google login again.', 'error');
-                    return;
-                }
-                try {
-                    const response = await fetch(`${BACKEND_BASE_URL}/api/auth/resend-email-otp`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'ngrok-skip-browser-warning': 'true'
-                        },
-                        body: JSON.stringify({ email })
-                    });
-                    const data = await response.json();
-                    if (response.ok) {
-                        showMessageBox(cleanMessage(data.message), 'success'); // Clean message here
-                        startEmailOtpTimer(120);
-                        resendEmailOtpButton.classList.add('hidden');
-                    } else {
-                        showMessageBox('Failed to resend email OTP: ' + (data.message || 'An unknown error occurred.'), 'error');
-                    }
-                } catch (error) {
-                    console.error('Network error during resend email OTP:', error);
-                    showMessageBox('Network error during resend email OTP. Please check your connection and try again.', 'error');
-                }
-            } else {
-                showMessageBox('Please wait before resending OTP.', 'info');
-            }
-        });
-    }
-
-    // Forgot Password Input Screen Listeners
-    if (forgotPasswordBackBtn) {
-        forgotPasswordBackBtn.addEventListener('click', goBack);
-    }
-    if (sendPasswordResetOtpButton) {
-        sendPasswordResetOtpButton.addEventListener('click', async () => {
-            const identifier = forgotPasswordIdentifierInput ? forgotPasswordIdentifierInput.value.trim() : '';
-            if (!identifier) {
-                showMessageBox('Please enter your email or phone number.', 'error');
-                return;
-            }
-            await sendPasswordResetOtp(identifier, sendPasswordResetOtpButton);
-        });
-    }
-    if (forgotPasswordLoginLink) {
-        forgotPasswordLoginLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showLoginScreen();
-        });
-    }
-
-    // Set Password Screen Listeners
-    if (createPasswordBackBtn) {
-        createPasswordBackBtn.addEventListener('click', goBack);
-    }
-    if (setNewPasswordButton) {
-        setNewPasswordButton.addEventListener('click', async () => {
-            const identifier = localStorage.getItem('userEmailForPasswordSet') || localStorage.getItem('passwordResetIdentifier');
-            const newPassword = newPasswordInput ? newPasswordInput.value.trim() : '';
-            const confirmPassword = confirmPasswordInput ? confirmPasswordInput.value.trim() : '';
-
-            if (!identifier) {
-                showMessageBox('User identifier not found. Please try logging in or resetting password again.', 'error');
-                closePopup();
-                return;
-            }
-
-            if (!newPassword || newPassword.length < 6) {
-                showMessageBox('Please enter a new password with at least 6 characters.', 'error');
-                return;
-            }
-
-            if (newPassword !== confirmPassword) {
-                showMessageBox('Passwords do not match. Please re-enter.', 'error');
-                return;
-            }
-
-            await setPasswordForUser(identifier, newPassword, setNewPasswordButton);
-            if (newPasswordInput) newPasswordInput.value = '';
-            if (confirmPasswordInput) confirmPasswordInput.value = '';
-        });
-    }
-
-    // NEW: Complete Profile Screen Listeners
-    if (completeProfileBackBtn) {
-        completeProfileBackBtn.addEventListener('click', goBack);
-    }
-    if (completeProfileSubmitButton) {
-        completeProfileSubmitButton.addEventListener('click', async () => {
-            const name = profileNameInput ? profileNameInput.value.trim() : '';
-            const dob = profileDobInput ? profileDobInput.value.trim() : ''; // YYYY-MM-DD format from input type="date"
-
-            if (!name) {
-                showMessageBox('Please enter your name.', 'error');
-                return;
-            }
-            if (!dob) {
-                showMessageBox('Please enter your date of birth.', 'error');
-                return;
-            }
-
-            const identifier = identifierForProfileCompletion; // Get identifier stored from previous step
-            if (!identifier) {
-                showMessageBox('Could not find user identifier for profile completion. Please try logging in again.', 'error');
-                closePopup();
-                return;
-            }
-
-            await completeUserProfile(identifier, name, dob, completeProfileSubmitButton);
-        });
-    }
-
-
-     // Event listeners for UI components
-    const libraryLikedBtn = Array.from(document.querySelectorAll('h3.text-base.font-medium')).find(el => el.textContent.trim() === 'Liked Songs');
-    if (libraryLikedBtn) {
-        libraryLikedBtn.closest('div').addEventListener('click', () => {
-            const likedOverlay = document.getElementById('likedSongsOverlay');
-            if (likedOverlay) {
-                likedOverlay.classList.add('open');
-                likedOverlay.setAttribute('aria-hidden', 'false');
-                fetchAndRenderLikedSongs();
-            }
-        });
-    }
-
-    const closeLikedBtn = document.getElementById('closeLikedSongs');
-    if (closeLikedBtn) {
-        closeLikedBtn.addEventListener('click', () => {
-            const likedOverlay = document.getElementById('likedSongsOverlay');
-            if (likedOverlay) {
-                likedOverlay.classList.remove('open');
-                likedOverlay.setAttribute('aria-hidden', 'true');
-            }
-        });
-    }
-
-    // Wiring up the playbar like button
-    const playbarLikeBtn = document.getElementById('mobile-add-btn') || document.querySelector('.playbar-add-btn');
-    if (playbarLikeBtn && !playbarLikeBtn.dataset.swarifyLikeWired) {
-        playbarLikeBtn.dataset.swarifyLikeWired = 'true';
-        playbarLikeBtn.addEventListener('click', (ev) => {
-            ev.preventDefault();
-            toggleLikeCurrentSong();
-        });
-    }
-    
-    // Wire up the add-to-playlist popup listener
-    const addPopupLikedItem = document.querySelector('#add-popup-overlay .swarify-add-popup-item');
-    if(addPopupLikedItem && addPopupLikedItem.textContent.toLowerCase().includes('liked songs')) {
-        addPopupLikedItem.addEventListener('click', (ev) => {
-            ev.preventDefault();
-            
-            const song = getCurrentSongForLike();
-            if (song) {
-                const likedSong = LikedStore.get().find(x => LikedStore.isSame(x, song));
-                if (likedSong) {
-                    backendUnlikeSong(likedSong);
-                    LikedStore.remove(song);
-                } else {
-                    LikedStore.add(song);
-                    backendLikeSong(song);
-                }
-                updatePlaybarLikeState();
-                updatePopupLikeState();
-            }
-
-            const overlay = document.getElementById('add-popup-overlay');
-            if(overlay) {
-                overlay.classList.remove('active');
-                overlay.style.display = 'none';
-            }
-        });
-    }
-
-    // Call the function to initialize the UI state
-    initializeUIState();
-
-    // --- NEW: Event listeners for the song options popup ---
-    const popupBackdrop = document.getElementById('song-options-popup');
-    const removeBtn = document.getElementById('popup-remove-from-liked');
-    const goBtn = document.getElementById('popup-go-to-album');
-
-    // Listener for the backdrop to close the popup on outside click
-    if (popupBackdrop) {
-        popupBackdrop.addEventListener('click', (e) => {
-            if (e.target === popupBackdrop) {
-                closeSongOptionsPopup();
-            }
-        });
-    }
-    
-    // Listener for the "Remove from this playlist" button
-    if (removeBtn) {
-        removeBtn.addEventListener('click', (e) => {
-            const albumId = e.currentTarget.dataset.albumId;
-            const trackIndex = e.currentTarget.dataset.trackIndex;
-            const likeId = e.currentTarget.dataset.likeId;
-            const songTitle = e.currentTarget.dataset.songTitle;
-            
-            if (albumId && trackIndex) {
-                const songToRemove = { albumId, trackIndex: Number(trackIndex), likeId };
-                LikedStore.remove(songToRemove);
-                backendUnlikeSong(songToRemove);
-                showMessageBox(`Removed from Liked Songs: ${songTitle}`, 'success', 1800);
-            }
-            closeSongOptionsPopup();
-            renderLikedSongsOverlay(); // Re-render the liked songs list
-        });
-    }
-
-    // Listener for "Go to album" button
-    // Listener for "Go to album" button
-if (goBtn) {
-    goBtn.addEventListener('click', (e) => {
-        // Use e.currentTarget to get the button element itself
-        const albumId = e.currentTarget.dataset.albumId; 
-        const albumToOpen = allAlbumsData.find(a => a.id === albumId);
-        
-        if (albumToOpen) {
-            // First, close all other popups, including the song options and liked songs overlays.
-            // This is a more robust approach than calling individual close functions.
-            closeAllPopups();
-            
-            // Then, immediately open the album details.
-            openAlbumDetails(albumToOpen);
-        }
-    });
-}
-    
-});
-
 
 
 // NEW: inline js from html
@@ -7437,22 +6156,7 @@ function setDynamicBackground() {
             }
             setDynamicBackground();
 
-document.addEventListener('DOMContentLoaded', function() {
-  const libraryLink = document.querySelector('.unique-footer-nav .unique-nav-item:nth-child(3) a');
-  const popup = document.getElementById('library-popup');
-  const closeBtn = document.getElementById('close-library-popup');
 
-  if(libraryLink && popup && closeBtn) {
-    libraryLink.addEventListener('click', function(e) {
-      e.preventDefault();
-      popup.classList.remove('hidden');
-    });
-
-    closeBtn.addEventListener('click', function() {
-      popup.classList.add('hidden');
-    });
-  }
-});
 
 
         // NEW: Event listener for the mobile add button to open the popup
@@ -8013,235 +6717,10 @@ window.closeAddToPlaylistOverlay = () => {
 };
 
 
-// This listener now ONLY handles attaching other listeners and injecting CSS
-document.addEventListener('DOMContentLoaded', () => {
-    // --- CSS Injection ---
-    const addToPlaylistStyle = document.createElement('style');
-    addToPlaylistStyle.innerHTML = `
-        #add-to-playlist-overlay {
-            display: flex; visibility: hidden; opacity: 0;
-            transform: translateY(100%);
-            transition: visibility 0.3s, opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-            z-index:10001;
-        }
-        #add-to-playlist-overlay.visible { visibility: visible; opacity: 1; transform: translateY(0); }
-        .playlist-select-checkbox {
-            appearance: none; -webkit-appearance: none; width: 28px; height: 28px; border: 2px solid #727272;
-            border-radius: 50%; outline: none; cursor: pointer; transition: background-color 0.2s, border-color 0.2s;
-            position: relative; flex-shrink: 0;
-        }
-        .playlist-select-checkbox:checked { background-color: #1ED760; border-color: #1ED760; }
-        .playlist-select-checkbox:checked::after {
-            content: '✔'; font-weight: bold; font-size: 16px; color: black; position: absolute;
-            top: 50%; left: 50%; transform: translate(-50%, -51%);
-        }
-    `;
-    document.head.appendChild(addToPlaylistStyle);
 
-    // --- Element References ---
-    const addToPlaylistOverlay = document.getElementById('add-to-playlist-overlay');
-    const closeAddToPlaylistBtn = document.getElementById('close-add-to-playlist-btn');
-    const newPlaylistFromAddScreenBtn = document.getElementById('new-playlist-from-add-screen');
-    const playlistSelectionContainer = document.getElementById('playlist-selection-container');
-    const doneAddingToPlaylistBtn = document.getElementById('done-adding-to-playlist-btn');
-    const popupAddToOtherPlaylistBtn = document.getElementById('popup-add-to-other-playlist');
-    const newPlaylistPopupOverlay = document.getElementById('new-playlist-popup-overlay');
-    const newPlaylistNameInput = document.getElementById('new-playlist-name-input');
-    
-    // --- Event Listeners Setup ---
-    if (popupAddToOtherPlaylistBtn) {
-        popupAddToOtherPlaylistBtn.addEventListener('click', () => {
-            const popupPanel = document.querySelector('.song-options-panel');
-            const songDataString = popupPanel ? popupPanel.dataset.song : null;
-
-            if (songDataString) {
-                const songData = JSON.parse(songDataString);
-                closeSongOptionsPopup();
-                setTimeout(() => window.openAddToPlaylistOverlay(songData), 350);
-            } else { 
-                showMessageBox('Could not find song details to add.', 'error'); 
-                closeSongOptionsPopup();
-            }
-        });
-    }
-
-    if (playlistSelectionContainer) {
-        playlistSelectionContainer.addEventListener('change', () => {
-            if (doneAddingToPlaylistBtn) {
-                doneAddingToPlaylistBtn.disabled = !playlistSelectionContainer.querySelector('input:checked');
-            }
-        });
-    }
-
-    if (doneAddingToPlaylistBtn) {
-        doneAddingToPlaylistBtn.addEventListener('click', async () => {
-            const songDataString = addToPlaylistOverlay.dataset.song;
-            if (!songDataString) return;
-            const song = JSON.parse(songDataString);
-            const checkboxes = playlistSelectionContainer.querySelectorAll('input:checked');
-            if (checkboxes.length === 0) return;
-            doneAddingToPlaylistBtn.disabled = true;
-            doneAddingToPlaylistBtn.textContent = 'Adding...';
-            const promises = Array.from(checkboxes).map(cb => addSongToPlaylist(cb.dataset.playlistId, song));
-            const results = await Promise.all(promises);
-            if (results.some(Boolean)) {
-                showMessageBox(`Added to ${results.filter(Boolean).length} playlist(s).`, 'success');
-                await fetchUserPlaylists();
-            }
-            doneAddingToPlaylistBtn.textContent = 'Done';
-            window.closeAddToPlaylistOverlay();
-        });
-    }
-
-    if (closeAddToPlaylistBtn) {
-        closeAddToPlaylistBtn.addEventListener('click', window.closeAddToPlaylistOverlay);
-    }
-    
-    if (newPlaylistFromAddScreenBtn) {
-        newPlaylistFromAddScreenBtn.addEventListener('click', () => {
-            const songDataString = addToPlaylistOverlay.dataset.song;
-            if (songDataString) {
-                localStorage.setItem('songToAddAfterCreatingPlaylist', songDataString);
-                window.closeAddToPlaylistOverlay();
-                setTimeout(() => {
-                    if (newPlaylistPopupOverlay) {
-                        newPlaylistPopupOverlay.classList.remove('hidden');
-                        newPlaylistPopupOverlay.style.display = 'flex';
-                        newPlaylistPopupOverlay.style.visibility = 'visible';
-                        newPlaylistPopupOverlay.style.opacity = '1';
-                        if (newPlaylistNameInput) {
-                            setTimeout(() => newPlaylistNameInput.focus(), 50);
-                        }
-                    }
-                }, 350);
-            }
-        });
-    }
-});
 
 // --- END: REPLACEMENT CODE ---
 
-// --- START: JavaScript for Liked Songs Search Functionality (Version 3) ---
-document.addEventListener('DOMContentLoaded', () => {
-    const likedSongsOverlay = document.getElementById('likedSongsOverlay');
-    const likedContent = document.getElementById('likedContent');
-    const searchInput = document.getElementById('likedSongsSearchInput');
-    const noResultsMessage = document.getElementById('noResultsMessage');
-    const noResultsQuery = document.getElementById('noResultsQuery');
-    const closeSearchBtn = document.getElementById('closeLikedSongsSearch');
-    const clearSearchBtn = document.getElementById('clearLikedSearch');
-    const compactHeader = document.getElementById('likedSongsCompactHeader');
-    const compactCloseBtn = document.getElementById('closeLikedSongsCompact');
-
-    if (!likedContent || !likedSongsOverlay) return;
-
-    // --- Main Scroll Listener ---
-    // This now toggles a class that shows the compact header instead of the search bar.
-    likedContent.addEventListener('scroll', () => {
-        if (likedContent.scrollTop > 60) { // Threshold to switch to compact header
-            likedSongsOverlay.classList.add('is-scrolled');
-        } else {
-            likedSongsOverlay.classList.remove('is-scrolled');
-        }
-    }, false);
-
-    // --- Search Activation & Filtering ---
-    // We add a listener to the document because the search trigger is inside the rendered list.
-    document.body.addEventListener('focusin', (e) => {
-        if (e.target && e.target.id === 'find-in-liked-songs-trigger') {
-            likedSongsOverlay.classList.add('search-active');
-            searchInput.focus();
-        }
-    });
-
-    closeSearchBtn.addEventListener('click', () => {
-        likedSongsOverlay.classList.remove('search-active');
-        searchInput.value = '';
-        searchInput.blur();
-        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-    });
-    
-    // Attach the main close functionality to BOTH close buttons
-    const closeLikedSongs = () => {
-        const likedOverlay = document.getElementById('likedSongsOverlay');
-        if (likedOverlay) {
-            likedOverlay.classList.remove('open');
-            likedOverlay.setAttribute('aria-hidden', 'true');
-        }
-    };
-   document.getElementById('closeLikedSongs').addEventListener('click', () => history.back());
-if(compactCloseBtn) compactCloseBtn.addEventListener('click', () => history.back());
-
-
-    searchInput.addEventListener('input', () => {
-        const query = searchInput.value.toLowerCase().trim();
-        const songs = document.querySelectorAll('#likedSongsList .swarify-liked-row');
-        let found = false;
-
-        songs.forEach(song => {
-            const titleEl = song.querySelector('.song-title');
-            const artistEl = song.querySelector('.song-artist');
-            const title = titleEl ? titleEl.textContent.toLowerCase() : '';
-            const artist = artistEl ? artistEl.textContent.toLowerCase() : '';
-
-            if (title.includes(query) || artist.includes(query)) {
-                song.style.display = 'flex';
-                found = true;
-            } else {
-                song.style.display = 'none';
-            }
-        });
-
-        clearSearchBtn.style.display = (query.length > 0) ? 'block' : 'none';
-
-        if (!found && query.length > 0) {
-            noResultsMessage.style.display = 'block';
-            noResultsQuery.textContent = `No results found for "${searchInput.value}"`;
-        } else {
-            noResultsMessage.style.display = 'none';
-        }
-    });
-
-    clearSearchBtn.addEventListener('click', () => {
-        searchInput.value = '';
-        searchInput.focus();
-        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-    });
-
-    const likedSongsPlayBtn = document.getElementById('liked-songs-play-btn');
-    if (likedSongsPlayBtn) {
-        likedSongsPlayBtn.addEventListener('click', () => {
-            handleLikedSongsPlayButtonClick();
-        });
-    }
-
-    // Also, ensure the highlight and icon update when playback is toggled globally.
-    document.addEventListener('trackChanged', () => {
-        highlightPlayingLikedSong();
-        updateLikedSongsPlayButtonIcon();
-    });
-
-    // It is crucial to update the liked songs UI state whenever any track ends
-    // or playback is toggled.
-    const audioPlayer = document.getElementById('audio-player');
-    if(audioPlayer) {
-        audioPlayer.addEventListener('play', () => {
-             highlightPlayingLikedSong();
-             updateLikedSongsPlayButtonIcon();
-        });
-        audioPlayer.addEventListener('pause', () => {
-             highlightPlayingLikedSong();
-             updateLikedSongsPlayButtonIcon();
-        });
-        audioPlayer.addEventListener('ended', () => {
-            isPlayingFromLikedSongs = false; // Reset context when a song ends
-            highlightPlayingLikedSong();
-            updateLikedSongsPlayButtonIcon();
-        });
-    }
-
-
-});
 
 // --- Update renderLikedSongsOverlay to include the search trigger ---
 // Replace your existing 'renderLikedSongsOverlay' function with this one.
@@ -8708,8 +7187,7 @@ function closePlaylistDetailsOverlay() {
     setTimeout(() => {
         overlay.classList.add('hidden');
     }, 300); // Should match your CSS transition duration
-
-    document.body.style.overflow = 'auto'; // Restore scrolling on the body
+updateBodyForPopups(); 
 }
 // --- END: NEW FUNCTION ---
 /**
@@ -8790,10 +7268,7 @@ function updatePlaylistPlayButtons() {
     updatePlaylistPlayButton(isPlaying);
 }
 
-// START: Replace the existing showFullScreenPlayer function
-/**
- * NEW: Shows the full-screen player overlay and sets dynamic background color.
- */
+
 function showFullScreenPlayer() {
       pushHistoryStateForPopup();
     if (!fullScreenPlayer) return;
@@ -8830,20 +7305,1663 @@ function showFullScreenPlayer() {
     // Update the rest of the player UI
     updatePlayerUI();
 }
-// END: Replacement for showFullScreenPlayer
+
+// =======================================================
+// NEW: MOBILE BACK BUTTON & HISTORY MANAGEMENT
+// =======================================================
+
+/**
+ * A helper function to check if a popup is currently visible to the user.
+ * @param {string} elementId - The ID of the popup element to check.
+ * @returns {boolean} - True if the popup is visible, false otherwise.
+ */
+function isPopupVisible(elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) return false;
+    
+    // Check for common 'hidden' classes used in the project
+    if (element.classList.contains('hidden') || element.classList.contains('unique-hidden') || element.classList.contains('invisible')) {
+        return false;
+    }
+    
+    // Check for 'active', 'open', or 'show' classes that indicate visibility
+    if (element.classList.contains('active') || element.classList.contains('open') || element.classList.contains('show')) {
+        return true;
+    }
+    
+    // Check computed style for display property
+    const style = window.getComputedStyle(element);
+    if (style.display === 'none' || style.visibility === 'hidden') {
+        return false;
+    }
+
+    return false; // Default to not visible if no explicit show state is found
+}
+
+/**
+ * Pushes a new state to the browser's history.
+ * This should be called every time a popup or overlay is opened.
+ */
+function pushHistoryStateForPopup() {
+    history.pushState({ swarifyPopup: true }, "");
+    console.log("Pushed history state for a new popup.");
+}
+
+/**
+ * Updates body scrolling based on whether any popups are open.
+ * This prevents the page from scrolling when an overlay is active.
+ */
+function updateBodyForPopups() {
+    // A slight delay to allow the DOM to update after a close function runs
+    setTimeout(() => {
+        const popupsToCheck = [
+            'song-options-popup', 'add-to-playlist-overlay', 'new-playlist-popup-overlay',
+            'mobile-search-overlay', 'unique-search-popup', 'full-screen-player',
+            'playlist-details-overlay', 'likedSongsOverlay', 'record-breaking-popup-overlay',
+            'record-breaking-popup-overlay2', 'library-popup', 'albumOverlay', 'popup-overlay'
+        ];
+
+        const isAnyPopupVisible = popupsToCheck.some(id => isPopupVisible(id));
+
+        if (isAnyPopupVisible) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    }, 50); // 50ms delay
+}
 
 
-// 
-// 
-// --- New Carousel Logic ---
-// 
-// 
-// 
-// 
-// --- New Carousel Logic ---
-// --- Corrected Carousel Logic ---
-document.addEventListener('DOMContentLoaded', () => {
-  // --- Data for the Carousel ---
+/**
+ * The main handler for the 'popstate' event (back button press).
+ * It checks for open popups in order of priority and closes the top-most one.
+ */
+function handleBackButton() {
+    console.log("Back button event detected. Checking for open popups...");
+
+    const popupsToClose = [
+        { id: 'song-options-popup', closeFunc: closeSongOptionsPopup },
+        { id: 'add-to-playlist-overlay', closeFunc: window.closeAddToPlaylistOverlay },
+        { id: 'new-playlist-popup-overlay', closeFunc: () => document.getElementById('new-playlist-popup-overlay')?.classList.add('hidden') },
+        { id: 'album-search-view', closeFunc: () => document.getElementById('albumOverlay')?.classList.remove('search-active') },
+        { id: 'mobile-search-overlay', closeFunc: () => document.getElementById('mobile-search-overlay')?.classList.remove('open') },
+        { id: 'unique-search-popup', closeFunc: () => document.getElementById('unique-search-popup')?.classList.add('unique-hidden') },
+        { id: 'full-screen-player', closeFunc: hideFullScreenPlayer },
+        { id: 'playlist-details-overlay', closeFunc: closePlaylistDetailsOverlay },
+        { id: 'likedSongsOverlay', closeFunc: () => document.getElementById('likedSongsOverlay')?.classList.remove('open') },
+        { id: 'record-breaking-popup-overlay', closeFunc: () => document.getElementById('record-breaking-popup-overlay')?.classList.remove('flex') },
+        { id: 'record-breaking-popup-overlay2', closeFunc: () => document.getElementById('record-breaking-popup-overlay2')?.classList.remove('flex') },
+        { id: 'library-popup', closeFunc: () => document.getElementById('library-popup')?.classList.add('hidden') },
+        {  id: 'albumOverlay', closeFunc: () => closeAlbumOverlay(true) },
+        { id: 'popup-overlay', closeFunc: closePopup }
+    ];
+
+    for (const popup of popupsToClose) {
+        if (isPopupVisible(popup.id)) {
+            console.log(`Closing popup via back button: ${popup.id}`);
+            popup.closeFunc();
+            updateBodyForPopups();
+            return; 
+        }
+    }
+    
+    updateBodyForPopups();
+}
+
+
+
+
+
+// --- All DOM Merged ---
+document.addEventListener('DOMContentLoaded', async () => {
+
+     // --- START: NEW CODE BLOCK TO ADD ---
+    // Immediately attach a temporary click handler to all cards on the page.
+    // This "catches" the very first click and prevents the browser from replaying it later.
+    const allInitialCards = document.querySelectorAll('.card');
+    allInitialCards.forEach(card => {
+        card.addEventListener('click', (event) => {
+            // If the main album data hasn't loaded yet, we show a message
+            // and prevent the click from doing anything else.
+            if (allAlbumsData.length === 0) {
+                event.preventDefault();
+                event.stopPropagation();
+                showMessageBox('Albums are still loading, please wait...', 'info');
+            }
+        }, { once: true }); // The "{ once: true }" option is crucial. It makes this temporary listener
+                           // automatically remove itself after it has been clicked one time.
+    });
+    // --- END: NEW CODE BLOCK TO ADD ---
+
+
+    console.log("DOM Content Loaded: Script execution started.");
+    // Hide player bar initially
+    if (mainPlayBar) {
+        mainPlayBar.style.display = 'none'; // Keep this to hide it until a song plays
+        console.log("DOMContentLoaded: mainPlayBar initially hidden.");
+    }
+
+    // Add padding to the player-left container for better spacing of the album cover/mini-player
+    if (playerLeft) {
+        // This is now the album art + song info container
+        playerLeft.style.padding = '0'; // The HTML already has padding on the main-play-bar-inner
+        // Ensure playerLeft can grow but also shrink if content is too long
+        playerLeft.style.minWidth = '0'; // Allow flex item to shrink below its content size
+        console.log("DOMContentLoaded: playerLeft padding reset to 0 and min-width set to 0.");
+    }
+
+    // Apply consistent styling to the player image (album cover)
+    if (currentAlbumArt) { // Changed from playerImg
+        currentAlbumArt.style.width = '64px'; // Matches new HTML
+        currentAlbumArt.style.height = '64px'; // Matches new HTML
+        currentAlbumArt.style.borderRadius = '8px';
+        currentAlbumArt.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.4)';
+        currentAlbumArt.style.objectFit = 'cover'; // Ensure image covers the area
+        currentAlbumArt.style.display = 'block'; // Ensure it's visible by default
+        console.log("DOMContentLoaded: currentAlbumArt styling applied.");
+    }
+
+    // showMessageBox('Initializing app...', 'info', 5000); // Initial loading message - REMOVED AS PER USER REQUEST
+    try {
+        // Attempt to handle Spotify callback on page load
+        await handleSpotifyCallback();
+        console.log("DOMContentLoaded: handleSpotifyCallback called.");
+
+        // Load YouTube Iframe API
+        loadYoutubeIframeAPI();
+        console.log("DOMContentLoaded: loadYoutubeIframeAPI called.");
+
+        // Set initial UI state for login (e.g., if no Spotify token found)
+        updateLoginUI();
+        console.log("DOMContentLoaded: updateLoginUI called.");
+
+        // Fetch and display initial content (these are placeholders now)
+        // Ensure these functions actually exist in your project
+        if (typeof fetchAndDisplayTrendingSongs === 'function') {
+            fetchAndDisplayTrendingSongs();
+        } else {
+            console.warn("fetchAndDisplayTrendingSongs function not found.");
+        }
+        if (typeof fetchAndDisplayPopularAlbums === 'function') {
+            fetchAndDisplayPopularAlbums();
+        } else {
+            console.warn("fetchAndDisplayPopularAlbums function not found.");
+        }
+        if (typeof fetchAndDisplayPopularArtists === 'function') {
+            fetchAndDisplayPopularArtists();
+        } else {
+            console.warn("fetchAndDisplayPopularArtists function not found.");
+        }
+        console.log("DOMContentLoaded: Initial content display functions called (if defined).");
+
+        // IMPORTANT: Fetch and attach listeners after everything else
+        // Ensure fetchAlbums is defined and correctly populates cardcontainers
+        if (typeof fetchAlbums === 'function') {
+            await fetchAlbums(); // This call includes attachEventListenersToHtmlCards()
+            console.log("DOMContentLoaded: fetchAlbums completed and listeners attached.");
+
+              populateRecordBreakingSection();
+              populateRecordBreakingSection2();
+            setupMiniCarouselScroll();
+            setupMiniCarouselScroll2();
+            attachEventListenersToHtmlCards();
+               const albumOverlay = document.getElementById('albumOverlay'); // Get the album overlay element
+                if (!albumOverlay.classList.contains('show')) { // <-- WRAP THE FUNCTIONS IN THIS CHECK
+                    await loadPlayerState();
+                    await loadLatestLikedSongAsFallback();
+                }
+            // Setup horizontal scroll for all three card sections
+            setupHorizontalScroll('trending-songs-cards');
+            setupHorizontalScroll('popular-albums-cards');
+            setupHorizontalScroll('popular-artists-cards');
+            // Also for the "more" sections in the overlay
+            setupHorizontalScroll('more-trending-songs-cards');
+            setupHorizontalScroll('explore-popular-albums-cards');
+            setupHorizontalScroll('explore-popular-artists-cards');
+            console.log("DOMContentLoaded: Horizontal scroll setup for all card sections.");
+
+        } 
+        else {
+            console.warn("fetchAlbums function not found. Card event listeners might not be attached.");
+        }
+
+        // Set initial volume for the native audio element
+        if (volumeBar) {
+            audio.volume = parseFloat(volumeBar.value);
+            console.log("DOMContentLoaded: Initial native audio volume set.");
+        }
+
+        // NEW: Add an event listener to the entire mainPlayBar to open the full-screen player on mobile/tablet
+        if (mainPlayBar) {
+            mainPlayBar.addEventListener('click', async (event) => {
+                // Check if the click originated from a control button, if so, let it handle the event
+                const isControlClick = event.target.closest('#play-pause-btn') ||
+                                       event.target.closest('#prev-track-btn') ||
+                                       event.target.closest('#next-track-btn') ||
+                                       event.target.closest('#rewind-btn') ||
+                                       event.target.closest('#fast-forward-btn') ||
+                                       event.target.closest('#progress-bar') ||
+                                       event.target.closest('#volume-bar') ||
+                                       event.target.closest('#repeat-btn') ||
+                                       event.target.closest('#shuffle-btn');
+
+                if (window.innerWidth <= 768 && !isControlClick) { // Only on mobile/tablet and if not a control button
+                    let albumToReopen = null;
+                    if (playingAlbum) {
+                        albumToReopen = playingAlbum;
+                        console.log("Compact playbar clicked (mobile). Actively playing album found.");
+
+                        // Check if the currently playing album is an embedded type
+                        const isEmbeddedPlaying = albumToReopen.rawHtmlEmbed || albumToReopen.fullSoundcloudEmbed || albumToReopen.audiomackEmbed || albumToReopen.iframeSrc;
+
+                        if (isEmbeddedPlaying) {
+                            console.log("Playing album is embedded. Redirecting to embedded album overlay.");
+                            openAlbumDetails(albumToReopen); // Re-open the album overlay for the embedded content
+                        } else {
+                            console.log("Playing album is controllable. Opening full-screen player.");
+                            showFullScreenPlayer(); // Show the full-screen player for controllable tracks
+                        }
+                    } else if (currentAlbum) {
+                        albumToReopen = currentAlbum;
+                        console.log("Compact playbar clicked (mobile). No actively playing album, opening last viewed album details.");
+                        // If no album is *playing*, but there's a *current* album (last viewed),
+                        // we should open its details, regardless of embed status.
+                        openAlbumDetails(albumToReopen);
+                    } else {
+                        console.log("Compact playbar clicked (mobile), but no current or playing album to open.");
+                        return;
+                    }
+                } else if (window.innerWidth > 768 && !isControlClick) { // Desktop behavior
+                    console.log("Main playbar clicked (desktop). Not a control button click.");
+                    let albumToReopen = null;
+                    if (playingAlbum) {
+                        albumToReopen = playingAlbum;
+                        console.log("Desktop playbar clicked. Actively playing album found. Redirecting to album details.");
+                        openAlbumDetails(albumToReopen);
+                    } else if (currentAlbum) {
+                        albumToReopen = currentAlbum;
+                        console.log("Desktop playbar clicked. No actively playing album, opening last viewed album details.");
+                        openAlbumDetails(albumToReopen);
+                    } else {
+                        console.log("Desktop playbar clicked, but no current or playing album to open.");
+                        return;
+                    }
+                }
+            });
+            console.log("DOMContentLoaded: mainPlayBar click listener attached.");
+        }
+
+        // NEW: Add minimize button listener for full-screen player
+        if (minimizePlayerBtn) {
+             minimizePlayerBtn.addEventListener('click', () => history.back());
+            console.log("DOMContentLoaded: minimizePlayerBtn click listener attached.");
+        }
+
+
+        // NEW: Add resize event listener to manage playbar view and scroll button visibility on window resize
+        window.addEventListener('resize', () => {
+            toggleMainPlaybarView(); // This now handles desktop vs mobile layout
+            // Update scroll button visibility for all relevant sections on resize
+            updateScrollButtonVisibility('trending-songs-cards');
+            updateScrollButtonVisibility('popular-albums-cards');
+            updateScrollButtonVisibility('popular-artists-cards');
+            updateScrollButtonVisibility('more-trending-songs-cards');
+            updateScrollButtonVisibility('explore-popular-albums-cards');
+            updateScrollButtonVisibility('explore-popular-artists-cards');
+            updateFixedTopHeadingVisibility(); // Update fixed top heading visibility on resize
+            // Also reposition the user dropdown on resize if it's open
+            if (isUserDropdownOpen) {
+                toggleUserDropdown(true); // Re-calculate and apply position
+            }
+        });
+        console.log("DOMContentLoaded: window resize listener attached for playbar view and scroll buttons.");
+
+        // Initial call to set the correct playbar view on load
+        toggleMainPlaybarView(); // Call without argument, it will determine based on window.innerWidth
+        console.log("DOMContentLoaded: Initial toggleMainPlaybarView called.");
+
+        // NEW: Scroll event listener for the fixed top heading
+        if (rightPanel && fixedTopPlayingHeading) {
+            rightPanel.addEventListener('scroll', () => {
+                updateFixedTopHeadingVisibility(); // Call the dedicated function on scroll
+            });
+            console.log("DOMContentLoaded: rightPanel scroll listener attached for fixed top heading.");
+        }
+
+    }
+    catch (error) {
+        console.error("DOMContentLoaded: An error occurred during initial setup:", error);
+
+    }
+    console.log("DOMContentLoaded: Script execution finished.");
+
+    const searchInput = document.getElementById('search-input');
+    const voiceSearchBtn = document.getElementById('voice-search-btn'); // Assuming these audio elements are defined in your HTML and globally accessible
+
+    const voiceStartSound = new Audio('https://files.catbox.moe/z41l8g.mp3'); // Replace with your actual path
+    const voiceEndSound = new Audio('https://files.catbox.moe/v08732.mp3'); // Replace with your actual path
+
+    let isListening = false; // To prevent multiple recognition instances
+
+    // Check for Web Speech API compatibility
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (SpeechRecognition && voiceSearchBtn) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false; // Listen for a single utterance
+        recognition.lang = 'en-US'; // Set language
+        recognition.interimResults = false; // Only return final results
+        recognition.maxAlternatives = 1; // Get the most likely result
+
+        voiceSearchBtn.addEventListener('click', () => {
+            if (isListening) {
+                recognition.stop();
+                return;
+            }
+
+            // Stop any ongoing playback when voice search is initiated
+            stopAllPlaybackUI();
+
+            recognition.start();
+            // Assuming playSound function is defined elsewhere
+            // playSound(voiceStartSound); // Play start sound
+            voiceSearchBtn.classList.add('listening'); // Add visual cue
+            searchInput.placeholder = "Listening...";
+            isListening = true;
+            console.log("Voice search started.");
+        });
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            console.log("Speech recognition result:", transcript);
+            searchInput.value = transcript; // Set the transcript to the search input
+
+            // Trigger the search logic
+            if (transcript.trim().length > 0) {
+                clearTimeout(debounceTimer); // Clear any existing debounce
+                searchAndOpenAlbum(transcript.trim().toLowerCase());
+            } else {
+                closeAlbumOverlay();
+                clearSearchMessage();
+            }
+        };
+
+        recognition.onend = () => {
+            console.log("Speech recognition ended.");
+            if (isListening) { // If it ended without manual stop, means no speech detected or timed out
+                // Assuming playSound function is defined elsewhere
+                // playSound(voiceEndSound); // Play end sound
+                voiceSearchBtn.classList.remove('listening'); // Remove visual cue
+                searchInput.placeholder = "Search...";
+                isListening = false;
+            }
+        };
+
+        recognition.onerror = (event) => {
+            console.error("Speech recognition error:", event.error);
+            showMessageBox(`Voice search error: ${event.error}`, 'error');
+            // Assuming playSound function is defined elsewhere
+            // playSound(voiceEndSound); // Play end sound
+            voiceSearchBtn.classList.remove('listening'); // Remove visual cue
+            searchInput.placeholder = "Search...";
+            isListening = false;
+        };
+    } else if (voiceSearchBtn) {
+        // If SpeechRecognition is not supported, hide the button or inform the user
+        voiceSearchBtn.style.display = 'none';
+        console.warn("Web Speech API not supported in this browser.");
+        showMessageBox("Your browser does not support voice search.", 'info', 5000);
+    }
+
+  // --- New: Centralized Footer Navigation Listeners ---
+    const navLinks = document.querySelectorAll('.unique-footer-nav .unique-nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', (event) => {
+            event.preventDefault();
+            const target = link.dataset.target || link.getAttribute('href').substring(1);
+            if (target) {
+                navigateTo(target);
+            }
+        });
+    });
+    
+
+   navigateTo('home');
+
+   
+
+
+    // NEW: Add click listener to the "New playlist" item in the `add-popup-overlay`
+  // in script.js, inside the 'DOMContentLoaded' listener
+
+const newPlaylistPopupItem = document.querySelector('#add-popup-overlay .swarify-add-popup-item:last-child');
+if (newPlaylistPopupItem) {
+    newPlaylistPopupItem.addEventListener('click', (e) => {
+        e.preventDefault();
+        const song = getCurrentSongForLike();
+        if (!isLoggedIn()) {
+            showMessageBox("You need to log in to create a playlist.", 'error');
+            return;
+        }
+
+        // --- FIX: Add this line ---
+        if (song) {
+            localStorage.setItem('songToAddAfterCreatingPlaylist', JSON.stringify(song));
+        }
+        // --- End of Fix ---
+
+        // Close the main add popup first
+        addPopupOverlay.classList.remove('active');
+        // Show the new playlist name popup
+        if(newPlaylistPopupOverlay) {
+            newPlaylistPopupOverlay.classList.remove('hidden');
+            setTimeout(() => newPlaylistNameInput.focus(), 10);
+        }
+    });
+}
+
+    // NEW: Add listeners for the "Create Playlist" popup buttons
+    if (createNewPlaylistBtn) {
+        createNewPlaylistBtn.addEventListener('click', () => {
+            const playlistName = newPlaylistNameInput.value.trim() || 'My new playlist';
+            createPlaylist(playlistName);
+            newPlaylistPopupOverlay.classList.add('hidden');
+            newPlaylistNameInput.value = '';
+        });
+    }
+
+    if (cancelNewPlaylistBtn) {
+        cancelNewPlaylistBtn.addEventListener('click', () => {
+            newPlaylistPopupOverlay.classList.add('hidden');
+            newPlaylistNameInput.value = '';
+        });
+    }
+
+    // NEW: Add listener for the library link in the footer
+    const libraryLink = document.getElementById('your-library-link');
+    if(libraryLink) {
+        libraryLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            await fetchUserPlaylists(); // Fetch and render playlists when library is opened
+            document.getElementById('library-popup').classList.remove('hidden');
+        });
+    }
+    
+    // NEW: Add listener for the close button on the playlist details overlay
+    if (closePlaylistDetailsBtn) {
+        closePlaylistDetailsBtn.addEventListener('click', () => {
+            playlistDetailsOverlay.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        });
+    }
+
+
+
+
+ window.addEventListener('beforeunload', savePlayerState);
+
+
+
+
+   // --- Centralized DOM Element References ---
+    const popupOverlay = document.getElementById('popup-overlay');
+    const popupContainer = document.getElementById('popup-container');
+
+    const initialChoiceScreen = document.getElementById('initial-choice-screen');
+    const loginScreen = document.getElementById('login-screen');
+    const signupScreen = document.getElementById('signup-screen');
+    const phoneSignupScreen = document.getElementById('phone-signup-screen');
+    const phoneLoginScreen = document.getElementById('phone-login-screen');
+    const phoneOtpInputScreen = document.getElementById('phone-otp-input-screen');
+    const otpVerificationScreen = document.getElementById('otp-verification-screen');
+    const emailOtpInputScreen = document.getElementById('email-otp-input-screen');
+    const createPasswordScreen = document.getElementById('create-password-screen');
+    const forgotPasswordInputScreen = document.getElementById('forgot-password-input-screen');
+    const completeProfileScreen = document.getElementById('complete-profile-screen'); // NEW
+
+    // All possible screens - Map them to an easy-to-use object
+    const screens = {
+        'initial-choice-screen': initialChoiceScreen,
+        'login-screen': loginScreen,
+        'signup-screen': signupScreen,
+        'phone-signup-screen': phoneSignupScreen,
+        'phone-login-screen': phoneLoginScreen,
+        'phone-otp-input-screen': phoneOtpInputScreen,
+        'otp-verification-screen': otpVerificationScreen,
+        'email-otp-input-screen': emailOtpInputScreen,
+        'create-password-screen': createPasswordScreen,
+        'forgot-password-input-screen': forgotPasswordInputScreen,
+        'complete-profile-screen': completeProfileScreen // NEW
+    };
+
+    const screenHistory = [];
+
+    // --- Buttons and Inputs ---
+    const closePopupButton = document.querySelector('#popup-container .close-button');
+    const testUserCountBtn = document.getElementById('test-user-count-btn');
+
+    // Initial Choice Screen elements
+    const initialSignupBtn = document.getElementById('initial-signup-btn');
+    const initialLoginLink = document.getElementById('initial-login-link');
+
+    // Login Screen elements
+    const loginBackBtn = document.getElementById('login-back-btn');
+    const loginContinueButton = document.getElementById('login-continue-button');
+    const loginEmailUsernameInput = document.getElementById('login-email-username');
+    const loginPasswordInput = document.getElementById('login-password');
+    const loginPhoneOtpBtn = document.getElementById('login-phone-otp-btn');
+    const loginPhonePasswordBtn = document.getElementById('login-phone-password-btn');
+    const loginSignupLink = document.getElementById('login-signup-link');
+    const forgotPasswordLink = document.getElementById('forgot-password-link');
+
+    // Signup Screen elements
+    const signupBackBtn = document.getElementById('signup-back-btn');
+    const signupNextButton = document.getElementById('signup-next-button');
+    const signupEmailInput = document.getElementById('signup-email');
+    const signupPasswordInput = document.getElementById('signup-password');
+    const signupUsePhoneLink = document.getElementById('signup-use-phone-link');
+    const signupLoginLink = document.getElementById('signup-login-link');
+
+    // Phone Signup Screen elements
+    const phoneSignupBackBtn = document.getElementById('phone-signup-back-btn');
+    const phoneSignupNextButton = document.getElementById('phone-signup-next-button');
+    const phonePhoneNumberSignupInput = document.getElementById('phone-number-signup');
+    const phoneSignupPasswordInput = document.getElementById('phone-signup-password');
+    const phoneSignupUseEmailLink = document.getElementById('phone-signup-use-email-link');
+    const phoneSignupLoginLink = document.getElementById('phone-signup-login-link');
+
+    // Phone Login Screen elements
+    const phoneLoginBackBtn = document.getElementById('phone-login-back-btn');
+    const phoneLoginContinueButton = document.getElementById('phone-login-continue-button');
+    const phonePhoneNumberLoginInput = document.getElementById('phone-number-login');
+    const phoneLoginPasswordInput = document.getElementById('phone-login-password');
+    const phoneLoginSignupLink = document.getElementById('phone-login-signup-link');
+    const phoneForgotPasswordLink = document.getElementById('phone-forgot-password-link');
+
+    // Phone OTP Input Screen elements
+    const phoneOtpBackBtn = document.getElementById('phone-otp-back-btn');
+    const otpPhoneNumberInput = document.getElementById('otp-phone-number-input');
+    const sendPhoneOtpButton = document.getElementById('send-otp-button');
+
+    // OTP Verification Screen elements
+    const otpVerificationBackBtn = document.getElementById('otp-verification-back-btn');
+    const phoneOtpCodeInput = document.getElementById('otp-code-input');
+    const verifyPhoneOtpButton = document.getElementById('verify-otp-button');
+    const resendPhoneOtpButton = document.getElementById('resend-otp-button');
+    const otpVerificationTitle = document.getElementById('otp-verification-title');
+    const otpVerificationMessage = document.getElementById('otp-verification-message');
+
+    // Email OTP specific elements
+    const emailOtpBackBtn = document.getElementById('email-otp-back-btn');
+    const emailOtpDisplayEmail = document.getElementById('email-otp-display-email');
+    const emailOtpCodeInput = document.getElementById('email-otp-code-input');
+    const verifyEmailOtpButton = document.getElementById('verify-email-otp-button');
+    const resendEmailOtpButton = document.getElementById('resend-email-otp-button');
+
+    // Forgot Password Input Screen elements
+    const forgotPasswordBackBtn = document.getElementById('forgot-password-back-btn');
+    const forgotPasswordIdentifierInput = document.getElementById('forgot-password-identifier-input');
+    const sendPasswordResetOtpButton = document.getElementById('send-password-reset-otp-button');
+    const forgotPasswordLoginLink = document.getElementById('forgot-password-login-link');
+
+    // Set Password Screen elements
+    const createPasswordBackBtn = document.getElementById('create-password-back-btn');
+    const newPasswordInput = document.getElementById('new-password');
+    const confirmPasswordInput = document.getElementById('confirm-password');
+    const setNewPasswordButton = document.getElementById('set-new-password-button');
+    const createPasswordTitle = document.getElementById('create-password-title');
+    const createPasswordMessage = document.getElementById('create-password-message');
+
+    // Complete Profile Screen elements (NEW)
+    const completeProfileBackBtn = document.getElementById('complete-profile-back-btn');
+    const profileNameInput = document.getElementById('profile-name-input');
+    const profileDobInput = document.getElementById('profile-dob-input');
+    const completeProfileSubmitButton = document.getElementById('complete-profile-submit-button');
+
+    // Top bar elements for UI update
+    const topSignupBtn = document.getElementById('top-signup-btn');
+    const topLoginBtn = document.getElementById('top-login-btn');
+    const userAvatarContainer = document.getElementById('user-avatar-container');
+    const userAvatar = document.getElementById('user-avatar');
+    const userDropdown = document.getElementById('user-dropdown');
+    const dropdownUsername = document.getElementById('dropdown-username');
+    const dropdownLogoutBtn = document.getElementById('dropdown-logout-btn');
+
+    // NEW: Tooltip element for hover effect
+    let userAvatarTooltip = null;
+
+    /**
+     * Creates or updates a tooltip for the user avatar on hover.
+     * @param {string} userName - The name to display in the tooltip.
+     */
+    const createOrUpdateUserTooltip = (userName) => {
+        if (!userAvatarTooltip) {
+            userAvatarTooltip = document.createElement('div');
+            userAvatarTooltip.id = 'user-avatar-tooltip';
+            userAvatarTooltip.classList.add('user-avatar-tooltip', 'hidden');
+            document.body.appendChild(userAvatarTooltip);
+        }
+        userAvatarTooltip.textContent = userName;
+    };
+
+    /**
+     * Shows the user avatar tooltip.
+     * @param {Event} e - The mouseover event.
+     */
+    const showUserTooltip = (e) => {
+        const userName = localStorage.getItem('loggedInUserName') || localStorage.getItem('loggedInUserEmail') || 'Guest';
+        createOrUpdateUserTooltip(userName);
+
+        const rect = userAvatarContainer.getBoundingClientRect();
+        // Position the tooltip above and centered with the avatar
+        userAvatarTooltip.style.left = `${rect.left + rect.width / 2}px`;
+        userAvatarTooltip.style.top = `${rect.top - userAvatarTooltip.offsetHeight - 5}px`; // Adjust 5px for spacing
+        userAvatarTooltip.classList.remove('hidden');
+        userAvatarTooltip.classList.add('show');
+    };
+
+    /**
+     * Hides the user avatar tooltip.
+     */
+    const hideUserTooltip = () => {
+        if (userAvatarTooltip) {
+            userAvatarTooltip.classList.remove('show');
+            userAvatarTooltip.classList.add('hidden');
+        }
+    };
+
+
+    /**
+     * Gets the ID of the currently active screen.
+     * @returns {string|null} The ID of the active screen, or null if none.
+     */
+    const getActiveScreenId = () => {
+        for (const id in screens) {
+            if (screens[id] && screens[id].classList.contains('active')) {
+                return id;
+            }
+        }
+        return null;
+    };
+
+    /**
+     * Shows a specific screen and hides all others within the popup.
+     * @param {string} screenToShowId - The ID of the screen to show.
+     * @param {boolean} [pushToHistory=true] - Whether to push the current screen to history.
+     */
+    window.showScreen = (screenToShowId, pushToHistory = true) => {
+        const screenToShow = screens[screenToShowId];
+        if (!screenToShow) {
+            console.error(`Screen with ID "${screenToShowId}" not found.`);
+            return;
+        }
+
+        const currentActiveScreenId = getActiveScreenId();
+        if (pushToHistory && currentActiveScreenId && currentActiveScreenId !== screenToShowId) {
+            screenHistory.push(currentActiveScreenId);
+            console.log('Screen pushed to history:', currentActiveScreenId, 'History:', screenHistory);
+        } else if (!pushToHistory) {
+            console.log('Not pushing to history. Current history:', screenHistory);
+        }
+
+        screenToShow.scrollTop = 0;
+
+        if (currentActiveScreenId && currentActiveScreenId !== screenToShowId) {
+            const currentActiveScreen = screens[currentActiveScreenId];
+            if (currentActiveScreen) {
+                currentActiveScreen.classList.remove('active');
+                currentActiveScreen.classList.add('slide-out-left');
+                currentActiveScreen.classList.add('opacity-0', 'pointer-events-none');
+
+                currentActiveScreen.addEventListener('transitionend', function handler() {
+                    currentActiveScreen.classList.remove('slide-out-left');
+                    currentActiveScreen.style.display = 'none';
+                    currentActiveScreen.removeEventListener('transitionend', handler);
+                }, { once: true });
+            }
+        }
+
+        screenToShow.style.display = 'flex';
+        screenToShow.classList.remove('opacity-0', 'pointer-events-none', 'slide-out-left');
+        screenToShow.classList.add('active');
+
+        if (!pushToHistory && currentActiveScreenId) {
+            screenToShow.classList.add('slide-in-right');
+            void screenToShow.offsetWidth;
+            screenToShow.classList.remove('slide-in-right');
+        } else {
+            screenToShow.style.transform = 'translateX(0)';
+        }
+
+        setTimeout(() => {
+            if (popupContainer) {
+                popupContainer.style.height = screenToShow.scrollHeight + 'px';
+            }
+        }, 50);
+    };
+
+    /**
+     * Navigates back to the previous screen in the history stack.
+     */
+    window.goBack = () => {
+        console.log('goBack called. Current history:', screenHistory);
+        if (screenHistory.length > 0) {
+            const prevScreenId = screenHistory.pop();
+            console.log('Popping from history:', prevScreenId, 'New history:', screenHistory);
+            showScreen(prevScreenId, false);
+        } else {
+            console.log('History empty, closing popup.');
+            closePopup();
+        }
+    };
+
+    window.showInitialChoiceScreen = () => {
+        screenHistory.length = 0;
+        console.log('showInitialChoiceScreen: History cleared.');
+        showScreen('initial-choice-screen', false);
+    };
+
+    window.showLoginScreen = () => {
+        showScreen('login-screen');
+        if (phoneOtpTimerInterval) { clearInterval(phoneOtpTimerInterval); }
+        phoneOtpResendAvailableTime = 0;
+    };
+
+    window.showSignupScreen = () => {
+        showScreen('signup-screen');
+        if (phoneOtpTimerInterval) { clearInterval(phoneOtpTimerInterval); }
+        phoneOtpResendAvailableTime = 0;
+    };
+
+    window.showPhoneSignup = () => {
+        showScreen('phone-signup-screen');
+        if (phoneOtpTimerInterval) { clearInterval(phoneOtpTimerInterval); }
+        phoneOtpResendAvailableTime = 0;
+    };
+
+    window.showPhoneLogin = () => {
+        showScreen('phone-login-screen');
+    };
+
+    window.showPhoneOtpInput = () => {
+        showScreen('phone-otp-input-screen');
+        if (phoneOtpTimerInterval) { clearInterval(phoneOtpTimerInterval); }
+        phoneOtpResendAvailableTime = 0;
+    };
+
+    window.showEmailOtpInputScreen = () => {
+        const pendingEmail = localStorage.getItem('pendingEmailVerification');
+        if (pendingEmail) {
+            if (emailOtpDisplayEmail) emailOtpDisplayEmail.textContent = pendingEmail;
+            showScreen('email-otp-input-screen');
+            if (emailOtpTimerInterval) { clearInterval(emailOtpTimerInterval); }
+            emailOtpResendAvailableTime = 0;
+        } else {
+            showMessageBox('No email found for OTP verification. Please try Google login again.', 'error');
+            showInitialChoiceScreen();
+        }
+    };
+
+    window.showCreatePasswordScreen = () => {
+        if (newPasswordInput) newPasswordInput.value = '';
+        if (confirmPasswordInput) confirmPasswordInput.value = '';
+        showScreen('create-password-screen');
+    };
+
+    window.showForgotPasswordInputScreen = () => {
+        if (forgotPasswordIdentifierInput) forgotPasswordIdentifierInput.value = '';
+        showScreen('forgot-password-input-screen');
+    };
+
+    // NEW: Function to show Complete Profile Screen
+    window.showCompleteProfileScreen = () => {
+        if (profileNameInput) profileNameInput.value = '';
+        if (profileDobInput) profileDobInput.value = '';
+        showScreen('complete-profile-screen');
+    };
+
+
+    /**
+     * Opens the main authentication popup.
+     */
+    window.openPopup = () => {
+         pushHistoryStateForPopup();
+        if (popupOverlay) popupOverlay.classList.add('active');
+        popupOverlay.classList.remove('invisible', 'opacity-0');
+        document.body.classList.add('no-scroll');
+        screenHistory.length = 0;
+        console.log('openPopup: History cleared.');
+        showScreen('initial-choice-screen', false);
+    };
+
+    /**
+     * Closes the main authentication popup.
+     */
+    window.closePopup = () => {
+    if (popupOverlay) {
+        popupOverlay.classList.remove('active');
+        popupOverlay.classList.add('invisible', 'opacity-0');
+        popupOverlay.classList.add('hidden'); // <-- ADD THIS LINE
+    }
+    updateBodyForPopups();
+    screenHistory.length = 0;
+        console.log('closePopup: History cleared and popup closed.');
+        for (const id in screens) {
+            const screen = screens[id];
+            if (screen) {
+                screen.classList.remove('active');
+                screen.classList.add('opacity-0', 'pointer-events-none');
+                screen.classList.remove('slide-out-left', 'slide-in-right');
+                screen.style.display = 'none';
+            }
+        }
+        localStorage.removeItem('pendingEmailVerification');
+        localStorage.removeItem('userEmailForPasswordSet');
+        localStorage.removeItem('passwordResetIdentifier');
+        localStorage.removeItem('identifierForProfileCompletion'); // NEW: Clear profile completion identifier
+        hideUserTooltip(); // Hide tooltip when popup closes
+    };
+
+    // --- Initial Load Logic ---
+    updateLoginUI();
+
+    setTimeout(() => {
+        const userToken = localStorage.getItem('userToken');
+         const albumOverlay = document.getElementById('albumOverlay'); // Get the album overlay element
+    if (!userToken && !albumOverlay.classList.contains('show')) { // <-- ADD THIS CHECK
+        openPopup();
+    }
+    }, 2000);
+
+   if (closePopupButton) {
+    closePopupButton.addEventListener('click', () => history.back());
+   }
+
+    if (testUserCountBtn) {
+        testUserCountBtn.addEventListener('click', () => getUserCount(testUserCountBtn));
+    }
+
+    // Top Bar Login/Signup Button Listeners
+    if (topSignupBtn) {
+        topSignupBtn.addEventListener('click', openPopup);
+    }
+    if (topLoginBtn) {
+        topLoginBtn.addEventListener('click', openPopup);
+    }
+
+    // User Avatar and Dropdown Listeners
+    if (userAvatarContainer && userDropdown) {
+        let isDropdownOpen = false;
+
+        userAvatarContainer.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent click from propagating to document
+
+            if (!isDropdownOpen) {
+                userDropdown.classList.add('show');
+                // Ensure dropdown username is updated when opened by click
+                const loggedInUserName = localStorage.getItem('loggedInUserName') || localStorage.getItem('loggedInUserEmail') || 'Guest';
+                if (dropdownUsername) dropdownUsername.textContent = loggedInUserName;
+                
+                isDropdownOpen = true;
+                // Add a click listener to the document to close dropdown when clicking outside
+                document.addEventListener('click', outsideClickHandler);
+            } else {
+                userDropdown.classList.remove('show');
+                isDropdownOpen = false;
+                document.removeEventListener('click', outsideClickHandler);
+            }
+        });
+
+        // Event listeners for the new tooltip on hover
+        userAvatarContainer.addEventListener('mouseover', showUserTooltip);
+        userAvatarContainer.addEventListener('mouseout', hideUserTooltip);
+
+
+        function outsideClickHandler(event) {
+            // Check if the click was outside the avatar container and the dropdown itself
+            const clickedOutside = !userAvatarContainer.contains(event.target) && !userDropdown.contains(event.target);
+            if (clickedOutside) {
+                userDropdown.classList.remove('show');
+                isDropdownOpen = false;
+                document.removeEventListener('click', outsideClickHandler);
+            }
+        }
+    }
+
+if (dropdownLogoutBtn) {
+    dropdownLogoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('userToken');
+        localStorage.removeItem('loggedInUserEmail');
+        localStorage.removeItem('loggedInUserName');
+        localStorage.removeItem(PLAYER_STATE_KEY); // Remove last played song state
+
+        // Add these lines to fully reset the player
+        playingAlbum = null;
+        stopAllPlaybackUI();
+        if (mainPlayBar) mainPlayBar.style.display = 'none';
+        
+        showMessageBox('You have been logged out.', 'info');
+        updateLoginUI();
+        closePopup(); // Close popup after logout
+    });
+}
+
+    // Initial Choice Screen Listeners
+    if (initialSignupBtn) {
+        initialSignupBtn.addEventListener('click', showSignupScreen);
+    }
+    if (initialLoginLink) {
+        initialLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showLoginScreen();
+        });
+    }
+
+    // Login Screen Listeners
+    if (loginBackBtn) {
+        loginBackBtn.addEventListener('click', goBack);
+    }
+    if (loginContinueButton) {
+        loginContinueButton.addEventListener('click', async () => {
+            const identifier = loginEmailUsernameInput ? loginEmailUsernameInput.value.trim() : '';
+            const password = loginPasswordInput ? loginPasswordInput.value.trim() : '';
+
+            if (!identifier || !password) {
+                showMessageBox('Please enter your email/username/phone and password.', 'error');
+                return;
+            }
+            await loginUser(identifier, password, loginContinueButton);
+            if (loginEmailUsernameInput) loginEmailUsernameInput.value = '';
+            if (loginPasswordInput) loginPasswordInput.value = '';
+        });
+    }
+
+    if (forgotPasswordLink) {
+        forgotPasswordLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showForgotPasswordInputScreen();
+        });
+    }
+
+    if (loginPhoneOtpBtn) {
+        loginPhoneOtpBtn.addEventListener('click', showPhoneOtpInput);
+    }
+    if (loginPhonePasswordBtn) {
+        loginPhonePasswordBtn.addEventListener('click', showPhoneLogin);
+    }
+    if (loginSignupLink) {
+        loginSignupLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSignupScreen();
+        });
+    }
+
+    // Signup Screen Listeners
+    if (signupBackBtn) {
+        signupBackBtn.addEventListener('click', goBack);
+    }
+    if (signupNextButton) {
+        signupNextButton.addEventListener('click', async () => {
+            const email = signupEmailInput ? signupEmailInput.value.trim() : '';
+            const password = signupPasswordInput ? signupPasswordInput.value.trim() : '';
+
+            if (!email || !email.includes('@')) {
+                showMessageBox('Please enter a valid email address.', 'error');
+                return;
+            }
+            if (!password || password.length < 6) {
+                showMessageBox('Please enter a password with at least 6 characters.', 'error');
+                return;
+            }
+
+            await registerUser(email, password, null, signupNextButton);
+            if (signupEmailInput) signupEmailInput.value = '';
+            if (signupPasswordInput) signupPasswordInput.value = '';
+        });
+    }
+    if (signupUsePhoneLink) {
+        signupUsePhoneLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showPhoneSignup();
+        });
+    }
+    if (signupLoginLink) {
+        signupLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showLoginScreen();
+        });
+    }
+
+    // Phone Signup Screen Listeners
+    if (phoneSignupBackBtn) {
+        phoneSignupBackBtn.addEventListener('click', goBack);
+    }
+    if (phoneSignupNextButton) {
+        phoneSignupNextButton.addEventListener('click', async () => {
+            const phoneNumber = phonePhoneNumberSignupInput ? phonePhoneNumberSignupInput.value.trim() : '';
+            const password = phoneSignupPasswordInput ? phoneSignupPasswordInput.value.trim() : '';
+
+            if (!phoneNumber) {
+                showMessageBox('Please enter a phone number.', 'error');
+                return;
+            }
+            if (!password || password.length < 6) {
+                showMessageBox('Please enter a password with at least 6 characters.', 'error');
+                return;
+            }
+
+            await registerUser(null, password, phoneNumber, phoneSignupNextButton);
+            if (phonePhoneNumberSignupInput) phonePhoneNumberSignupInput.value = '';
+            if (phoneSignupPasswordInput) phoneSignupPasswordInput.value = '';
+        });
+    }
+    if (phoneSignupUseEmailLink) {
+        phoneSignupUseEmailLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSignupScreen();
+        });
+    }
+    if (phoneSignupLoginLink) {
+        phoneSignupLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showLoginScreen();
+        });
+    }
+
+    // Phone Login Screen Listeners
+    if (phoneLoginBackBtn) {
+        phoneLoginBackBtn.addEventListener('click', goBack);
+    }
+    if (phoneLoginContinueButton) {
+        phoneLoginContinueButton.addEventListener('click', async () => {
+            const phoneNumber = phonePhoneNumberLoginInput ? phonePhoneNumberLoginInput.value.trim() : '';
+            const password = phoneLoginPasswordInput ? phoneLoginPasswordInput.value.trim() : '';
+
+            if (!phoneNumber || !password) {
+                showMessageBox('Please enter a phone number and a password.', 'error');
+                return;
+            }
+            await loginUser(phoneNumber, password, phoneLoginContinueButton);
+            if (phonePhoneNumberLoginInput) phonePhoneNumberLoginInput.value = '';
+            if (phoneLoginPasswordInput) phoneLoginPasswordInput.value = '';
+        });
+    }
+
+    if (phoneForgotPasswordLink) {
+        phoneForgotPasswordLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showForgotPasswordInputScreen();
+        });
+    }
+
+    if (phoneLoginSignupLink) {
+        phoneLoginSignupLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSignupScreen();
+        });
+    }
+
+    // Phone OTP Input Screen Listeners
+    if (phoneOtpBackBtn) {
+        phoneOtpBackBtn.addEventListener('click', goBack);
+    }
+    if (sendPhoneOtpButton) {
+        sendPhoneOtpButton.addEventListener('click', async () => {
+            const phoneNumber = otpPhoneNumberInput ? otpPhoneNumberInput.value.trim() : '';
+            if (!phoneNumber) {
+                showMessageBox('Please enter your phone number to send OTP.', 'error');
+                return;
+            }
+            currentOtpContext = 'login';
+            await sendPhoneOtp(phoneNumber, sendPhoneOtpButton);
+        });
+    }
+
+    // OTP Verification Screen Listeners
+    if (otpVerificationBackBtn) {
+        otpVerificationBackBtn.addEventListener('click', goBack);
+    }
+    if (verifyPhoneOtpButton) {
+        verifyPhoneOtpButton.addEventListener('click', async () => {
+            const otpCode = phoneOtpCodeInput ? phoneOtpCodeInput.value.trim() : '';
+
+            if (!otpCode) {
+                showMessageBox('Please enter the OTP.', 'error');
+                return;
+            }
+
+            if (currentOtpContext === 'passwordReset') {
+                const identifier = localStorage.getItem('passwordResetIdentifier');
+                if (!identifier) {
+                    showMessageBox('No identifier found for password reset. Please restart the process.', 'error');
+                    closePopup();
+                    return;
+                }
+                await verifyPasswordResetOtp(identifier, otpCode, verifyPhoneOtpButton);
+            } else {
+                const phoneNumber = otpPhoneNumberInput ? otpPhoneNumberInput.value.trim() : '';
+                if (!phoneNumber) {
+                    showMessageBox('No phone number found. Please go back and re-enter.', 'error');
+                    return;
+                }
+                await verifyPhoneOtp(phoneNumber, otpCode, verifyPhoneOtpButton);
+            }
+            if (phoneOtpCodeInput) phoneOtpCodeInput.value = '';
+        });
+    }
+    if (resendPhoneOtpButton) {
+        resendPhoneOtpButton.addEventListener('click', async () => {
+            if (phoneOtpResendAvailableTime <= 0) {
+                if (currentOtpContext === 'passwordReset') {
+                    const identifier = localStorage.getItem('passwordResetIdentifier');
+                    if (!identifier) {
+                        showMessageBox('No identifier found to resend OTP. Please restart the process.', 'error');
+                        return;
+                    }
+                    await sendPasswordResetOtp(identifier, resendPhoneOtpButton);
+                } else {
+                    const phoneNumber = otpPhoneNumberInput ? otpPhoneNumberInput.value.trim() : '';
+                    if (!phoneNumber) {
+                        showMessageBox('No phone number found to resend OTP. Please go back and re-enter.', 'error');
+                        return;
+                    }
+                    await sendPhoneOtp(phoneNumber, resendPhoneOtpButton);
+                }
+            } else {
+                showMessageBox('Please wait before resending OTP.', 'info');
+            }
+        });
+    }
+
+    // Email OTP Input Screen Listeners
+    if (emailOtpBackBtn) {
+        emailOtpBackBtn.addEventListener('click', goBack);
+    }
+    if (verifyEmailOtpButton) {
+        verifyEmailOtpButton.addEventListener('click', async () => {
+            const email = localStorage.getItem('pendingEmailVerification');
+            const otpCode = emailOtpCodeInput ? emailOtpCodeInput.value.trim() : '';
+
+            if (!email || !otpCode) {
+                showMessageBox('Email and OTP are required.', 'error');
+                return;
+            }
+            await verifyEmailOtp(email, otpCode, verifyEmailOtpButton);
+            if (emailOtpCodeInput) emailOtpCodeInput.value = '';
+        });
+    }
+    if (resendEmailOtpButton) {
+        resendEmailOtpButton.addEventListener('click', async () => {
+            if (emailOtpResendAvailableTime <= 0) {
+                const email = localStorage.getItem('pendingEmailVerification');
+                if (!email) {
+                    showMessageBox('No email found to resend OTP. Please try Google login again.', 'error');
+                    return;
+                }
+                try {
+                    const response = await fetch(`${BACKEND_BASE_URL}/api/auth/resend-email-otp`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'ngrok-skip-browser-warning': 'true'
+                        },
+                        body: JSON.stringify({ email })
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                        showMessageBox(cleanMessage(data.message), 'success'); // Clean message here
+                        startEmailOtpTimer(120);
+                        resendEmailOtpButton.classList.add('hidden');
+                    } else {
+                        showMessageBox('Failed to resend email OTP: ' + (data.message || 'An unknown error occurred.'), 'error');
+                    }
+                } catch (error) {
+                    console.error('Network error during resend email OTP:', error);
+                    showMessageBox('Network error during resend email OTP. Please check your connection and try again.', 'error');
+                }
+            } else {
+                showMessageBox('Please wait before resending OTP.', 'info');
+            }
+        });
+    }
+
+    // Forgot Password Input Screen Listeners
+    if (forgotPasswordBackBtn) {
+        forgotPasswordBackBtn.addEventListener('click', goBack);
+    }
+    if (sendPasswordResetOtpButton) {
+        sendPasswordResetOtpButton.addEventListener('click', async () => {
+            const identifier = forgotPasswordIdentifierInput ? forgotPasswordIdentifierInput.value.trim() : '';
+            if (!identifier) {
+                showMessageBox('Please enter your email or phone number.', 'error');
+                return;
+            }
+            await sendPasswordResetOtp(identifier, sendPasswordResetOtpButton);
+        });
+    }
+    if (forgotPasswordLoginLink) {
+        forgotPasswordLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showLoginScreen();
+        });
+    }
+
+    // Set Password Screen Listeners
+    if (createPasswordBackBtn) {
+        createPasswordBackBtn.addEventListener('click', goBack);
+    }
+    if (setNewPasswordButton) {
+        setNewPasswordButton.addEventListener('click', async () => {
+            const identifier = localStorage.getItem('userEmailForPasswordSet') || localStorage.getItem('passwordResetIdentifier');
+            const newPassword = newPasswordInput ? newPasswordInput.value.trim() : '';
+            const confirmPassword = confirmPasswordInput ? confirmPasswordInput.value.trim() : '';
+
+            if (!identifier) {
+                showMessageBox('User identifier not found. Please try logging in or resetting password again.', 'error');
+                closePopup();
+                return;
+            }
+
+            if (!newPassword || newPassword.length < 6) {
+                showMessageBox('Please enter a new password with at least 6 characters.', 'error');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showMessageBox('Passwords do not match. Please re-enter.', 'error');
+                return;
+            }
+
+            await setPasswordForUser(identifier, newPassword, setNewPasswordButton);
+            if (newPasswordInput) newPasswordInput.value = '';
+            if (confirmPasswordInput) confirmPasswordInput.value = '';
+        });
+    }
+
+    // NEW: Complete Profile Screen Listeners
+    if (completeProfileBackBtn) {
+        completeProfileBackBtn.addEventListener('click', goBack);
+    }
+    if (completeProfileSubmitButton) {
+        completeProfileSubmitButton.addEventListener('click', async () => {
+            const name = profileNameInput ? profileNameInput.value.trim() : '';
+            const dob = profileDobInput ? profileDobInput.value.trim() : ''; // YYYY-MM-DD format from input type="date"
+
+            if (!name) {
+                showMessageBox('Please enter your name.', 'error');
+                return;
+            }
+            if (!dob) {
+                showMessageBox('Please enter your date of birth.', 'error');
+                return;
+            }
+
+            const identifier = identifierForProfileCompletion; // Get identifier stored from previous step
+            if (!identifier) {
+                showMessageBox('Could not find user identifier for profile completion. Please try logging in again.', 'error');
+                closePopup();
+                return;
+            }
+
+            await completeUserProfile(identifier, name, dob, completeProfileSubmitButton);
+        });
+    }
+
+
+     // Event listeners for UI components
+    const libraryLikedBtn = Array.from(document.querySelectorAll('h3.text-base.font-medium')).find(el => el.textContent.trim() === 'Liked Songs');
+    if (libraryLikedBtn) {
+        libraryLikedBtn.closest('div').addEventListener('click', () => {
+            const likedOverlay = document.getElementById('likedSongsOverlay');
+            if (likedOverlay) {
+                likedOverlay.classList.add('open');
+                likedOverlay.setAttribute('aria-hidden', 'false');
+                fetchAndRenderLikedSongs();
+            }
+        });
+    }
+
+    const closeLikedBtn = document.getElementById('closeLikedSongs');
+    if (closeLikedBtn) {
+        closeLikedBtn.addEventListener('click', () => {
+            const likedOverlay = document.getElementById('likedSongsOverlay');
+            if (likedOverlay) {
+                likedOverlay.classList.remove('open');
+                likedOverlay.setAttribute('aria-hidden', 'true');
+            }
+        });
+    }
+
+    // Wiring up the playbar like button
+    const playbarLikeBtn = document.getElementById('mobile-add-btn') || document.querySelector('.playbar-add-btn');
+    if (playbarLikeBtn && !playbarLikeBtn.dataset.swarifyLikeWired) {
+        playbarLikeBtn.dataset.swarifyLikeWired = 'true';
+        playbarLikeBtn.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            toggleLikeCurrentSong();
+        });
+    }
+    
+    // Wire up the add-to-playlist popup listener
+    const addPopupLikedItem = document.querySelector('#add-popup-overlay .swarify-add-popup-item');
+    if(addPopupLikedItem && addPopupLikedItem.textContent.toLowerCase().includes('liked songs')) {
+        addPopupLikedItem.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            
+            const song = getCurrentSongForLike();
+            if (song) {
+                const likedSong = LikedStore.get().find(x => LikedStore.isSame(x, song));
+                if (likedSong) {
+                    backendUnlikeSong(likedSong);
+                    LikedStore.remove(song);
+                } else {
+                    LikedStore.add(song);
+                    backendLikeSong(song);
+                }
+                updatePlaybarLikeState();
+                updatePopupLikeState();
+            }
+
+            const overlay = document.getElementById('add-popup-overlay');
+            if(overlay) {
+                overlay.classList.remove('active');
+                overlay.style.display = 'none';
+            }
+        });
+    }
+
+    // Call the function to initialize the UI state
+    initializeUIState();
+
+    // --- NEW: Event listeners for the song options popup ---
+    const popupBackdrop = document.getElementById('song-options-popup');
+    const removeBtn = document.getElementById('popup-remove-from-liked');
+    const goBtn = document.getElementById('popup-go-to-album');
+
+    // Listener for the backdrop to close the popup on outside click
+    if (popupBackdrop) {
+        popupBackdrop.addEventListener('click', (e) => {
+            if (e.target === popupBackdrop) {
+                closeSongOptionsPopup();
+            }
+        });
+    }
+    
+    // Listener for the "Remove from this playlist" button
+    if (removeBtn) {
+        removeBtn.addEventListener('click', (e) => {
+            const albumId = e.currentTarget.dataset.albumId;
+            const trackIndex = e.currentTarget.dataset.trackIndex;
+            const likeId = e.currentTarget.dataset.likeId;
+            const songTitle = e.currentTarget.dataset.songTitle;
+            
+            if (albumId && trackIndex) {
+                const songToRemove = { albumId, trackIndex: Number(trackIndex), likeId };
+                LikedStore.remove(songToRemove);
+                backendUnlikeSong(songToRemove);
+                showMessageBox(`Removed from Liked Songs: ${songTitle}`, 'success', 1800);
+            }
+            closeSongOptionsPopup();
+            renderLikedSongsOverlay(); // Re-render the liked songs list
+        });
+    }
+
+    // Listener for "Go to album" button
+    // Listener for "Go to album" button
+if (goBtn) {
+    goBtn.addEventListener('click', (e) => {
+        // Use e.currentTarget to get the button element itself
+        const albumId = e.currentTarget.dataset.albumId; 
+        const albumToOpen = allAlbumsData.find(a => a.id === albumId);
+        
+        if (albumToOpen) {
+            // First, close all other popups, including the song options and liked songs overlays.
+            // This is a more robust approach than calling individual close functions.
+            closeAllPopups();
+            
+            // Then, immediately open the album details.
+            openAlbumDetails(albumToOpen);
+        }
+    });
+}
+
+
+
+      const libraryLink1 = document.querySelector('.unique-footer-nav .unique-nav-item:nth-child(3) a');
+  const popup = document.getElementById('library-popup');
+  const closeBtn = document.getElementById('close-library-popup');
+
+  if(libraryLink1 && popup && closeBtn) {
+    libraryLink1.addEventListener('click', function(e) {
+      e.preventDefault();
+      popup.classList.remove('hidden');
+    });
+
+    closeBtn.addEventListener('click', function() {
+      popup.classList.add('hidden');
+    });
+  }
+
+     // --- CSS Injection ---
+    const addToPlaylistStyle = document.createElement('style');
+    addToPlaylistStyle.innerHTML = `
+        #add-to-playlist-overlay {
+            display: flex; visibility: hidden; opacity: 0;
+            transform: translateY(100%);
+            transition: visibility 0.3s, opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            z-index:10001;
+        }
+        #add-to-playlist-overlay.visible { visibility: visible; opacity: 1; transform: translateY(0); }
+        .playlist-select-checkbox {
+            appearance: none; -webkit-appearance: none; width: 28px; height: 28px; border: 2px solid #727272;
+            border-radius: 50%; outline: none; cursor: pointer; transition: background-color 0.2s, border-color 0.2s;
+            position: relative; flex-shrink: 0;
+        }
+        .playlist-select-checkbox:checked { background-color: #1ED760; border-color: #1ED760; }
+        .playlist-select-checkbox:checked::after {
+            content: '✔'; font-weight: bold; font-size: 16px; color: black; position: absolute;
+            top: 50%; left: 50%; transform: translate(-50%, -51%);
+        }
+    `;
+    document.head.appendChild(addToPlaylistStyle);
+
+    // --- Element References ---
+    const addToPlaylistOverlay = document.getElementById('add-to-playlist-overlay');
+    const closeAddToPlaylistBtn = document.getElementById('close-add-to-playlist-btn');
+    const newPlaylistFromAddScreenBtn = document.getElementById('new-playlist-from-add-screen');
+    const playlistSelectionContainer = document.getElementById('playlist-selection-container');
+    const doneAddingToPlaylistBtn = document.getElementById('done-adding-to-playlist-btn');
+    const popupAddToOtherPlaylistBtn = document.getElementById('popup-add-to-other-playlist');
+    const newPlaylistPopupOverlay = document.getElementById('new-playlist-popup-overlay');
+    const newPlaylistNameInput = document.getElementById('new-playlist-name-input');
+    
+    // --- Event Listeners Setup ---
+    if (popupAddToOtherPlaylistBtn) {
+        popupAddToOtherPlaylistBtn.addEventListener('click', () => {
+            const popupPanel = document.querySelector('.song-options-panel');
+            const songDataString = popupPanel ? popupPanel.dataset.song : null;
+
+            if (songDataString) {
+                const songData = JSON.parse(songDataString);
+                closeSongOptionsPopup();
+                setTimeout(() => window.openAddToPlaylistOverlay(songData), 350);
+            } else { 
+                showMessageBox('Could not find song details to add.', 'error'); 
+                closeSongOptionsPopup();
+            }
+        });
+    }
+
+    if (playlistSelectionContainer) {
+        playlistSelectionContainer.addEventListener('change', () => {
+            if (doneAddingToPlaylistBtn) {
+                doneAddingToPlaylistBtn.disabled = !playlistSelectionContainer.querySelector('input:checked');
+            }
+        });
+    }
+
+    if (doneAddingToPlaylistBtn) {
+        doneAddingToPlaylistBtn.addEventListener('click', async () => {
+            const songDataString = addToPlaylistOverlay.dataset.song;
+            if (!songDataString) return;
+            const song = JSON.parse(songDataString);
+            const checkboxes = playlistSelectionContainer.querySelectorAll('input:checked');
+            if (checkboxes.length === 0) return;
+            doneAddingToPlaylistBtn.disabled = true;
+            doneAddingToPlaylistBtn.textContent = 'Adding...';
+            const promises = Array.from(checkboxes).map(cb => addSongToPlaylist(cb.dataset.playlistId, song));
+            const results = await Promise.all(promises);
+            if (results.some(Boolean)) {
+                showMessageBox(`Added to ${results.filter(Boolean).length} playlist(s).`, 'success');
+                await fetchUserPlaylists();
+            }
+            doneAddingToPlaylistBtn.textContent = 'Done';
+            window.closeAddToPlaylistOverlay();
+        });
+    }
+
+    if (closeAddToPlaylistBtn) {
+        closeAddToPlaylistBtn.addEventListener('click', window.closeAddToPlaylistOverlay);
+    }
+    
+    if (newPlaylistFromAddScreenBtn) {
+        newPlaylistFromAddScreenBtn.addEventListener('click', () => {
+            const songDataString = addToPlaylistOverlay.dataset.song;
+            if (songDataString) {
+                localStorage.setItem('songToAddAfterCreatingPlaylist', songDataString);
+                window.closeAddToPlaylistOverlay();
+                setTimeout(() => {
+                    if (newPlaylistPopupOverlay) {
+                        newPlaylistPopupOverlay.classList.remove('hidden');
+                        newPlaylistPopupOverlay.style.display = 'flex';
+                        newPlaylistPopupOverlay.style.visibility = 'visible';
+                        newPlaylistPopupOverlay.style.opacity = '1';
+                        if (newPlaylistNameInput) {
+                            setTimeout(() => newPlaylistNameInput.focus(), 50);
+                        }
+                    }
+                }, 350);
+            }
+        });
+    }
+
+  const likedSongsOverlay = document.getElementById('likedSongsOverlay');
+    const likedContent = document.getElementById('likedContent');
+    const searchInput1 = document.getElementById('likedSongsSearchInput');
+    const noResultsMessage = document.getElementById('noResultsMessage');
+    const noResultsQuery = document.getElementById('noResultsQuery');
+    const closeSearchBtn = document.getElementById('closeLikedSongsSearch');
+    const clearSearchBtn = document.getElementById('clearLikedSearch');
+    const compactHeader = document.getElementById('likedSongsCompactHeader');
+    const compactCloseBtn = document.getElementById('closeLikedSongsCompact');
+
+    if (!likedContent || !likedSongsOverlay) return;
+
+    // --- Main Scroll Listener ---
+    // This now toggles a class that shows the compact header instead of the search bar.
+    likedContent.addEventListener('scroll', () => {
+        if (likedContent.scrollTop > 60) { // Threshold to switch to compact header
+            likedSongsOverlay.classList.add('is-scrolled');
+        } else {
+            likedSongsOverlay.classList.remove('is-scrolled');
+        }
+    }, false);
+
+    // --- Search Activation & Filtering ---
+    // We add a listener to the document because the search trigger is inside the rendered list.
+    document.body.addEventListener('focusin', (e) => {
+        if (e.target && e.target.id === 'find-in-liked-songs-trigger') {
+            likedSongsOverlay.classList.add('search-active');
+            searchInput1.focus();
+        }
+    });
+
+    closeSearchBtn.addEventListener('click', () => {
+        likedSongsOverlay.classList.remove('search-active');
+        searchInput1.value = '';
+        searchInput1.blur();
+        searchInput1.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    
+    // Attach the main close functionality to BOTH close buttons
+    const closeLikedSongs = () => {
+        const likedOverlay = document.getElementById('likedSongsOverlay');
+        if (likedOverlay) {
+            likedOverlay.classList.remove('open');
+            likedOverlay.setAttribute('aria-hidden', 'true');
+        }
+    };
+   document.getElementById('closeLikedSongs').addEventListener('click', () => history.back());
+if(compactCloseBtn) compactCloseBtn.addEventListener('click', () => history.back());
+
+
+    searchInput1.addEventListener('input', () => {
+        const query = searchInput1.value.toLowerCase().trim();
+        const songs = document.querySelectorAll('#likedSongsList .swarify-liked-row');
+        let found = false;
+
+        songs.forEach(song => {
+            const titleEl = song.querySelector('.song-title');
+            const artistEl = song.querySelector('.song-artist');
+            const title = titleEl ? titleEl.textContent.toLowerCase() : '';
+            const artist = artistEl ? artistEl.textContent.toLowerCase() : '';
+
+            if (title.includes(query) || artist.includes(query)) {
+                song.style.display = 'flex';
+                found = true;
+            } else {
+                song.style.display = 'none';
+            }
+        });
+
+        clearSearchBtn.style.display = (query.length > 0) ? 'block' : 'none';
+
+        if (!found && query.length > 0) {
+            noResultsMessage.style.display = 'block';
+            noResultsQuery.textContent = `No results found for "${searchInput.value}"`;
+        } else {
+            noResultsMessage.style.display = 'none';
+        }
+    });
+
+    clearSearchBtn.addEventListener('click', () => {
+        searchInput1.value = '';
+        searchInput1.focus();
+        searchInput1.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    const likedSongsPlayBtn = document.getElementById('liked-songs-play-btn');
+    if (likedSongsPlayBtn) {
+        likedSongsPlayBtn.addEventListener('click', () => {
+            handleLikedSongsPlayButtonClick();
+        });
+    }
+
+    // Also, ensure the highlight and icon update when playback is toggled globally.
+    document.addEventListener('trackChanged', () => {
+        highlightPlayingLikedSong();
+        updateLikedSongsPlayButtonIcon();
+    });
+
+    // It is crucial to update the liked songs UI state whenever any track ends
+    // or playback is toggled.
+    const audioPlayer = document.getElementById('audio-player');
+    if(audioPlayer) {
+        audioPlayer.addEventListener('play', () => {
+             highlightPlayingLikedSong();
+             updateLikedSongsPlayButtonIcon();
+        });
+        audioPlayer.addEventListener('pause', () => {
+             highlightPlayingLikedSong();
+             updateLikedSongsPlayButtonIcon();
+        });
+        audioPlayer.addEventListener('ended', () => {
+            isPlayingFromLikedSongs = false; // Reset context when a song ends
+            highlightPlayingLikedSong();
+            updateLikedSongsPlayButtonIcon();
+        });
+    }
+    // --- Data for the Carousel ---
   const carouselSongs = [
     {
       albumId: '6871f28b19d863c7966eeef3',
@@ -9260,21 +9378,19 @@ audio.addEventListener('play', updateAllPlayButtonStates);
 
 
 
-});
 
 
-// --- START: Record Breaking Albums Popup Logic (Final Code) ---
-document.addEventListener('DOMContentLoaded', () => {
+
     // Get references to all the necessary elements
     const listenNowBtn = document.querySelector('.listen-now-btn');
-    const popupOverlay = document.getElementById('record-breaking-popup-overlay');
+    const popupOverlay1 = document.getElementById('record-breaking-popup-overlay');
     const closePopupBtn = document.getElementById('close-record-breaking-popup');
     const popupGrid = document.getElementById('record-breaking-popup-grid');
 
     // Function to open the popup
     const openRecordBreakingPopup = () => {
          pushHistoryStateForPopup();
-        if (!popupOverlay || !popupGrid) return;
+        if (!popupOverlay1 || !popupGrid) return;
 
         // 1. Clear any old content from the grid
         popupGrid.innerHTML = '';
@@ -9313,16 +9429,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // 5. Show the popup
-        popupOverlay.classList.remove('hidden');
-        popupOverlay.classList.add('flex'); // Use flex to center the content
+        popupOverlay1.classList.remove('hidden');
+        popupOverlay1.classList.add('flex'); // Use flex to center the content
         document.body.classList.add('popup-active'); // Prevent background scrolling
     };
 
     // Function to close the popup
     const closeRecordBreakingPopup = () => {
-        if (!popupOverlay) return;
-        popupOverlay.classList.add('hidden');
-        popupOverlay.classList.remove('flex');
+        if (!popupOverlay1) return;
+        popupOverlay1.classList.add('hidden');
+        popupOverlay1.classList.remove('flex');
         document.body.classList.remove('popup-active');
     };
 
@@ -9334,31 +9450,30 @@ document.addEventListener('DOMContentLoaded', () => {
         closePopupBtn.addEventListener('click', closeRecordBreakingPopup);
     }
     // Also close the popup if the user clicks on the dark background
-    if (popupOverlay) {
-        popupOverlay.addEventListener('click', (e) => {
-            if (e.target === popupOverlay) {
+    if (popupOverlay1) {
+        popupOverlay1.addEventListener('click', (e) => {
+            if (e.target === popupOverlay1) {
                 closeRecordBreakingPopup();
             }
         });
     }
-});
-// --- END: Record Breaking Albums Popup Logic ---
 
-// --- START: Record Breaking Albums Popup Logic (Final Code) ---
-document.addEventListener('DOMContentLoaded', () => {
+
+
+
     // Get references to all the necessary elements
-    const listenNowBtn = document.querySelector('.listen-now-btn2');
-    const popupOverlay = document.getElementById('record-breaking-popup-overlay2');
-    const closePopupBtn = document.getElementById('close-record-breaking-popup2');
-    const popupGrid = document.getElementById('record-breaking-popup-grid2');
+    const listenNowBtn2 = document.querySelector('.listen-now-btn2');
+    const popupOverlay2 = document.getElementById('record-breaking-popup-overlay2');
+    const closePopupBtn2 = document.getElementById('close-record-breaking-popup2');
+    const popupGrid2 = document.getElementById('record-breaking-popup-grid2');
 
     // Function to open the popup
     const openRecordBreakingPopup2 = () => {
          pushHistoryStateForPopup();
-        if (!popupOverlay || !popupGrid) return;
+        if (!popupOverlay2 || !popupGrid2) return;
 
         // 1. Clear any old content from the grid
-        popupGrid.innerHTML = '';
+        popupGrid2.innerHTML = '';
 
         // 2. Find the original mini-carousel albums
         const originalCards = document.querySelectorAll('#record-breaking-albums-container2 .mini-album-card2');
@@ -9394,158 +9509,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // 5. Show the popup
-        popupOverlay.classList.remove('hidden');
-        popupOverlay.classList.add('flex'); // Use flex to center the content
+        popupOverlay2.classList.remove('hidden');
+        popupOverlay2.classList.add('flex'); // Use flex to center the content
         document.body.classList.add('popup-active2'); // Prevent background scrolling
     };
 
     // Function to close the popup
     const closeRecordBreakingPopup2 = () => {
-        if (!popupOverlay) return;
-        popupOverlay.classList.add('hidden');
-        popupOverlay.classList.remove('flex');
+        if (!popupOverlay2) return;
+        popupOverlay2.classList.add('hidden');
+        popupOverlay2.classList.remove('flex');
         document.body.classList.remove('popup-active2');
     };
 
     // Attach the event listeners
-    if (listenNowBtn) {
-        listenNowBtn.addEventListener('click', openRecordBreakingPopup2);
+    if (listenNowBtn2) {
+        listenNowBtn2.addEventListener('click', openRecordBreakingPopup2);
     }
-    if (closePopupBtn) {
-        closePopupBtn.addEventListener('click', closeRecordBreakingPopup2);
+    if (closePopupBtn2) {
+        closePopupBtn2.addEventListener('click', closeRecordBreakingPopup2);
     }
     // Also close the popup if the user clicks on the dark background
-    if (popupOverlay) {
-        popupOverlay.addEventListener('click', (e) => {
+    if (popupOverlay2) {
+        popupOverlay2.addEventListener('click', (e) => {
             if (e.target === popupOverlay) {
                 closeRecordBreakingPopup2();
             }
         });
     }
+
+    window.addEventListener('popstate', handleBackButton);
 });
-// --- END: Record Breaking Albums Popup Logic ---
-// =======================================================
-// MOBILE BACK BUTTON & HISTORY MANAGEMENT
-// =======================================================
-
-/**
- * A helper function to check if a popup is currently visible.
- * It checks for common visibility patterns like 'hidden' classes or 'active' states.
- * @param {string} elementId - The ID of the popup element to check.
- * @returns {boolean} - True if the popup is visible, false otherwise.
- */
-function isPopupVisible(elementId) {
-    const element = document.getElementById(elementId);
-    if (!element) return false;
-    
-    // Check for common 'hidden' classes used throughout your project
-    if (element.classList.contains('hidden') || element.classList.contains('unique-hidden')) {
-        return false;
-    }
-    
-    // Check for 'active' or 'open' classes that indicate visibility
-    if (element.classList.contains('active') || element.classList.contains('open') || element.classList.contains('show')) {
-        return true;
-    }
-    
-    // Check the computed style for 'display' or 'visibility' properties
-    const style = window.getComputedStyle(element);
-    if (style.display === 'none' || style.visibility === 'hidden') {
-        return false;
-    }
-    
-    // A specific check for the main authentication popup
-    if (elementId === 'popup-overlay' && element.classList.contains('invisible')) {
-        return false;
-    }
-
-    // Fallback assumption: if no hiding rules are met, it might be visible.
-    // This covers cases where an element is shown by just removing a 'hidden' class without adding an 'active' one.
-    return !element.classList.contains('hidden');
-}
-
-/**
- * The main handler for the 'popstate' event (back button press).
- * It checks for open popups in order of priority and closes the top-most one.
- */
-// =======================================================
-// MOBILE BACK BUTTON & HISTORY MANAGEMENT (Corrected)
-// =======================================================
-
-// A helper to check if a popup is currently visible to the user.
-function isPopupVisible(elementId) {
-    const element = document.getElementById(elementId);
-    if (!element) return false;
-    
-    // Check for common 'hidden' classes used in the project
-    if (element.classList.contains('hidden') || element.classList.contains('unique-hidden') || element.classList.contains('invisible')) {
-        return false;
-    }
-    
-    // Check for 'active', 'open', or 'show' classes that indicate visibility
-    if (element.classList.contains('active') || element.classList.contains('open') || element.classList.contains('show')) {
-        return true;
-    }
-    
-    // Check computed style for display property
-    const style = window.getComputedStyle(element);
-    if (style.display === 'none' || style.visibility === 'hidden') {
-        return false;
-    }
-
-    return true; // Assume visible if no hiding rules are met.
-}
-
-/**
- * The main handler for the 'popstate' event (back button press).
- * This function is now the single source of truth for closing popups via back navigation.
- */
-function handleBackButton() {
-    console.log("Back button event detected. Checking for open popups...");
-
-    // This array defines the popups and their direct closing functions in order of priority.
-    const popupsToClose = [
-        { id: 'song-options-popup', closeFunc: closeSongOptionsPopup },
-        { id: 'add-to-playlist-overlay', closeFunc: window.closeAddToPlaylistOverlay },
-        { id: 'new-playlist-popup-overlay', closeFunc: () => document.getElementById('new-playlist-popup-overlay').classList.add('hidden') },
-        { id: 'mobile-search-overlay', closeFunc: () => document.getElementById('unique-search-popup').classList.add('unique-hidden') },
-        { id: 'unique-search-popup', closeFunc: () => document.getElementById('unique-search-popup').classList.add('unique-hidden') },
-        { id: 'full-screen-player', closeFunc: hideFullScreenPlayer },
-        { id: 'playlist-details-overlay', closeFunc: closePlaylistDetailsOverlay },
-        { id: 'likedSongsOverlay', closeFunc: () => document.getElementById('likedSongsOverlay').classList.remove('open') },
-        { id: 'record-breaking-popup-overlay', closeFunc: () => {
-            const popup = document.getElementById('record-breaking-popup-overlay');
-            if (popup) popup.classList.remove('flex');
-        }},
-        { id: 'record-breaking-popup-overlay2', closeFunc: () => {
-            const popup = document.getElementById('record-breaking-popup-overlay2');
-            if (popup) popup.classList.remove('flex');
-        }},
-        { id: 'library-popup', closeFunc: () => document.getElementById('library-popup').classList.add('hidden') },
-        { id: 'albumOverlay', closeFunc: closeAlbumOverlay },
-        { id: 'popup-overlay', closeFunc: closePopup } // Main auth popup
-    ];
-
-    // Find the first visible popup in our priority list and close it.
-    for (const popup of popupsToClose) {
-        if (isPopupVisible(popup.id)) {
-            console.log(`Closing popup via history: ${popup.id}`);
-            popup.closeFunc();
-            return; // Stop after closing the top-most popup.
-        }
-    }
-    console.log("No managed popups were open. Allowing default browser behavior.");
-}
-
-// Attach the handler to the window's popstate event.
-window.addEventListener('popstate', handleBackButton);
-
-/**
- * Pushes a new state to the browser's history.
- * This should be called every time a popup or overlay is opened.
- */
-function pushHistoryStateForPopup() {
-    // We push a simple state object to create a new entry in the browser's history.
-    history.pushState({ swarifyPopup: true }, "");
-    console.log("Pushed history state for a new popup.");
-}

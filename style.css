@@ -13473,4 +13473,70 @@ bottom:-11px;
     /* Removes the border completely */
     border: none !important;
 }
+.album-overlay{
+    top:0px;
+}
+
+
+
+
+
+/* ======================================================= */
+/* SMOOTH ALBUM OVERLAY TRANSITIONS                        */
+/* ======================================================= */
+
+.album-overlay {
+    /* Base state: off-screen to the right and invisible */
+    transform: translateX(100%);
+    opacity: 1; /* Start with opacity 1 to see the slide */
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), 
+                opacity 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    will-change: transform, opacity; /* Performance hint for the browser */
+}
+
+/* State when the overlay is active/visible on screen */
+.album-overlay.is-active {
+    transform: translateX(0);
+}
+
+/* State for an overlay that is being covered by a new one */
+/* It slides slightly to the left and fades back to create depth */
+.album-overlay.is-covered {
+    transform: translateX(-20%);
+    opacity: 0.5;
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), 
+                opacity 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+
+
+/* ======================================================= */
+/* SMOOTH ALBUM OVERLAY TRANSITIONS                        */
+/* ======================================================= */
+
+.album-overlay {
+    /* Base state: off-screen to the right */
+    transform: translateX(100%);
+    opacity: 1;
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    will-change: transform; /* Performance hint for the browser */
+}
+
+/* State when the overlay is active/visible on screen */
+.album-overlay.active {
+    transform: translateX(0);
+}
+
+/* NEW: State for an overlay that is animating OUT to the right */
+.album-overlay.is-exiting {
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Add this to style.css */
+#album-overlay-scroll-content.is-transitioning {
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
 

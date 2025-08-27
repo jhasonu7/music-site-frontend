@@ -14,6 +14,7 @@
 // ADD THIS at the top of your script
 const imageCache = new Set();
 
+
 function preloadImage(url) {
     if (!url || imageCache.has(url)) {
         return; // Don't preload if URL is invalid or already cached
@@ -1022,17 +1023,24 @@ async function loadLatestLikedSongAsFallback() {
 
 // REPLACE your existing updatePlayerUI function with this entire block
 
+// in script.js
+
+// REPLACE your existing updatePlayerUI function with this entire block
+
 async function updatePlayerUI() {
     console.log("updatePlayerUI called.");
 
     // --- Get references to all UI elements ---
     const fullScreenControls = document.querySelector('.full-screen-controls');
-    // CORRECTED SELECTOR: Using the correct class for the progress section
     const fullScreenProgress = document.querySelector('.full-screen-progress-section');
     const fullScreenBottomActions = document.querySelector('.full-screen-bottom-actions');
     const fullScreenEmbedInfo = document.getElementById('full-screen-embed-info');
-    // ADDED: Get a reference to the main playbar's control group by its ID
     const mainPlayerControls = document.getElementById('player-controls-group');
+
+    // --- ADDED: References to the dynamic header text elements ---
+    const fullScreenContextText = document.getElementById('full-screen-context-text');
+    const fullScreenSourceText = document.getElementById('full-screen-source-text');
+    // --- END OF ADDITION ---
 
     if (!playingAlbum) {
         mainPlayBar.style.display = 'none';
@@ -1047,30 +1055,19 @@ async function updatePlayerUI() {
 
     const isEmbeddedAlbum = playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc;
 
-    // --- NEW LOGIC: Toggle UI based on whether the album is embedded ---
     if (isEmbeddedAlbum) {
-        // --- Full-Screen Player: Hide controls ("reflectors") and show "View Player" info ---
         if (fullScreenControls) fullScreenControls.classList.add('hidden');
         if (fullScreenProgress) fullScreenProgress.classList.add('hidden');
         if (fullScreenBottomActions) fullScreenBottomActions.classList.add('hidden');
         if (fullScreenEmbedInfo) fullScreenEmbedInfo.classList.remove('hidden');
-
-        // --- Main Playbar: Hide the central control buttons (play/pause, next, etc.) ---
         if (mainPlayerControls) mainPlayerControls.classList.add('hidden');
-        
-        // Disable all player controls since they don't apply
         togglePlayerControls(false);
     } else {
-        // --- Full-Screen Player: Show controls and hide "View Player" info ---
         if (fullScreenControls) fullScreenControls.classList.remove('hidden');
         if (fullScreenProgress) fullScreenProgress.classList.remove('hidden');
         if (fullScreenBottomActions) fullScreenBottomActions.classList.remove('hidden');
         if (fullScreenEmbedInfo) fullScreenEmbedInfo.classList.add('hidden');
-
-        // --- Main Playbar: Show the central control buttons ---
         if (mainPlayerControls) mainPlayerControls.classList.remove('hidden');
-        
-        // Enable all player controls for direct playback
         togglePlayerControls(true);
     }
 
@@ -1098,7 +1095,6 @@ async function updatePlayerUI() {
             displayCoverArt = currentTrack.img || playingAlbum.coverArt || displayCoverArt;
             displayCoverArtLarge = currentTrack.img || playingAlbum.coverArt || displayCoverArtLarge;
 
-            // --- Real-time update logic ---
             if (progressBarInterval) clearInterval(progressBarInterval);
             let saveStateCounter = 0;
             progressBarInterval = setInterval(async () => {
@@ -1129,7 +1125,6 @@ async function updatePlayerUI() {
                     currentDuration = parseDurationToSeconds(currentTrack.duration);
                 }
                 
-                // Update Main Play Bar
                 if (currentTimeSpan) currentTimeSpan.textContent = formatTime(currentProgress);
                 if (totalTimeSpan) totalTimeSpan.textContent = formatTime(currentDuration);
                 if (progressBar) {
@@ -1137,7 +1132,6 @@ async function updatePlayerUI() {
                     progressBar.value = currentProgress;
                 }
 
-                // Update Full-Screen Player
                 if (fullScreenCurrentTime) fullScreenCurrentTime.textContent = formatTime(currentProgress);
                 if (fullScreenTotalTime) fullScreenTotalTime.textContent = formatTime(currentDuration);
                 if (fullScreenProgressBar) {
@@ -1147,7 +1141,6 @@ async function updatePlayerUI() {
                     fullScreenProgressBar.style.setProperty('--progress-percent', `${progressPercent}%`);
                 }
 
-                // Update Play/Pause Icons
                 if (playIcon && pauseIcon) {
                     playIcon.classList.toggle('hidden', playerIsPlaying);
                     pauseIcon.classList.toggle('hidden', !playerIsPlaying);
@@ -1157,11 +1150,10 @@ async function updatePlayerUI() {
                     fullPauseIcon.classList.toggle('hidden', !playerIsPlaying);
                 }
 
-                // Save state periodically
                 if (playerIsPlaying) {
                     lastKnownPlaybackPosition = currentProgress;
                     saveStateCounter++;
-                    if (saveStateCounter >= 5) { // Save every 5 seconds
+                    if (saveStateCounter >= 5) {
                         savePlayerState();
                         saveStateCounter = 0;
                     }
@@ -1179,10 +1171,24 @@ async function updatePlayerUI() {
     if (fullScreenAlbumArt) fullScreenAlbumArt.src = displayCoverArtLarge;
     if (fullScreenSongTitleLarge) fullScreenSongTitleLarge.textContent = displayTitle;
     if (fullScreenArtistNameLarge) fullScreenArtistNameLarge.textContent = displayArtist;
-    if (fullScreenSongTitle) fullScreenSongTitle.textContent = displayTitle;
-    if (fullScreenArtistName) fullScreenArtistName.textContent = displayArtist;
 
-    // Logic for setting background color
+    // --- THIS IS THE FIX ---
+    // The following lines were added to ensure the header text is always updated.
+    // It correctly uses the `playingAlbum` data, which is accurate for both
+    // embedded and non-embedded content at this stage.
+    if (fullScreenContextText) {
+        if (isEmbeddedAlbum) {
+            fullScreenContextText.textContent = 'PLAYING FROM EMBEDDED PLAYER';
+        } else {
+            fullScreenContextText.textContent = 'PLAYING FROM ALBUM';
+        }
+    }
+    if (fullScreenSourceText) {
+        // The source is always the album's title.
+        fullScreenSourceText.textContent = playingAlbum.title || 'Unknown Album';
+    }
+    // --- END OF FIX ---
+    
     const setBackgroundColor = () => {
         try {
             if (!fullScreenAlbumArt.complete || typeof fullScreenAlbumArt.naturalWidth === "undefined" || fullScreenAlbumArt.naturalWidth === 0) return;
@@ -1215,7 +1221,6 @@ async function updatePlayerUI() {
     updatePlaybarLikeState();
     updatePopupLikeState();
 }
-
 /**
  * Updates the icons of all compact play buttons in the playlist.
  */
@@ -2435,9 +2440,7 @@ async function openAlbumDetails(albumData, highlightTrackTitle = null) {
  * @param {Object} albumToRecommendFor - The album object to get recommendations for.
  */
 
-// REPLACE your existing populateAlbumOverlayUI function with this entire block
-
-// REPLACE your existing populateAlbumOverlayUI function with this clean version
+// In script.js, find and REPLACE the entire populateAlbumOverlayUI function with this.
 
 async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = true) {
     console.log(`Populating UI for album: "${albumData.title}"`);
@@ -2447,6 +2450,14 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
 
     const albumDetailsContent = document.getElementById('album-overlay-scroll-content');
     const albumFullEmbedContainer = document.getElementById('album-full-embed-container');
+    
+    // --- START: NEW LOGIC FOR MANAGING THE COMPACT HEADER ---
+    // Remove any old compact header to prevent duplicates
+    const oldCompactHeader = document.getElementById('embedded-compact-header');
+    if (oldCompactHeader) {
+        oldCompactHeader.remove();
+    }
+    // --- END: NEW LOGIC ---
 
     if (albumDetailsContent) albumDetailsContent.scrollTop = 0;
 
@@ -2466,9 +2477,7 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
 
         if (wrapper) {
             wrapper.style.display = 'block';
-            console.log(`Showing cached iframe wrapper for album: ${albumData.title}`);
         } else {
-            console.log(`Creating new iframe wrapper for embedded album: ${albumData.title}`);
             wrapper = document.createElement('div');
             wrapper.dataset.albumId = albumData.id;
             wrapper.style.cssText = 'width: 100%; height: 100%; overflow-y: auto; position: relative;';
@@ -2480,13 +2489,10 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
                     <div class="section-heading"><h1>You might also like</h1></div>
                     <div class="cardcontainer" id="embedded-similar-albums-container"></div>
                 </div>`;
-
-            // The wrapper now only contains the essential content
+     
             wrapper.innerHTML = embedContent + similarSectionHTML;
-
             albumFullEmbedContainer.appendChild(wrapper);
             iframeCache[albumData.id] = wrapper;
-
             fetchAndDisplayEmbeddedSimilarAlbums(albumData, wrapper);
         }
 
@@ -2494,16 +2500,71 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
         if (oldMask) oldMask.remove();
 
         const topMaskHTML = `<div id="embedded-overlay-top-mask">
-                                <img src="${albumData.coverArt || 'https://placehold.co/80x80/4a4a4a/ffffff?text=Album'}" alt="Album Cover" class="embedded-header-cover">
-                                <div class="embedded-header-info">
-                                    <div class="embedded-header-title">${albumData.title || 'Embedded Content'}</div>
-                                    <div class="embedded-header-artist">${albumData.artist || 'Various Artists'}</div>
-                                </div>
-                             </div>`;
+                        <button class="embedded-header-back-btn close-overlay">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12l4.58-4.59z"/></svg>
+                        </button>
+                        <img src="${albumData.coverArt || 'https://placehold.co/300x300/4a4a4a/ffffff?text=Album'}" alt="Album Cover" class="embedded-header-cover">
+                        <div class="embedded-header-info">
+                            <div class="embedded-header-title">${albumData.title || 'Embedded Content'}</div>
+                            <div class="embedded-header-artist">${albumData.artist || 'Various Artists'}</div>
+                            <div class="embedded-header-meta">Album • ${albumData.year || '2024'} • ${albumData.tracks ? albumData.tracks.length : 1} songs</div>
+                        </div>
+                     </div>`;
         wrapper.insertAdjacentHTML('afterbegin', topMaskHTML);
 
+        // --- START: CORRECTED COMPACT HEADER CREATION ---
+        // Create and inject the compact header INSIDE the main album overlay
+        const compactHeader = document.createElement('div');
+        compactHeader.id = 'embedded-compact-header';
+        compactHeader.innerHTML = `
+            <button class="embedded-compact-header-back-btn close-overlay">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12l4.58-4.59z"/></svg>
+            </button>
+            <span class="embedded-compact-header-title">${albumData.title || 'Embedded Content'}</span>
+        `;
+     wrapper.insertAdjacentElement('afterbegin', compactHeader);
+        
+        const topMask = wrapper.querySelector('#embedded-overlay-top-mask');
+        const coverImg = topMask.querySelector('.embedded-header-cover');
+        coverImg.crossOrigin = "Anonymous";
+
+        const setDynamicBackgroundColor = () => {
+            try {
+                const colorThief = new ColorThief();
+                const dominantColor = colorThief.getColor(coverImg);
+                const baseColor = createAdvancedBackgroundColor(dominantColor);
+                const baseRgb = `rgb(${baseColor[0]}, ${baseColor[1]}, ${baseColor[2]})`;
+                const darkerColor = baseColor.map(c => Math.max(0, c - 70));
+                const darkerRgb = `rgb(${darkerColor[0]}, ${darkerColor[1]}, ${darkerColor[2]})`;
+                const pageDarkRgb = `rgb(18, 18, 18)`;
+
+                const gradient = `linear-gradient(to bottom, ${baseRgb}, ${darkerRgb} 60%, ${pageDarkRgb} 95%)`;
+                topMask.style.backgroundImage = gradient;
+                compactHeader.style.backgroundColor = baseRgb;
+            } catch (e) {
+                console.error("ColorThief error:", e);
+                const fallbackGradient = `linear-gradient(to bottom, rgb(50,50,50), rgb(18,18,18) 95%)`;
+                topMask.style.backgroundImage = fallbackGradient;
+                compactHeader.style.backgroundColor = 'rgb(50,50,50)';
+            }
+        };
+
+        if (coverImg.complete) {
+            setDynamicBackgroundColor();
+        } else {
+            coverImg.onload = setDynamicBackgroundColor;
+        }
+
+        setupEmbeddedScrollListener(wrapper);
+          
+         setTimeout(() => {
+            checkEmbeddedHeaderVisibility(wrapper);
+        }, 0); // 50ms is usually enough time.
+        // --- END OF FIX -
+
+        // --- END: CORRECTED COMPACT HEADER CREATION ---
     } else {
-        // Logic for regular, non-embedded albums (this remains unchanged)
+        // This is the logic for regular, non-embedded albums. It remains the same.
         albumDetailsContent.style.display = 'block';
         albumFullEmbedContainer.style.display = 'none';
         albumOverlay.classList.remove('embedded-view');
@@ -2542,7 +2603,6 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
         togglePlayerControls(true);
     }
 
-    // Attach event listeners for play/close buttons
     const albumPlayButton = document.getElementById('album-play');
     if (albumPlayButton) {
         albumPlayButton.onclick = () => {
@@ -2567,6 +2627,56 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
     setupAlbumScrollListener();
 }
 
+// in script.js
+
+/**
+ * Checks the scroll position of the embedded album view and shows/hides the compact header.
+ * @param {HTMLElement} scrollWrapper - The scrollable div containing the embedded content.
+ */
+function checkEmbeddedHeaderVisibility(scrollWrapper) {
+    if (!scrollWrapper) return;
+    
+    // Find the main header mask (with the large cover art) inside the specific wrapper
+    const topMask = scrollWrapper.querySelector('#embedded-overlay-top-mask');
+    // The compact header is inside the wrapper as well
+    const compactHeader = scrollWrapper.querySelector('#embedded-compact-header');
+
+    if (!topMask || !compactHeader) {
+        return;
+    }
+
+    const topMaskRect = topMask.getBoundingClientRect();
+    
+    // Show the compact header if the bottom of the main header has scrolled
+    // above the 60px mark from the top of the viewport.
+    if (topMaskRect.bottom < 60) {
+        compactHeader.classList.add('visible');
+    } else {
+        compactHeader.classList.remove('visible');
+    }
+}
+
+// ADD THIS NEW FUNCTION to script.js
+
+/**
+ * Sets up the scroll listener for the embedded album view to show/hide the compact header.
+ * @param {HTMLElement} scrollWrapper - The scrollable div containing the embedded content.
+ */
+function setupEmbeddedScrollListener(scrollWrapper) {
+    // Remove any existing listener from this wrapper to prevent duplicates
+    scrollWrapper.removeEventListener('scroll', handleEmbeddedScroll);
+    // Add the new listener
+    scrollWrapper.addEventListener('scroll', handleEmbeddedScroll);
+}
+
+/**
+ * The actual scroll handler function.
+ * @param {Event} event - The scroll event object.
+ */
+function handleEmbeddedScroll(event) {
+    // The event handler now simply calls our reusable logic function
+    checkEmbeddedHeaderVisibility(event.currentTarget);
+}
 // REPLACE your existing restoreAlbumDetails function with this one
 
 async function restoreAlbumDetails(previousState) {
@@ -2764,7 +2874,12 @@ async function handleAlbumPlayButtonClick() {
 async function closeAlbumOverlay(instant = false) {
     const scrollContent = document.getElementById('album-overlay-scroll-content');
     const albumFullEmbedContainer = document.getElementById('album-full-embed-container'); // Get the container
-
+        // --- ADD THIS BLOCK ---
+    const compactHeader = document.getElementById('embedded-compact-header');
+    if (compactHeader) {
+        compactHeader.remove();
+    }
+    // --- END OF ADDED BLOCK ---
     // --- Case 1: Navigating BACK to a previous album in history ---
     if (albumHistoryStack.length > 0) {
         const previousState = albumHistoryStack.pop();

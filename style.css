@@ -13627,6 +13627,165 @@ bottom:-11px;
 }
 
 
+/* ======================================================= */
+/* MOBILE & TABLET STYLES FOR EMBEDDED ALBUM HEADER        */
+/* ======================================================= */
+
+@media (max-width: 768px) {
+
+    /* --- Main Header Mask Container --- */
+    #embedded-overlay-top-mask {
+        flex-direction: column;   /* Stack content vertically */
+        align-items: flex-start;  /* Left-align the content block */
+        justify-content: flex-start; /* Align content to the top */
+        text-align: left;         /* Ensure text inside is left-aligned */
+        padding: 60px 20px 20px 20px; /* Add top padding for the back button */
+        height: auto;             /* Let height be determined by content */
+     background-image: linear-gradient(to bottom, transparent, #121212); /* Default gradient for fallback */
+    }
+
+    /* --- Back Button --- */
+    .embedded-header-back-btn {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background-color: rgba(0, 0, 0, 0.7);
+        border: none;
+        border-radius: 50%;
+        color: white;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 1005; /* Ensure it's on top */
+    }
+
+    /* --- Large Cover Art --- */
+    .embedded-header-cover {
+        width: 100%;              /* Make image span the container width */
+        max-width: 350px;         /* Limit max size on wider tablets */
+        height: auto;             /* Maintain aspect ratio */
+        aspect-ratio: 1 / 1;      /* Keep it square */
+        margin: 0 auto 24px auto; /* Center the image horizontally */
+    }
+
+    /* --- Text Info Container --- */
+    .embedded-header-info {
+        width: 100%; /* Ensure text container is full-width */
+        text-align: left;
+    }
+    
+    .embedded-header-title {
+        font-size: 1.75rem; /* ~28px */
+        font-weight: 900;
+    }
+    
+    .embedded-header-artist {
+        font-size: 1rem; /* ~16px */
+        color: #b3b3b3;
+    }
+
+    .embedded-header-meta {
+        font-size: 0.875rem; /* ~14px */
+        color: #b3b3b3;
+        margin-top: 8px;
+    }
+}
+
+#album-full-embed-container iframe{
+    top:290px;
+    position: relative;
+}
+
+#embedded-similar-albums-section{
+    margin-top:390px;
+}
+
+/* ======================================================= */
+/* HIDE SCROLLBAR ON MOBILE EMBEDDED ALBUM VIEW (Corrected)  */
+/* ======================================================= */
+@media (max-width: 768px) {
+    /*
+      This is the corrected selector. It targets the scrolling <div>
+      that is created by JavaScript *inside* the main container.
+    */
+    #album-full-embed-container > div {
+        /* For Firefox */
+        scrollbar-width: none;
+        /* For Internet Explorer and Edge */
+        -ms-overflow-style: none;
+    }
+
+    /* For Chrome, Safari, and other WebKit browsers */
+    #album-full-embed-container > div::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+
+
+/* In style.css, find and REPLACE the old #embedded-compact-header styles with these. */
+
+/* --- Compact Header for Embedded View --- */
+#embedded-compact-header {
+    position: sticky; /* Positioned relative to the main .album-overlay */
+    top: 0;
+    left: 0;
+    width: 100%; /* Automatically takes the width of the overlay */
+    height: 60px;
+    z-index: 1005; /* High z-index within the overlay */
+    
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+    box-sizing: border-box;
+    
+    /* Initially hidden */
+    opacity: 0;
+    transform: translateY(-100%);
+    pointer-events: none;
+    
+    /* Smooth transitions */
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, background-color 0.7s ease-in-out;
+    
+    /* Default background color */
+    background-color: #1d1b1bff; 
+}
+
+/* Class added by JS to show the header */
+#embedded-compact-header.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* Back button style */
+.embedded-compact-header-back-btn {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Album title style */
+.embedded-compact-header-title {
+    color: white;
+    font-weight: bold;
+    font-size: 1rem;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60%;
+}
 
 
 

@@ -202,7 +202,7 @@ background: transparent;
 document.head.appendChild(styleSheet);
 
 
-
+let iframeCache = {};
 let processedCarouselSongs = []; // <<< ADD THIS LINE
 
 // --- DOM Elements (assuming these exist in your HTML) ---
@@ -1018,299 +1018,174 @@ async function loadLatestLikedSongAsFallback() {
         console.error("Error during liked song fallback:", error);
     }
 }
-/**
- * Updates the UI elements of both the compact playbar and the full-screen player.
- * This function is called whenever the playback state or current track changes.
- */
+// REPLACE your existing updatePlayerUI function with this FINAL, COMPLETE version.
+
+// REPLACE your existing updatePlayerUI function with this entire block
+
 async function updatePlayerUI() {
     console.log("updatePlayerUI called.");
 
+    // --- Get references to all UI elements ---
+    const fullScreenControls = document.querySelector('.full-screen-controls');
+    // CORRECTED SELECTOR: Using the correct class for the progress section
+    const fullScreenProgress = document.querySelector('.full-screen-progress-section');
+    const fullScreenBottomActions = document.querySelector('.full-screen-bottom-actions');
+    const fullScreenEmbedInfo = document.getElementById('full-screen-embed-info');
+    // ADDED: Get a reference to the main playbar's control group by its ID
+    const mainPlayerControls = document.getElementById('player-controls-group');
+
     if (!playingAlbum) {
-        console.log("updatePlayerUI: No playing album. Clearing playbar UI and hiding playbar.");
-        // Clear compact playbar UI elements
+        mainPlayBar.style.display = 'none';
+        hideFullScreenPlayer();
         if (currentAlbumArt) currentAlbumArt.src = 'https://placehold.co/64x64/4a4a4a/ffffff?text=Album';
         if (currentSongTitle) currentSongTitle.textContent = 'No Track Playing';
         if (currentArtistName) currentArtistName.textContent = '';
-        if (progressBar) {
-            progressBar.value = 0;
-            progressBar.max = 0;
-            progressBar.disabled = true;
-        }
-        if (currentTimeSpan) currentTimeSpan.textContent = '0:00';
-        if (totalTimeSpan) totalTimeSpan.textContent = '0:00';
-        if (playPauseBtn) {
-            playIcon.classList.remove('hidden');
-            pauseIcon.classList.add('hidden');
-        }
-
-        // Clear full-screen player UI elements
-        if (fullScreenAlbumArt) fullScreenAlbumArt.src = 'https://placehold.co/300x300/4a4a4a/ffffff?text=Album';
-        if (fullScreenSongTitle) fullScreenSongTitle.textContent = 'No Track Playing';
-        if (fullScreenArtistName) fullScreenArtistName.textContent = '';
-        if (fullScreenSongTitleLarge) fullScreenSongTitleLarge.textContent = 'No Track Playing';
-        if (fullScreenArtistNameLarge) fullScreenArtistNameLarge.textContent = '';
-        if (fullScreenProgressBar) {
-            fullScreenProgressBar.value = 0;
-            fullScreenProgressBar.max = 0;
-            fullScreenProgressBar.disabled = true;
-        }
-        if (fullScreenCurrentTime) fullScreenCurrentTime.textContent = '0:00';
-        if (fullScreenTotalTime) fullScreenTotalTime.textContent = '0:00';
-        if (fullPlayPauseBtn) {
-            fullPlayIcon.classList.remove('hidden');
-            fullPauseIcon.classList.add('hidden');
-        }
-
-        // CORRECTED PART: Clear header text when nothing is playing
-        if (typeof fullScreenContextText !== 'undefined' && fullScreenContextText) fullScreenContextText.textContent = '';
-        if (typeof fullScreenSourceText !== 'undefined' && fullScreenSourceText) fullScreenSourceText.textContent = '';
-        
-        togglePlayerControls(true); // Re-enable controls, as nothing is playing (or it's a non-embed state)
-        if (progressBarInterval) {
-            clearInterval(progressBarInterval);
-            progressBarInterval = null;
-        }
-        mainPlayBar.style.display = 'none'; // Hide the playbar if nothing is playing
-        updateFixedTopHeadingVisibility(); // Hide fixed heading as well
-        hideFullScreenPlayer(); // Ensure full screen player is hidden
         return;
     }
 
-    mainPlayBar.style.display = 'flex'; // Ensure compact playbar is visible if something is playing
-
-    // CORRECTED PART: Logic to dynamically update the full-screen header text
-    if (typeof fullScreenContextText !== 'undefined' && fullScreenContextText && typeof fullScreenSourceText !== 'undefined' && fullScreenSourceText) {
-        if (isPlayingFromLikedSongs) {
-            fullScreenContextText.textContent = "PLAYING FROM YOUR LIBRARY";
-            fullScreenSourceText.textContent = "Liked Songs";
-        } else {
-            fullScreenContextText.textContent = "PLAYING FROM ALBUM";
-            fullScreenSourceText.textContent = playingAlbum.title || "Unknown Album";
-        }
-    }
+    mainPlayBar.style.display = 'flex';
 
     const isEmbeddedAlbum = playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc;
 
-    let displayTitle = 'Unknown Title';
-    let displayArtist = 'Unknown Artist';
-    let displayCoverArt = 'https://placehold.co/64x64/4a4a4a/ffffff?text=Album'; // Default for compact
-    let displayCoverArtLarge = 'https://placehold.co/300x300/4a4a4a/ffffff?text=Album'; // Default for full-screen
+    // --- NEW LOGIC: Toggle UI based on whether the album is embedded ---
+    if (isEmbeddedAlbum) {
+        // --- Full-Screen Player: Hide controls ("reflectors") and show "View Player" info ---
+        if (fullScreenControls) fullScreenControls.classList.add('hidden');
+        if (fullScreenProgress) fullScreenProgress.classList.add('hidden');
+        if (fullScreenBottomActions) fullScreenBottomActions.classList.add('hidden');
+        if (fullScreenEmbedInfo) fullScreenEmbedInfo.classList.remove('hidden');
+
+        // --- Main Playbar: Hide the central control buttons (play/pause, next, etc.) ---
+        if (mainPlayerControls) mainPlayerControls.classList.add('hidden');
+        
+        // Disable all player controls since they don't apply
+        togglePlayerControls(false);
+    } else {
+        // --- Full-Screen Player: Show controls and hide "View Player" info ---
+        if (fullScreenControls) fullScreenControls.classList.remove('hidden');
+        if (fullScreenProgress) fullScreenProgress.classList.remove('hidden');
+        if (fullScreenBottomActions) fullScreenBottomActions.classList.remove('hidden');
+        if (fullScreenEmbedInfo) fullScreenEmbedInfo.classList.add('hidden');
+
+        // --- Main Playbar: Show the central control buttons ---
+        if (mainPlayerControls) mainPlayerControls.classList.remove('hidden');
+        
+        // Enable all player controls for direct playback
+        togglePlayerControls(true);
+    }
+
+    let displayTitle = playingAlbum.title || 'Unknown Title';
+    let displayArtist = playingAlbum.artist || 'Unknown Artist';
+    let displayCoverArt = playingAlbum.coverArt || 'https://placehold.co/64x64/4a4a4a/ffffff?text=Album';
+    let displayCoverArtLarge = playingAlbum.coverArt || 'https://placehold.co/300x300/4a4a4a/ffffff?text=Album';
     let currentTrack = null;
 
     if (isEmbeddedAlbum) {
-        displayTitle = playingAlbum.title || 'Embedded Content';
-        displayArtist = playingAlbum.artist || 'Various Artists';
-        displayCoverArt = playingAlbum.coverArt || 'https://placehold.co/64x64/4a4a4a/ffffff?text=Embed';
-        displayCoverArtLarge = playingAlbum.coverArt || 'https://placehold.co/300x300/4a4a4a/ffffff?text=Embed';
-        console.log(`updatePlayerUI: Detected embedded album. Using album data: ${displayTitle} by ${displayArtist}`);
-
-        if (progressBar) { progressBar.value = 0; progressBar.max = 0; progressBar.disabled = true; }
+        if (progressBar) { progressBar.value = 0; progressBar.disabled = true; }
         if (currentTimeSpan) currentTimeSpan.textContent = '0:00';
         if (totalTimeSpan) totalTimeSpan.textContent = 'N/A';
-
-        if (fullScreenProgressBar) { fullScreenProgressBar.value = 0; fullScreenProgressBar.max = 0; fullScreenProgressBar.disabled = true; }
+        if (fullScreenProgressBar) { fullScreenProgressBar.value = 0; fullScreenProgressBar.disabled = true; }
         if (fullScreenCurrentTime) fullScreenCurrentTime.textContent = '0:00';
         if (fullScreenTotalTime) fullScreenTotalTime.textContent = 'N/A';
+        if (progressBarInterval) clearInterval(progressBarInterval);
+        progressBarInterval = null;
+    } else if (playingAlbum.tracks && playingAlbum.tracks.length > 0) {
+        currentTrackIndex = typeof currentTrackIndex !== 'undefined' ? currentTrackIndex : 0;
+        currentTrack = playingAlbum.tracks[currentTrackIndex];
+        if (currentTrack) {
+            displayTitle = currentTrack.title || 'Unknown Title';
+            displayArtist = currentTrack.artist || 'Unknown Artist';
+            displayCoverArt = currentTrack.img || playingAlbum.coverArt || displayCoverArt;
+            displayCoverArtLarge = currentTrack.img || playingAlbum.coverArt || displayCoverArtLarge;
 
-        togglePlayerControls(false);
-        if (progressBarInterval) {
-            clearInterval(progressBarInterval);
-            progressBarInterval = null;
-        }
+            // --- Real-time update logic ---
+            if (progressBarInterval) clearInterval(progressBarInterval);
+            let saveStateCounter = 0;
+            progressBarInterval = setInterval(async () => {
+                let currentProgress = 0;
+                let currentDuration = 0;
+                let playerIsPlaying = false;
 
-    } else {
-        if (playingAlbum.tracks && playingAlbum.tracks.length > 0 && currentTrackIndex !== undefined && currentTrackIndex >= 0 && currentTrackIndex < playingAlbum.tracks.length) {
-            currentTrack = playingAlbum.tracks[currentTrackIndex];
-            if (currentTrack) {
-                displayTitle = currentTrack.title || 'Unknown Title';
-                displayArtist = currentTrack.artist || 'Unknown Artist';
-                displayCoverArt = currentTrack.img || playingAlbum.coverArt || 'https://placehold.co/64x64/4a4a4a/ffffff?text=Track';
-                displayCoverArtLarge = currentTrack.img || playingAlbum.coverArt || 'https://placehold.co/300x300/4a4a4a/ffffff?text=Track';
-                console.log(`updatePlayerUI: Detected tracklist album. Using track data: ${displayTitle} by ${displayArtist}`);
-
-                let isPlaying = false;
-                let duration = 0;
-                let currentTime = 0;
-
-                if (audio.src === currentTrack.src) {
-                    isPlaying = !audio.paused && !audio.ended;
-                    duration = audio.duration;
-                    currentTime = audio.currentTime;
-                } else if (ytPlayer && currentTrack.iframeSrc && currentTrack.iframeSrc.includes('https://www.youtube.com/embed/')) {
-                    const videoIdMatch = currentTrack.iframeSrc.match(/\/embed\/([a-zA-Z0-9_-]+)/);
-                    const videoId = videoIdMatch ? videoIdMatch[1] : null;
-                    if (videoId && ytPlayer.getVideoData() && ytPlayer.getVideoData().video_id === videoId) {
-                        isPlaying = ytPlayer.getPlayerState() === YT.PlayerState.PLAYING;
-                        const ytDuration = ytPlayer.getDuration();
-                        if (!isNaN(ytDuration) && ytDuration > 0) {
-                            duration = ytDuration;
-                        }
-                        currentTime = ytPlayer.getCurrentTime();
-                    }
+                if (audio.src && audio.src.includes(currentTrack.src)) {
+                    currentProgress = audio.currentTime;
+                    currentDuration = audio.duration || 0;
+                    playerIsPlaying = !audio.paused && !audio.ended;
+                } else if (ytPlayer && ytPlayer.getPlayerState) {
+                    currentProgress = ytPlayer.getCurrentTime();
+                    currentDuration = ytPlayer.getDuration();
+                    playerIsPlaying = ytPlayer.getPlayerState() === YT.PlayerState.PLAYING;
                 } else if (spotifyPlayer && currentTrack.spotifyUri) {
                     try {
                         const state = await spotifyPlayer.getCurrentState();
-                        if (state && state.track_window.current_track.uri === currentTrack.spotifyUri) {
-                            isPlaying = !state.paused;
-                            const spotifyDuration = state.duration / 1000;
-                            if (!isNaN(spotifyDuration) && spotifyDuration > 0) {
-                                duration = spotifyDuration;
-                            }
-                            currentTime = state.position / 1000;
+                        if (state) {
+                            currentProgress = state.position / 1000;
+                            currentDuration = state.duration / 1000;
+                            playerIsPlaying = !state.paused;
                         }
-                    } catch (e) {
-                        console.warn("Error getting Spotify state for player UI update:", e);
-                        isPlaying = false;
-                    }
+                    } catch (e) { /* ignore */ }
                 }
 
-                if (isNaN(duration) || duration <= 0) {
-                    duration = parseDurationToSeconds(currentTrack.duration) || 0;
+                if (isNaN(currentDuration) || currentDuration <= 0) {
+                    currentDuration = parseDurationToSeconds(currentTrack.duration);
                 }
-
+                
+                // Update Main Play Bar
+                if (currentTimeSpan) currentTimeSpan.textContent = formatTime(currentProgress);
+                if (totalTimeSpan) totalTimeSpan.textContent = formatTime(currentDuration);
                 if (progressBar) {
-                    progressBar.max = duration;
-                    progressBar.value = currentTime;
-                    progressBar.disabled = false;
+                    progressBar.max = currentDuration;
+                    progressBar.value = currentProgress;
                 }
-                if (currentTimeSpan) currentTimeSpan.textContent = formatTime(currentTime);
-                if (totalTimeSpan) totalTimeSpan.textContent = formatTime(duration);
 
+                // Update Full-Screen Player
+                if (fullScreenCurrentTime) fullScreenCurrentTime.textContent = formatTime(currentProgress);
+                if (fullScreenTotalTime) fullScreenTotalTime.textContent = formatTime(currentDuration);
                 if (fullScreenProgressBar) {
-                    fullScreenProgressBar.max = duration;
-                    fullScreenProgressBar.value = currentTime;
-                    fullScreenProgressBar.disabled = false;
+                    fullScreenProgressBar.max = currentDuration;
+                    fullScreenProgressBar.value = currentProgress;
+                    const progressPercent = (currentDuration > 0) ? (currentProgress / currentDuration) * 100 : 0;
+                    fullScreenProgressBar.style.setProperty('--progress-percent', `${progressPercent}%`);
                 }
-                if (fullScreenCurrentTime) fullScreenCurrentTime.textContent = formatTime(currentTime);
-                if (fullScreenTotalTime) fullScreenTotalTime.textContent = formatTime(duration);
 
-                togglePlayerControls(true);
+                // Update Play/Pause Icons
+                if (playIcon && pauseIcon) {
+                    playIcon.classList.toggle('hidden', playerIsPlaying);
+                    pauseIcon.classList.toggle('hidden', !playerIsPlaying);
+                }
+                if (fullPlayIcon && fullPauseIcon) {
+                    fullPlayIcon.classList.toggle('hidden', playerIsPlaying);
+                    fullPauseIcon.classList.toggle('hidden', !playerIsPlaying);
+                }
 
-                if (progressBarInterval) clearInterval(progressBarInterval);
-                let saveStateCounter = 0;
-                progressBarInterval = setInterval(async () => {
-                    let currentProgress = 0;
-                    let currentDuration = 0;
-                    let playerIsPlaying = false;
-
-                    if (audio.src === currentTrack.src) {
-                        currentProgress = audio.currentTime;
-                        currentDuration = audio.duration;
-                        playerIsPlaying = !audio.paused && !audio.ended;
-                    } else if (ytPlayer && currentTrack.iframeSrc && currentTrack.iframeSrc.includes('youtube.com')) {
-                        currentProgress = ytPlayer.getCurrentTime();
-                        currentDuration = ytPlayer.getDuration();
-                        playerIsPlaying = ytPlayer.getPlayerState() === YT.PlayerState.PLAYING;
-                    } else if (spotifyPlayer && currentTrack.spotifyUri) {
-                        try {
-                            const state = await spotifyPlayer.getCurrentState();
-                            if (state && !state.paused) {
-                                currentProgress = state.position / 1000;
-                                currentDuration = state.duration / 1000;
-                                playerIsPlaying = !state.paused;
-                            }
-                        } catch (e) { /* ignore */ }
+                // Save state periodically
+                if (playerIsPlaying) {
+                    lastKnownPlaybackPosition = currentProgress;
+                    saveStateCounter++;
+                    if (saveStateCounter >= 5) { // Save every 5 seconds
+                        savePlayerState();
+                        saveStateCounter = 0;
                     }
+                }
 
-                    if (currentTimeSpan) currentTimeSpan.textContent = formatTime(currentProgress);
-                    if (progressBar) {
-                        progressBar.max = currentDuration;
-                        progressBar.value = currentProgress;
-                    }
-
-                    if (fullScreenCurrentTime) fullScreenCurrentTime.textContent = formatTime(currentProgress);
-                    if (fullScreenProgressBar) {
-                        fullScreenProgressBar.max = currentDuration;
-                        fullScreenProgressBar.value = currentProgress;
-                         const progressPercent = (currentDuration > 0) ? (currentProgress / currentDuration) * 100 : 0;
-                        fullScreenProgressBar.style.setProperty('--progress-percent', `${progressPercent}%`);
-                    }
-
-                    if (playPauseBtn) {
-                        if (playerIsPlaying) {
-                            playIcon.classList.add('hidden');
-                            pauseIcon.classList.remove('hidden');
-                        } else {
-                            playIcon.classList.remove('hidden');
-                            pauseIcon.classList.add('hidden');
-                        }
-                    }
-                    if (fullPlayPauseBtn) {
-                        if (playerIsPlaying) {
-                            fullPlayIcon.classList.add('hidden');
-                            fullPauseIcon.classList.remove('hidden');
-                        } else {
-                            fullPlayIcon.classList.remove('hidden');
-                            fullPauseIcon.classList.add('hidden');
-                        }
-                    }
-
-                    if (!playerIsPlaying && currentProgress >= currentDuration && currentDuration > 0) {
-                        clearInterval(progressBarInterval);
-                        progressBarInterval = null;
-                        if (currentTimeSpan) currentTimeSpan.textContent = '0:00';
-                        if (progressBar) progressBar.value = 0;
-                        if (playPauseBtn) {
-                            playIcon.classList.remove('hidden');
-                            pauseIcon.classList.add('hidden');
-                        }
-                        if (fullScreenCurrentTime) fullScreenCurrentTime.textContent = '0:00';
-                        if (fullScreenProgressBar) fullScreenProgressBar.value = 0;
-                        if (fullPlayPauseBtn) {
-                            fullPlayIcon.classList.remove('hidden');
-                            fullPauseIcon.classList.add('hidden');
-                        }
-                    }
-                    if (playerIsPlaying) {
-                        saveStateCounter++;
-                        if (saveStateCounter >= 5) {
-                            savePlayerState();
-                            saveStateCounter = 0;
-                        }
-                    }
-                }, 1000);
-            }
-        } else {
-            displayTitle = playingAlbum.title || 'Unknown Title';
-            displayArtist = playingAlbum.artist || 'Unknown Artist';
-            displayCoverArt = playingAlbum.coverArt || 'https://placehold.co/64x64/4a4a4a/ffffff?text=Album';
-            displayCoverArtLarge = playingAlbum.coverArt || 'https://placehold.co/300x300/4a4a4a/ffffff?text=Album';
-
-            if (progressBar) { progressBar.value = 0; progressBar.max = 0; progressBar.disabled = true; }
-            if (currentTimeSpan) currentTimeSpan.textContent = '0:00';
-            if (totalTimeSpan) totalTimeSpan.textContent = '0:00';
-
-            if (fullScreenProgressBar) { fullScreenProgressBar.value = 0; fullScreenProgressBar.max = 0; fullScreenProgressBar.disabled = true; }
-            if (fullScreenCurrentTime) fullScreenCurrentTime.textContent = '0:00';
-            if (fullScreenTotalTime) fullScreenTotalTime.textContent = '0:00';
-
-            togglePlayerControls(true);
-            if (progressBarInterval) clearInterval(progressBarInterval);
-            progressBarInterval = null;
+            }, 1000);
         }
     }
 
+    // Update common UI elements (titles, art, etc.)
     if (currentAlbumArt) currentAlbumArt.src = displayCoverArt;
-    if (currentSongTitle) {
-        currentSongTitle.textContent = displayTitle;
-        currentSongTitle.style.overflow = 'hidden';
-        currentSongTitle.style.whiteSpace = 'nowrap';
-        currentSongTitle.style.textOverflow = 'ellipsis';
-    }
-    if (currentArtistName) {
-        currentArtistName.textContent = displayArtist;
-        currentArtistName.style.overflow = 'hidden';
-        currentArtistName.style.whiteSpace = 'nowrap';
-        currentArtistName.style.textOverflow = 'ellipsis';
-    }
-
+    if (currentSongTitle) currentSongTitle.textContent = displayTitle;
+    if (currentArtistName) currentArtistName.textContent = displayArtist;
+    
     if (fullScreenAlbumArt) fullScreenAlbumArt.src = displayCoverArtLarge;
+    if (fullScreenSongTitleLarge) fullScreenSongTitleLarge.textContent = displayTitle;
+    if (fullScreenArtistNameLarge) fullScreenArtistNameLarge.textContent = displayArtist;
+    if (fullScreenSongTitle) fullScreenSongTitle.textContent = displayTitle;
+    if (fullScreenArtistName) fullScreenArtistName.textContent = displayArtist;
+
+    // Logic for setting background color
     const setBackgroundColor = () => {
         try {
-            if (!fullScreenAlbumArt.complete || typeof fullScreenAlbumArt.naturalWidth === "undefined" || fullScreenAlbumArt.naturalWidth === 0) {
-                console.warn("ColorThief: Image not ready, skipping color extraction.");
-                return;
-            }
+            if (!fullScreenAlbumArt.complete || typeof fullScreenAlbumArt.naturalWidth === "undefined" || fullScreenAlbumArt.naturalWidth === 0) return;
             const colorThief = new ColorThief();
             const dominantColor = colorThief.getColor(fullScreenAlbumArt);
             const finalColor = createAdvancedBackgroundColor(dominantColor);
@@ -1324,78 +1199,22 @@ async function updatePlayerUI() {
             mainPlayBar.style.setProperty('--dominant-color-main', '#1A0303');
         }
     };
-    
+
     if (fullScreenAlbumArt) {
         if (fullScreenAlbumArt.complete) {
             setBackgroundColor();
         } else {
             fullScreenAlbumArt.onload = setBackgroundColor;
             fullScreenAlbumArt.onerror = () => {
-                console.error("Image failed to load, cannot extract color.");
                 fullScreenPlayer.style.setProperty('--dominant-color', '#4a4a4a');
                 mainPlayBar.style.setProperty('--dominant-color-main', '#1A0303');
             };
         }
     }
     
-    if (fullScreenSongTitle) fullScreenSongTitle.textContent = displayTitle;
-    if (fullScreenArtistName) fullScreenArtistName.textContent = displayArtist;
-    if (fullScreenSongTitleLarge) fullScreenSongTitleLarge.textContent = displayTitle;
-    if (fullScreenArtistNameLarge) fullScreenArtistNameLarge.textContent = displayArtist;
-
-    let isPlaying = false;
-    if (currentTrack && currentTrack.src && !audio.paused && audio.src === currentTrack.src) {
-        isPlaying = true;
-    } else if (currentTrack && ytPlayer && currentTrack.iframeSrc && currentTrack.iframeSrc.includes('youtube.com') && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
-        isPlaying = true;
-    } else if (currentTrack && spotifyPlayer && currentTrack.spotifyUri) {
-        try {
-            const state = await spotifyPlayer.getCurrentState();
-            if (state && !state.paused && state.track_window.current_track.uri === currentTrack.spotifyUri) {
-                isPlaying = true;
-            }
-        } catch (e) { /* ignore */ }
-    } else if (isEmbeddedAlbum && playingAlbum) {
-        isPlaying = true;
-    }
-
-    if (playPauseBtn) {
-        if (isPlaying) {
-            playIcon.classList.add('hidden');
-            pauseIcon.classList.remove('hidden');
-        } else {
-            playIcon.classList.remove('hidden');
-            pauseIcon.classList.add('hidden');
-        }
-    }
-    if (fullPlayPauseBtn) {
-        if (isPlaying) {
-            fullPlayIcon.classList.add('hidden');
-            fullPauseIcon.classList.remove('hidden');
-        } else {
-            fullPlayIcon.classList.remove('hidden');
-            fullPauseIcon.classList.add('hidden');
-        }
-    }
-    if (repeatBtn) repeatBtn.classList.toggle('active', isRepeat);
-    if (shuffleBtn) shuffleBtn.classList.toggle('active', isShuffle);
-    if (fullRepeatBtn) fullRepeatBtn.classList.toggle('active', isRepeat);
-    if (fullShuffleBtn) fullShuffleBtn.classList.toggle('active', isShuffle);
-     updatePlaybarLikeState();
-      updatePopupLikeState();
-
-    const fullScreenAddBtn = document.getElementById('full-screen-add-btn');
-    if (fullScreenAddBtn) {
-        fullScreenAddBtn.addEventListener('click', (ev) => {
-            ev.preventDefault();
-            toggleLikeCurrentSong();
-        });
-    }
-
-    updateCompactPlayButtonIcons();
-    updateCarouselPlayButtonState();
+    updatePlaybarLikeState();
+    updatePopupLikeState();
 }
-
 
 /**
  * Updates the icons of all compact play buttons in the playlist.
@@ -2557,12 +2376,8 @@ function updatePlayingTrackIndicator() {
 
 
 
-// In script.js
+// REPLACE your existing openAlbumDetails function with this corrected version
 
-// REPLACEMENT for the openAlbumDetails function
-// In script.js
-
-// REPLACEMENT for the openAlbumDetails function
 async function openAlbumDetails(albumData, highlightTrackTitle = null) {
     
     if (currentAlbum && albumData.id !== currentAlbum.id) {
@@ -2574,13 +2389,15 @@ async function openAlbumDetails(albumData, highlightTrackTitle = null) {
             recommendationsHtml: recommendationsContainer ? recommendationsContainer.innerHTML : ''
         };
         albumHistoryStack.push(currentState);
-        console.log('Saved previous album and its recommendations to history.');
     }
     
-    // --- FIX: Add a new browser history entry ONLY when navigating forward ---
     history.pushState({ albumId: albumData.id }, albumData.title, `/album/${albumData.id}`);
 
-    // This function now only handles the UI update
+    // *** THE FIX: The block of code that was here has been REMOVED. ***
+    // The logic that immediately set `playingAlbum = albumData` for embedded albums
+    // has been deleted. Now, only a direct click inside the iframe (detected by the 'blur' event)
+    // will update the play bar.
+
     await populateAlbumOverlayUI(albumData);
 
     albumOverlay.classList.remove('hidden');
@@ -2589,7 +2406,6 @@ async function openAlbumDetails(albumData, highlightTrackTitle = null) {
         document.body.style.overflow = 'hidden';
     }, 10);
     
-    updatePlayerUI();
     setupAlbumSearchListeners();
     updateFixedTopHeadingVisibility();
 }
@@ -2619,10 +2435,11 @@ async function openAlbumDetails(albumData, highlightTrackTitle = null) {
  * @param {Object} albumToRecommendFor - The album object to get recommendations for.
  */
 
-// REPLACE your existing populateAlbumOverlayUI function with this one
+// REPLACE your existing populateAlbumOverlayUI function with this entire block
+
+// REPLACE your existing populateAlbumOverlayUI function with this clean version
 
 async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = true) {
-
     console.log(`Populating UI for album: "${albumData.title}"`);
     currentAlbum = albumData;
 
@@ -2633,67 +2450,60 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
 
     if (albumDetailsContent) albumDetailsContent.scrollTop = 0;
 
+    Array.from(albumFullEmbedContainer.children).forEach(child => {
+        if (child.dataset.albumId) {
+            child.style.display = 'none';
+        }
+    });
+
     if (isEmbeddedAlbum) {
         albumDetailsContent.style.display = 'none';
         albumFullEmbedContainer.style.display = 'block';
         albumOverlay.classList.add('embedded-view');
         albumOverlay.classList.remove('tracklist-view');
 
-        // Clear previous content
-        albumFullEmbedContainer.innerHTML = '';
+        let wrapper = iframeCache[albumData.id];
 
-        // Create and append the iframe for the embedded player
-        const embedContent = albumData.soundcloudEmbed || albumData.fullSoundcloudEmbed || albumData.rawHtmlEmbed || albumData.audiomackEmbed || (albumData.iframeSrc ? `<iframe src="${albumData.iframeSrc}" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>` : '');
-        albumFullEmbedContainer.innerHTML = embedContent;
-        const iframe = albumFullEmbedContainer.querySelector('iframe');
-        if (iframe) iframe.dataset.albumId = albumData.id;
+        if (wrapper) {
+            wrapper.style.display = 'block';
+            console.log(`Showing cached iframe wrapper for album: ${albumData.title}`);
+        } else {
+            console.log(`Creating new iframe wrapper for embedded album: ${albumData.title}`);
+            wrapper = document.createElement('div');
+            wrapper.dataset.albumId = albumData.id;
+            wrapper.style.cssText = 'width: 100%; height: 100%; overflow-y: auto; position: relative;';
 
-        // Create and append the top mask header
-        let topMaskDiv = document.createElement('div');
-        topMaskDiv.id = 'embedded-overlay-top-mask';
-        topMaskDiv.innerHTML = `<img src="${albumData.coverArt || 'https://placehold.co/80x80/4a4a4a/ffffff?text=Album'}" alt="Album Cover" class="embedded-header-cover"><div class="embedded-header-info"><div class="embedded-header-title">${albumData.title || 'Embedded Content'}</div><div class="embedded-header-artist">${albumData.artist || 'Various Artists'}</div></div>`;
-        albumFullEmbedContainer.appendChild(topMaskDiv);
+            const embedContent = albumData.soundcloudEmbed || albumData.fullSoundcloudEmbed || albumData.rawHtmlEmbed || albumData.audiomackEmbed || (albumData.iframeSrc ? `<iframe src="${albumData.iframeSrc}" title="${albumData.title}" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>` : '');
 
-        // Create and append the interaction layer for the first click
-        const embedInteractionLayer = document.createElement('div');
-        embedInteractionLayer.id = 'embed-interaction-layer';
-        albumFullEmbedContainer.appendChild(embedInteractionLayer);
-        embedInteractionLayer.addEventListener('click', firstClickEmbedHandler, { once: true });
+            const similarSectionHTML = `
+                <div id="embedded-similar-albums-section" class="spotifyPlaylists">
+                    <div class="section-heading"><h1>You might also like</h1></div>
+                    <div class="cardcontainer" id="embedded-similar-albums-container"></div>
+                </div>`;
 
+            // The wrapper now only contains the essential content
+            wrapper.innerHTML = embedContent + similarSectionHTML;
 
-        // NEW: Add vertical strips for embedded albums (without hearts)
-        const verticalHeartStrip = document.createElement('div');
-        verticalHeartStrip.id = 'vertical-heart-strip';
-        albumFullEmbedContainer.appendChild(verticalHeartStrip);
+            albumFullEmbedContainer.appendChild(wrapper);
+            iframeCache[albumData.id] = wrapper;
 
-        const verticalHeartStrip1 = document.createElement('div');
-        verticalHeartStrip1.id = 'vertical-heart-strip1';
-        albumFullEmbedContainer.appendChild(verticalHeartStrip1);
+            fetchAndDisplayEmbeddedSimilarAlbums(albumData, wrapper);
+        }
 
-        console.log("Vertical strips added to embedded album overlay.");
-        
-        // --- START: NEW CODE to add recommendation section ---
-        // Create the HTML for the "You might also like" section
-        const similarSectionHTML = `
-            <div id="embedded-similar-albums-section" class="spotifyPlaylists">
-                <div class="section-heading">
-                    <h1>You might also like</h1>
-                </div>
-                <div class="cardcontainer" id="embedded-similar-albums-container">
-                    <!-- Similar albums will be loaded here -->
-                </div>
-            </div>
-        `;
-        // Append this new section to the main container
-        albumFullEmbedContainer.insertAdjacentHTML('beforeend', similarSectionHTML);
-        
-        // Fetch and display the recommendations for this new section
-        fetchAndDisplayEmbeddedSimilarAlbums(albumData);
-        // --- END: NEW CODE ---
+        const oldMask = wrapper.querySelector('#embedded-overlay-top-mask');
+        if (oldMask) oldMask.remove();
 
-        togglePlayerControls(false);
+        const topMaskHTML = `<div id="embedded-overlay-top-mask">
+                                <img src="${albumData.coverArt || 'https://placehold.co/80x80/4a4a4a/ffffff?text=Album'}" alt="Album Cover" class="embedded-header-cover">
+                                <div class="embedded-header-info">
+                                    <div class="embedded-header-title">${albumData.title || 'Embedded Content'}</div>
+                                    <div class="embedded-header-artist">${albumData.artist || 'Various Artists'}</div>
+                                </div>
+                             </div>`;
+        wrapper.insertAdjacentHTML('afterbegin', topMaskHTML);
 
     } else {
+        // Logic for regular, non-embedded albums (this remains unchanged)
         albumDetailsContent.style.display = 'block';
         albumFullEmbedContainer.style.display = 'none';
         albumOverlay.classList.remove('embedded-view');
@@ -2705,7 +2515,7 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
         const albumMeta = document.getElementById('albumDetails-meta');
         const tracksBody = document.getElementById('albumDetails-tracks');
         const compactTitle = document.getElementById('compact-header-title');
-        
+
         albumCover.src = albumData.coverArt || 'https://placehold.co/250x250/000/fff?text=Album';
         albumTitle.textContent = albumData.title || 'Unknown Title';
         albumArtist.textContent = albumData.artist || 'Unknown Artist';
@@ -2724,14 +2534,15 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
                 });
             });
         }
-        
+
         if (shouldFetchRecommendations) {
             await fetchAndDisplaySimilarAlbums(albumData);
         }
-        
+
         togglePlayerControls(true);
     }
-    
+
+    // Attach event listeners for play/close buttons
     const albumPlayButton = document.getElementById('album-play');
     if (albumPlayButton) {
         albumPlayButton.onclick = () => {
@@ -2742,56 +2553,53 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
                 } else {
                     playTrack(currentAlbum.tracks[0], 0);
                 }
-            } else {
-                console.log("Play button clicked, but no playable tracks found for this album.");
             }
         };
     }
 
     const closeButtons = document.querySelectorAll('.close-overlay');
     closeButtons.forEach(btn => {
-        btn.onclick = closeAlbumOverlay;
+        btn.onclick = () => history.back();
     });
 
     updatePlayingTrackIndicator();
     updateAlbumPlayButtonIcon();
     setupAlbumScrollListener();
 }
-// In script.js
 
-// In script.js
-// In script.js
+// REPLACE your existing restoreAlbumDetails function with this one
 
-// REPLACEMENT for the restoreAlbumDetails function
 async function restoreAlbumDetails(previousState) {
     const { albumData, scrollTop, recommendationsHtml } = previousState || {};
 
     if (!albumData) {
-        console.error("Restore error: albumData is missing from the history state. Cannot restore view.");
-        if(albumOverlay) {
-            albumHistoryStack = [];
-            closeAlbumOverlay();
-        }
+        console.error("Restore error: No album data in history state.");
         return; 
     }
 
     console.log(`Restoring album "${albumData.title}" from history.`);
-
-    // --- FIX: UPDATE the browser history entry instead of adding a new one ---
     history.replaceState({ albumId: albumData.id }, albumData.title, `/album/${albumData.id}`);
+    
+    // Set the restored album as the current one for the UI, but DO NOT change the playing state.
+    currentAlbum = albumData;
+    
+    // *** THE FIX: The block of code that automatically updated the play bar has been REMOVED. ***
+    // By removing the logic that set `playingAlbum = albumData` here, we ensure that going "back"
+    // to an embedded album view does NOT change what the play bar is showing. The play bar will
+    // continue to reflect the album that is actually playing sound.
 
+    // Populate the UI without fetching new recommendations
     await populateAlbumOverlayUI(albumData, false);
 
+    // Restore cached recommendations if they exist
     const container = document.getElementById('similar-albums-container');
     const section = document.getElementById('similar-albums-section');
     if (container && section && recommendationsHtml) {
-        console.log("Restoring recommendations from cached HTML.");
         section.style.display = '';
         section.classList.remove('hidden');
         container.innerHTML = recommendationsHtml;
         attachEventListenersToHtmlCards(); 
     } else {
-        console.log("No cached recommendations found, fetching new ones.");
         await fetchAndDisplaySimilarAlbums(albumData);
     }
 
@@ -2802,6 +2610,7 @@ async function restoreAlbumDetails(previousState) {
         }, 50); 
     }
 }
+
 // ADD THIS ENTIRE NEW FUNCTION
 
 /**
@@ -2950,18 +2759,11 @@ async function handleAlbumPlayButtonClick() {
     updatePlayerUI(); // Sync all player UI
     updateFixedTopHeadingVisibility(); // Sync fixed top heading
 }
+// REPLACE your existing closeAlbumOverlay function with this entire block
 
-/**
- * Function to close the album overlay or navigate back to a previous album view.
- * This now includes smooth transitions for both actions.
- */
-// In script.js
-
-// In script.js
-
-// REPLACEMENT for the closeAlbumOverlay function
 async function closeAlbumOverlay(instant = false) {
     const scrollContent = document.getElementById('album-overlay-scroll-content');
+    const albumFullEmbedContainer = document.getElementById('album-full-embed-container'); // Get the container
 
     // --- Case 1: Navigating BACK to a previous album in history ---
     if (albumHistoryStack.length > 0) {
@@ -2979,45 +2781,42 @@ async function closeAlbumOverlay(instant = false) {
         currentAlbum = null;
         history.replaceState(null, "", "/"); // This cleans the URL
 
+        // The main album overlay is always hidden
+        albumOverlay.classList.remove('active', 'show');
+
+        // --- THIS IS THE KEY FIX ---
+        // Check if the currently playing album is an embedded one.
+        const isPlayingEmbedded = playingAlbum && (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc);
+
+        // We ONLY hide the iframe's container if we are NOT leaving an
+        // embedded player running in the background. If we are, we leave
+        // the container active so the music doesn't stop.
+        if (albumFullEmbedContainer && !isPlayingEmbedded) {
+            console.log("Not playing an embedded album, so hiding the embed container.");
+            albumFullEmbedContainer.style.display = 'none';
+        } else {
+            console.log("Playing an embedded album. Keeping its container active in the background.");
+        }
+        // --- END OF FIX ---
+
+        // The rest of the function remains the same, handling cleanup
         if (instant) {
-            // --- INSTANT CLOSE (For Device Back Button) ---
-            albumOverlay.style.transition = 'none'; // Disable animations
-            albumOverlay.classList.remove('active', 'show'); // Hide immediately
-            
-            // Perform cleanup that was previously in 'transitionend'
-            if (albumFullEmbedContainer) {
-                albumFullEmbedContainer.innerHTML = '';
-                albumFullEmbedContainer.style.display = 'none';
-            }
+            albumOverlay.style.transition = 'none';
             const similarAlbumsSection = document.getElementById('similar-albums-section');
             if (similarAlbumsSection) {
                 similarAlbumsSection.classList.add('hidden');
             }
-            
-            // Restore transitions for next time
             requestAnimationFrame(() => {
                 albumOverlay.style.transition = '';
             });
-
         } else {
-    // --- ANIMATED CLOSE (For Custom Overlay Button) ---
-    albumOverlay.classList.remove('active');
-
-    // Use a reliable setTimeout instead of the unpredictable 'transitionend' event.
-    // The timeout duration should be slightly longer than your CSS transition time (which is 0.4s).
-    setTimeout(() => {
-        albumOverlay.classList.remove('show');
-        
-        if (albumFullEmbedContainer) {
-            albumFullEmbedContainer.innerHTML = '';
-            albumFullEmbedContainer.style.display = 'none';
+            setTimeout(() => {
+                const similarAlbumsSection = document.getElementById('similar-albums-section');
+                if (similarAlbumsSection) {
+                    similarAlbumsSection.classList.add('hidden');
+                }
+            }, 500);
         }
-        const similarAlbumsSection = document.getElementById('similar-albums-section');
-        if (similarAlbumsSection) {
-            similarAlbumsSection.classList.add('hidden');
-        }
-    }, 500); // 500ms is a safe delay for a 400ms animation.
-}
         
         updateBodyForPopups();
         updateFixedTopHeadingVisibility();
@@ -3567,26 +3366,21 @@ function handlePlayButtonClick(event) {
     // Now, `album.id` will correctly match the `data-album-id` after transformation in fetchAlbums
     const albumToPlay = allAlbumsData.find(album => album.id === albumId);
     if (albumToPlay) {
-        console.log(`handlePlayButtonClick: Found album in allAlbumsData: ${albumToPlay.title} (ID: ${albumToPlay.id})`);
+        openAlbumDetails(albumToPlay);
 
-        // If this is an embedded album, stop all previous controllable playback before opening its overlay
+        // Check if it's an embedded album
         if (albumToPlay.rawHtmlEmbed || albumToPlay.fullSoundcloudEmbed || albumToPlay.audiomackEmbed || albumToPlay.iframeSrc) {
-            console.log("Embedded album play button clicked. Calling stopControllablePlayersOnly before opening overlay.");
-            stopControllablePlayersOnly(); // Stop any existing controllable playback
-            playingAlbum = albumToPlay; // NEW: Set playingAlbum here
-            currentlyPlayedCardId = albumToPlay.id; // Set the ID of the playing card
-            hidePlayedCard(); // Hide the playing card
-            openAlbumDetails(albumToPlay); // Open the album details overlay
-            console.log("Embedded album play button clicked, letting firstClickEmbedHandler manage play.");
+            // If it's embedded, immediately update the player state and UI
+            console.log("Embedded album play button clicked. Updating main play bar now.");
+            playingAlbum = albumToPlay;
+            updatePlayerUI(); // This makes the main play bar show the new album
         } else {
-            // For non-embedded albums (tracklists), open the album details and automatically play the first track
-            openAlbumDetails(albumToPlay); // Open the album details overlay
+            // If it's a regular album with tracks, play the first one
             if (albumToPlay.tracks && albumToPlay.tracks.length > 0) {
-                console.log("Non-embedded album play button clicked. Playing first track automatically.");
-                playTrack(albumToPlay.tracks[0], 0); // Play the first track (index 0)
+                console.log("Tracklist album play button clicked. Playing first track.");
+                playTrack(albumToPlay.tracks[0], 0);
             } else {
-                console.log("Non-embedded album play button clicked, but no tracks found to play automatically.");
-                showMessageBox('No tracks available to play for this album.', 'info');
+                console.log("Tracklist album has no tracks to play.");
             }
         }
     } else {
@@ -4310,99 +4104,7 @@ if (bottomSearchLink) {
 }
 
 
-function firstClickEmbedHandler() {
-    console.log("First click on embedded album detected. Handling previous embedded playback removal.");
 
-    // Stop controllable players (native audio, YouTube API player instance, Spotify SDK)
-    // This does NOT stop embedded iframe players (they must be removed from DOM to stop).
-    try {
-        stopControllablePlayersOnly();
-    } catch (e) {
-        console.warn("Error calling stopControllablePlayersOnly:", e);
-    }
-
-    const prevPlayingAlbumId = playingAlbum ? playingAlbum.id : null;
-    const newAlbumId = currentAlbum ? currentAlbum.id : null;
-    console.log("firstClickEmbedHandler: prevPlayingAlbumId=", prevPlayingAlbumId, "newAlbumId=", newAlbumId);
-
-    // Remove any iframe elements that belong to the previously playing embedded album(s).
-    // Keep any iframe that matches the currently opened album (newAlbumId).
-    try {
-        const allIframes = Array.from(document.querySelectorAll('iframe[data-album-id]'));
-        allIframes.forEach(iframe => {
-            try {
-                const aid = iframe.dataset.albumId;
-                if (!aid) return;
-                // If the iframe belongs to a different (previous) album, remove it.
-                if (newAlbumId && aid !== String(newAlbumId)) {
-                    iframe.remove();
-                    console.log("Removed previous embedded iframe for albumId:", aid);
-                }
-                // If there's no newAlbumId (defensive), and iframe != current overlay iframe, remove all.
-            } catch (e) {
-                console.warn("Error evaluating iframe dataset:", e);
-            }
-        });
-    } catch (e) {
-        console.warn("Error removing previous iframes:", e);
-    }
-
-    // Additionally, remove any hidden iframes inside albumFullEmbedContainer that are not the new one.
-    try {
-        if (albumFullEmbedContainer) {
-            const containerIframes = Array.from(albumFullEmbedContainer.querySelectorAll('iframe'));
-            containerIframes.forEach(f => {
-                const aid = f.dataset.albumId;
-                if (newAlbumId && aid !== String(newAlbumId)) {
-                    f.remove();
-                    console.log("Removed non-current iframe from albumFullEmbedContainer (id=" + aid + ")");
-                }
-            });
-        }
-    } catch (e) {
-        console.warn("Error cleaning albumFullEmbedContainer iframes:", e);
-    }
-
-    // Now set playingAlbum to the newly opened album (the overlay's album view)
-    try {
-        playingAlbum = currentAlbum;
-        currentlyPlayedCardId = playingAlbum ? playingAlbum.id : null;
-        console.log("firstClickEmbedHandler: playingAlbum set to currentAlbum id=", currentlyPlayedCardId);
-        hidePlayedCard();
-    } catch (e) {
-        console.warn("Error setting playingAlbum/currentlyPlayedCardId:", e);
-    }
-
-    // Remove the interaction layer so iframe receives direct input
-    const embedInteractionLayer = document.getElementById('embed-interaction-layer');
-    if (embedInteractionLayer) {
-        try {
-            embedInteractionLayer.removeEventListener('click', firstClickEmbedHandler);
-        } catch (e) {}
-        embedInteractionLayer.remove();
-        console.log('embed-interaction-layer removed after first click.');
-    }
-
-    // Update playbar and fixed heading to reflect the newly active embedded album
-    try {
-        updatePlayerUI();
-        updateFixedTopHeadingVisibility();
-    } catch (e) {
-        console.warn("Error updating player UI after first click:", e);
-    }
-}
-
-    // The embedded iframe itself is NOT removed here. It remains active.
-    // Its playback is managed by the iframe itself (e.g., YouTube's autoplay, Spotify's embed player).
-
-
-
-/**
- * NEW: Toggles the visibility and layout of the main playbar details
- * based on screen width and album overlay state.
- * This function now ensures the main playbar is *always* visible,
- * but its internal layout adapts.
- */
 function toggleMainPlaybarView() {
     console.log(`toggleMainPlaybarView called. window.innerWidth: ${window.innerWidth}`);
     if (!mainPlayBar) {
@@ -7563,65 +7265,36 @@ if (window.location.pathname === '/' || window.location.pathname === '') {
             console.log("DOMContentLoaded: Initial native audio volume set.");
         }
 
-        // NEW: Add an event listener to the entire mainPlayBar to open the full-screen player on mobile/tablet
-        if (mainPlayBar) {
-            mainPlayBar.addEventListener('click', async (event) => {
-                // Check if the click originated from a control button, if so, let it handle the event
-                const isControlClick = event.target.closest('#play-pause-btn') ||
-                                       event.target.closest('#prev-track-btn') ||
-                                       event.target.closest('#next-track-btn') ||
-                                       event.target.closest('#rewind-btn') ||
-                                       event.target.closest('#fast-forward-btn') ||
-                                       event.target.closest('#progress-bar') ||
-                                       event.target.closest('#volume-bar') ||
-                                       event.target.closest('#repeat-btn') ||
-                                       event.target.closest('#shuffle-btn');
+        // REPLACE the existing mainPlayBar click listener with this one
 
-                if (window.innerWidth <= 768 && !isControlClick) { // Only on mobile/tablet and if not a control button
-                    let albumToReopen = null;
-                    if (playingAlbum) {
-                        albumToReopen = playingAlbum;
-                        console.log("Compact playbar clicked (mobile). Actively playing album found.");
-
-                        // Check if the currently playing album is an embedded type
-                        const isEmbeddedPlaying = albumToReopen.rawHtmlEmbed || albumToReopen.fullSoundcloudEmbed || albumToReopen.audiomackEmbed || albumToReopen.iframeSrc;
-
-                        if (isEmbeddedPlaying) {
-                            console.log("Playing album is embedded. Redirecting to embedded album overlay.");
-                            openAlbumDetails(albumToReopen); // Re-open the album overlay for the embedded content
-                        } else {
-                            console.log("Playing album is controllable. Opening full-screen player.");
-                            showFullScreenPlayer(); // Show the full-screen player for controllable tracks
-                        }
-                    } else if (currentAlbum) {
-                        albumToReopen = currentAlbum;
-                        console.log("Compact playbar clicked (mobile). No actively playing album, opening last viewed album details.");
-                        // If no album is *playing*, but there's a *current* album (last viewed),
-                        // we should open its details, regardless of embed status.
-                        openAlbumDetails(albumToReopen);
-                    } else {
-                        console.log("Compact playbar clicked (mobile), but no current or playing album to open.");
-                        return;
-                    }
-                } else if (window.innerWidth > 768 && !isControlClick) { // Desktop behavior
-                    console.log("Main playbar clicked (desktop). Not a control button click.");
-                    let albumToReopen = null;
-                    if (playingAlbum) {
-                        albumToReopen = playingAlbum;
-                        console.log("Desktop playbar clicked. Actively playing album found. Redirecting to album details.");
-                        openAlbumDetails(albumToReopen);
-                    } else if (currentAlbum) {
-                        albumToReopen = currentAlbum;
-                        console.log("Desktop playbar clicked. No actively playing album, opening last viewed album details.");
-                        openAlbumDetails(albumToReopen);
-                    } else {
-                        console.log("Desktop playbar clicked, but no current or playing album to open.");
-                        return;
-                    }
-                }
-            });
-            console.log("DOMContentLoaded: mainPlayBar click listener attached.");
+if (mainPlayBar) {
+    mainPlayBar.addEventListener('click', (event) => {
+        // Stop if a specific control button was clicked
+        if (event.target.closest('button, input')) {
+            return;
         }
+
+        // If a song/album is loaded, show the full-screen player
+        if (playingAlbum) {
+            console.log("Play bar clicked. Opening full-screen player.");
+            showFullScreenPlayer();
+        }
+    });
+}
+
+// ADD this new listener inside your DOMContentLoaded event
+
+const viewEmbeddedPlayerBtn = document.getElementById('view-embedded-player-btn');
+if (viewEmbeddedPlayerBtn) {
+    viewEmbeddedPlayerBtn.addEventListener('click', () => {
+        // First, hide the full-screen player
+        hideFullScreenPlayer();
+        // Then, open the album overlay for the currently playing embedded album
+        if (playingAlbum) {
+            openAlbumDetails(playingAlbum);
+        }
+    });
+}
 
         // NEW: Add minimize button listener for full-screen player
         if (minimizePlayerBtn) {
@@ -9570,6 +9243,46 @@ audio.addEventListener('play', updateAllPlayButtonStates);
         });
     }
 
+// REPLACE the existing 'blur' event listener inside your DOMContentLoaded with this one.
+
+let blurTimeout = null;
+window.addEventListener('blur', () => {
+    // Use a small timeout because document.activeElement might not update instantly.
+    if (blurTimeout) clearTimeout(blurTimeout);
+    blurTimeout = setTimeout(() => {
+        // Check if the user has clicked inside an iframe
+        if (document.activeElement && document.activeElement.tagName === 'IFRAME') {
+            // Check if this iframe belongs to the currently VIEWED embedded album.
+            if (currentAlbum && currentAlbum.id) {
+                const wrapper = iframeCache[currentAlbum.id];
+                // Make sure the focused iframe is inside the correct album wrapper
+                if (wrapper && wrapper.contains(document.activeElement)) {
+                    console.log(`User clicked inside the iframe for album: "${currentAlbum.title}". Updating play bar.`);
+
+                    // If the play bar is already showing this album, no need to do anything.
+                    if (playingAlbum && playingAlbum.id === currentAlbum.id) {
+                        return;
+                    }
+
+                    // --- THIS IS THE FIX ---
+                    // Instead of the aggressive stopAllPlaybackUI(), we use a gentler function
+                    // that only stops controllable players (like native audio or YouTube API)
+                    // without destroying the current UI or removing our new iframe.
+                    stopControllablePlayersOnly();
+
+                    // Update the player state and refresh the UI
+                    playingAlbum = currentAlbum;
+                    currentlyPlayedCardId = currentAlbum.id;
+                    updatePlayerUI();
+                }
+            }
+        }
+    }, 50);
+});
+
+
+
+
     window.addEventListener('popstate', handleBackButton);
 });
 
@@ -9583,10 +9296,13 @@ audio.addEventListener('play', updateAllPlayButtonStates);
  */
 // REPLACE this function in your script.js
 
-async function fetchAndDisplayEmbeddedSimilarAlbums(albumToRecommendFor) {
-    const container = document.getElementById('embedded-similar-albums-container');
-    const section = document.getElementById('embedded-similar-albums-section');
+async function fetchAndDisplayEmbeddedSimilarAlbums(albumToRecommendFor , wrapperElement) {
+   // Find the container and section *inside* the specific wrapper for the current album
+    const section = wrapperElement.querySelector('#embedded-similar-albums-section');
+    const container = wrapperElement.querySelector('#embedded-similar-albums-container');
+    
     if (!container || !section) {
+        console.error("Could not find recommendation containers within the provided wrapper element.");
         return;
     }
 
@@ -9597,7 +9313,6 @@ async function fetchAndDisplayEmbeddedSimilarAlbums(albumToRecommendFor) {
         const genreQuery = encodeURIComponent(albumToRecommendFor.genre || '');
         const currentAlbumId = encodeURIComponent(albumToRecommendFor.id || '');
         
-        // UPDATED: Changed limit from 6 to 16
         const fetchURL = `${BACKEND_BASE_URL}/api/recommendations?artist=${artistQuery}&genre=${genreQuery}&exclude=${currentAlbumId}&limit=16`;
 
         const response = await fetch(fetchURL);
@@ -9609,6 +9324,7 @@ async function fetchAndDisplayEmbeddedSimilarAlbums(albumToRecommendFor) {
                 const cardHtml = createAlbumCardHtml(album);
                 container.insertAdjacentHTML('beforeend', cardHtml);
             });
+            // Re-attach listeners to the newly created cards
             attachEventListenersToHtmlCards();
         } else {
             container.innerHTML = `<p style="color: #b3b3b3; text-align: center; grid-column: 1 / -1;">No similar albums found.</p>`;

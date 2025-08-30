@@ -218,7 +218,7 @@ const exploreMoreAlbumsCardsContainer = document.getElementById('explore-more-al
 
 // --- Global Variables ---
 let isInitialPageLoad = true;
-let albumHistoryStack = []; 
+
 let currentAlbum = null; // Stores the currently loaded album data (for the overlay)
 let currentTrackIndex = 0; // Index of the currently playing track within currentAlbum.tracks
 let isRepeat = false; // Flag for repeat mode
@@ -1226,69 +1226,9 @@ async function updatePlayerUI() {
  */
 
 
-// A single function to close all overlays and popups
-function closeAllPopups() {
-    const mobileOverlay = document.getElementById('mobile-search-overlay');
-    const smallPopup = document.getElementById('unique-search-popup');
-    const libraryPopup = document.getElementById('library-popup');
-    const likedSongsOverlay = document.getElementById('likedSongsOverlay');
-    const albumOverlay = document.getElementById('albumOverlay');
-    const songOptionsPopup = document.getElementById('song-options-popup');
-    const mainAuthPopup = document.getElementById('popup-overlay');
-    const playlistDetailsOverlay = document.getElementById('playlist-details-overlay'); // NEW
 
-    if (mobileOverlay) mobileOverlay.classList.remove('open');
-    if (smallPopup) smallPopup.classList.add('unique-hidden');
-    if (libraryPopup) libraryPopup.classList.add('hidden');
-    if (likedSongsOverlay) likedSongsOverlay.classList.remove('open');
-    if (albumOverlay) closeAlbumOverlay(); // This relies on your existing function
-    if (songOptionsPopup) closeSongOptionsPopup(); // This relies on your existing function
-    if (mainAuthPopup) mainAuthPopup.classList.add('invisible', 'opacity-0');
-    if (playlistDetailsOverlay) playlistDetailsOverlay.classList.add('hidden');
-    // Restore default body overflow for mobile
-    document.body.style.overflow = 'auto';
 
-    // Remove the `unique-active` class from all footer links
-    const navLinks = document.querySelectorAll('.unique-footer-nav .unique-nav-link');
-    navLinks.forEach(link => link.classList.remove('unique-active'));
-}
 
-// A centralized navigation function
-function navigateTo(target) {
-    if (target === 'search' || target === 'library') {
-        pushHistoryStateForPopup(); // <<< ADD THIS LINE
-    }
-
-    // Step 1: Always close everything first to ensure a clean state
-    closeAllPopups();
-
-    // Step 2: Based on the target, show the correct UI and highlight the footer button
-    switch(target) {
-        case 'home':
-            // The home view is the default, so no special popup needs to be opened.
-            // The main content is already visible.
-            document.querySelector('.unique-footer-nav .unique-nav-link:nth-child(1)').classList.add('unique-active');
-            break;
-        case 'search':
-            // The search button uses two different popups, one for mobile and one for desktop.
-            if (window.innerWidth <= 1024) {
-                document.getElementById('mobile-search-overlay').classList.add('open');
-            } else {
-                document.getElementById('unique-search-popup').classList.remove('unique-hidden');
-            }
-            document.querySelector('#unique-search-icon-link').classList.add('unique-active');
-            break;
-        case 'library':
-            document.getElementById('library-popup').classList.remove('hidden');
-            document.querySelector('#your-library-link').classList.add('unique-active');
-            break;
-        case 'premium':
-            // Since there's no UI for this, you can just show a message.
-            showMessageBox('Premium features are not yet implemented.', 'info');
-            document.querySelector('.unique-nav-link[href="#premium"]').classList.add('unique-active');
-            break;
-    }
-}
 
 // script.js
 // ... (your existing utility functions)
@@ -1506,129 +1446,6 @@ function darkenColor(rgbArray, factor) {
 // --- END: NEW Helper function ---
 
 
-// --- REPLACEMENT for openPlaylistDetailsOverlay function ---
-async function openPlaylistDetailsOverlay(playlist) {
-     pushHistoryStateForPopup();
-    console.log("Opening new playlist overlay for:", playlist.name);
-    currentPlaylistForView = playlist;
-
-    const overlay = document.getElementById('playlist-details-overlay');
-    const scrollContent = document.getElementById('playlist-scroll-content');
-    if (!overlay || !scrollContent) return;
-    
-    // Reset scroll position and state
-    scrollContent.scrollTop = 0;
-    overlay.classList.remove('is-covered');
-    
-    overlay.classList.remove('hidden');
-    overlay.classList.remove('is-covered');
-
-    requestAnimationFrame(() => {
-    overlay.classList.add('is-active');
-});
-    document.body.style.overflow = 'hidden';
-
-     setTimeout(() => {
-        overlay.classList.add('active');
-    }, 10);
-
-    // Get all necessary elements
-    const backgroundGradient = document.getElementById('playlist-background-gradient');
-    const coverArtImg = document.getElementById('playlist-cover-art');
-    const titleH1 = document.getElementById('playlist-title-h1');
-    const compactTitle = document.getElementById('playlist-compact-title');
-    const mainBackBtn = document.getElementById('playlist-main-back-btn');
-    const compactBackBtn = document.getElementById('playlist-compact-back-btn');
-
-    // --- Back Button Listeners ---
-    mainBackBtn.onclick = closePlaylistDetailsOverlay;
-    compactBackBtn.onclick = closePlaylistDetailsOverlay;
-
-    // --- Dynamic Background Logic ---
-    const coverArt = (playlist.songs && playlist.songs.length > 0) 
-        ? (playlist.songs[0].img || playlist.songs[0].coverArt)
-        : 'https://placehold.co/192x192/4a4a4a/ffffff?text=Playlist';
-    
-    if (coverArtImg) {
-        // **FIX**: Add the crossOrigin attribute to allow color analysis of images from other domains.
-        coverArtImg.crossOrigin = "Anonymous";
-
-        const extractAndSetColor = () => {
-            try {
-                const colorThief = new ColorThief();
-                const dominantColor = colorThief.getColor(coverArtImg);
-                const darkColorArray = darkenColor(dominantColor, 0.4); // Factor of 0.4 for a dark shade
-                const darkRgbColor = `rgb(${darkColorArray[0]}, ${darkColorArray[1]}, ${darkColorArray[2]})`;
-                overlay.style.setProperty('--playlist-bg-color', darkRgbColor);
-            } catch (e) {
-                console.error("ColorThief error:", e);
-                overlay.style.setProperty('--playlist-bg-color', '#2a2a2a'); // Fallback color
-            }
-        };
-
-        // Set up event listeners
-        coverArtImg.onload = extractAndSetColor;
-        coverArtImg.onerror = () => {
-             overlay.style.setProperty('--playlist-bg-color', '#2a2a2a');
-        };
-
-        // Set the image source *after* setting the crossOrigin attribute.
-        coverArtImg.src = coverArt;
-
-        // **FIX**: Handle cached images where the 'onload' event might not fire again.
-        if (coverArtImg.complete) {
-            extractAndSetColor();
-        }
-    }
-
-    // Set Titles and other info
-    if (titleH1) titleH1.textContent = playlist.name;
-    if (compactTitle) compactTitle.textContent = playlist.name;
-    
-    const creatorAvatar = document.getElementById('playlist-creator-avatar');
-    const creatorName = document.getElementById('playlist-creator-name');
-    const durationInfo = document.getElementById('playlist-duration-info');
-    const mainPlayBtn = document.getElementById('playlist-play-btn');
-    const compactPlayBtn = document.getElementById('playlist-compact-play-btn');
-
-    const userName = localStorage.getItem('loggedInUserName') || 'You';
-    if (creatorName) creatorName.textContent = userName;
-    if (creatorAvatar) creatorAvatar.textContent = userName.charAt(0).toUpperCase();
-
-    const totalSeconds = playlist.songs ? playlist.songs.reduce((acc, song) => acc + parseDurationToSeconds(song.duration), 0) : 0;
-    const totalMinutes = Math.round(totalSeconds / 60);
-    if (durationInfo) durationInfo.textContent = `${totalMinutes} min`;
-
- const playPlaylist = () => {
-    if (playlist.songs && playlist.songs.length > 0) {
-        const firstSong = playlist.songs[0];
-        const currentTrack = playingAlbum && playingAlbum.tracks ? playingAlbum.tracks[currentTrackIndex] : null;
-
-        // Check if the current song is already the first song of this playlist
-        if (currentTrack && currentTrack.id === firstSong.id) {
-            togglePlayback();
-        } else {
-            // If it's a new song, find the album, open its details, and play the track
-            const album = allAlbumsData.find(a => a.id === firstSong.albumId);
-            if (album) {
-                openAlbumDetails(album);
-                playTrack(album.tracks[firstSong.trackIndex], firstSong.trackIndex);
-            }
-        }
-    } else {
-        // Optional: show a message if the playlist is empty
-        showMessageBox("This playlist is empty.", "info");
-    }
-};
-    if (mainPlayBtn) mainPlayBtn.onclick = playPlaylist;
-    if (compactPlayBtn) compactPlayBtn.onclick = playPlaylist;
-
-    // Render songs and setup listeners
-    renderPlaylistSongs(playlist);
-    setupPlaylistScrollListener();
-    setupPlaylistSearchListeners();
-    fetchAndRenderRecommendedSongs(playlist._id);
-}
 
 // END: Replacement for openPlaylistDetailsOverlay
 
@@ -2103,45 +1920,6 @@ async function updateAlbumPlayButtonIcon() {
 }
 
 
-/**
- * NEW: Shows the full-screen player overlay.
- */
-// START: Replace your existing showFullScreenPlayer function with this one.
-/**
- * NEW: Shows the full-screen player overlay.
- */
-function showFullScreenPlayer() {
-    if (!fullScreenPlayer) return;
-
-    fullScreenPlayer.classList.add('active');
-    document.body.style.overflow = 'hidden';
-    console.log("Full-screen player shown.");
-
-    // The dynamic background logic has been moved to updatePlayerUI
-    // to ensure it runs *after* the new album art is set.
-
-    // Update the rest of the player UI
-    updatePlayerUI();
-}
-// END: Replacement for showFullScreenPlayer
-
-/**
- * NEW: Hides the full-screen player overlay.
- */
-function hideFullScreenPlayer() {
-    if (!fullScreenPlayer) return;
-    fullScreenPlayer.classList.remove('active');
- updateBodyForPopups();
-    console.log("Full-screen player hidden.");
-
-    // If the album overlay (tracklist) is open, ensure it's still visible
-    if (albumOverlay && albumOverlay.classList.contains('show')) {
-        // Keep album overlay open, but ensure its content is correctly positioned
-        // This might involve adjusting padding-bottom for main-play-bar if it's compact.
-        // The toggleMainPlaybarView will handle the main-play-bar's layout.
-        console.log("Album overlay (tracklist) is still open.");
-    }
-}
 
 
 // Corrected logic for updateFixedTopHeadingVisibility
@@ -2381,66 +2159,6 @@ function updatePlayingTrackIndicator() {
 
 
 
-// REPLACE your existing openAlbumDetails function with this corrected version
-
-async function openAlbumDetails(albumData, highlightTrackTitle = null) {
-    
-    if (currentAlbum && albumData.id !== currentAlbum.id) {
-        const scrollContent = document.getElementById('album-overlay-scroll-content');
-        const recommendationsContainer = document.getElementById('similar-albums-container');
-        const currentState = {
-            albumData: currentAlbum,
-            scrollTop: scrollContent ? scrollContent.scrollTop : 0,
-            recommendationsHtml: recommendationsContainer ? recommendationsContainer.innerHTML : ''
-        };
-        albumHistoryStack.push(currentState);
-    }
-    
-    history.pushState({ albumId: albumData.id }, albumData.title, `/album/${albumData.id}`);
-
-    // *** THE FIX: The block of code that was here has been REMOVED. ***
-    // The logic that immediately set `playingAlbum = albumData` for embedded albums
-    // has been deleted. Now, only a direct click inside the iframe (detected by the 'blur' event)
-    // will update the play bar.
-
-    await populateAlbumOverlayUI(albumData);
-
-    albumOverlay.classList.remove('hidden');
-    setTimeout(() => {
-        albumOverlay.classList.add('show', 'active');
-        document.body.style.overflow = 'hidden';
-    }, 10);
-    
-    setupAlbumSearchListeners();
-    updateFixedTopHeadingVisibility();
-}
-// ADD THIS NEW FUNCTION to script.js
-/**
- * Populates the album overlay with content, correctly handling both
- * tracklist albums and embedded albums. This is the new single source of truth.
- * @param {Object} albumData - The data for the album to display.
- */
-// In script.js
-
-/**
- * Populates the album overlay with content, correctly handling both
- * tracklist albums and embedded albums. This is the new single source of truth.
- * @param {Object} albumData - The data for the album to display.
- */
-// In script.js
-
-/**
- * Populates the album overlay with content, correctly handling both
- * tracklist albums and embedded albums.
- * @param {Object} albumData - The data for the album to display.
- * @param {boolean} [shouldFetchRecommendations=true] - Set to false to prevent fetching new recommendations.
- */
-/**
- * Fetches and displays similar albums specifically for the embedded album view.
- * @param {Object} albumToRecommendFor - The album object to get recommendations for.
- */
-
-// In script.js, find and REPLACE the entire populateAlbumOverlayUI function with this.
 
 async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = true) {
     console.log(`Populating UI for album: "${albumData.title}"`);
@@ -2511,6 +2229,14 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
                         </div>
                      </div>`;
         wrapper.insertAdjacentHTML('afterbegin', topMaskHTML);
+        // --- START: FIX for embedded album back button ---
+        const embeddedBackBtn = wrapper.querySelector('.embedded-header-back-btn');
+        if (embeddedBackBtn) {
+            embeddedBackBtn.addEventListener('click', () => {
+                history.back();
+            });
+        }
+        // --- END: FIX ---
 
         // --- START: CORRECTED COMPACT HEADER CREATION ---
         // Create and inject the compact header INSIDE the main album overlay
@@ -2617,10 +2343,7 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
         };
     }
 
-    const closeButtons = document.querySelectorAll('.close-overlay');
-    closeButtons.forEach(btn => {
-        btn.onclick = () => history.back();
-    });
+   
 
     updatePlayingTrackIndicator();
     updateAlbumPlayButtonIcon();
@@ -2677,86 +2400,7 @@ function handleEmbeddedScroll(event) {
     // The event handler now simply calls our reusable logic function
     checkEmbeddedHeaderVisibility(event.currentTarget);
 }
-// REPLACE your existing restoreAlbumDetails function with this one
 
-async function restoreAlbumDetails(previousState) {
-    const { albumData, scrollTop, recommendationsHtml } = previousState || {};
-
-    if (!albumData) {
-        console.error("Restore error: No album data in history state.");
-        return; 
-    }
-
-    console.log(`Restoring album "${albumData.title}" from history.`);
-    history.replaceState({ albumId: albumData.id }, albumData.title, `/album/${albumData.id}`);
-    
-    // Set the restored album as the current one for the UI, but DO NOT change the playing state.
-    currentAlbum = albumData;
-    
-    // *** THE FIX: The block of code that automatically updated the play bar has been REMOVED. ***
-    // By removing the logic that set `playingAlbum = albumData` here, we ensure that going "back"
-    // to an embedded album view does NOT change what the play bar is showing. The play bar will
-    // continue to reflect the album that is actually playing sound.
-
-    // Populate the UI without fetching new recommendations
-    await populateAlbumOverlayUI(albumData, false);
-
-    // Restore cached recommendations if they exist
-    const container = document.getElementById('similar-albums-container');
-    const section = document.getElementById('similar-albums-section');
-    if (container && section && recommendationsHtml) {
-        section.style.display = '';
-        section.classList.remove('hidden');
-        container.innerHTML = recommendationsHtml;
-        attachEventListenersToHtmlCards(); 
-    } else {
-        await fetchAndDisplaySimilarAlbums(albumData);
-    }
-
-    const scrollContent = document.getElementById('album-overlay-scroll-content');
-    if (scrollContent) {
-        setTimeout(() => {
-            scrollContent.scrollTop = scrollTop;
-        }, 50); 
-    }
-}
-
-// ADD THIS ENTIRE NEW FUNCTION
-
-/**
- * Reads the browser's URL and displays the correct view (home or album).
- * This is the core of our client-side router.
- */
-function handleRouteChange() {
-    const path = window.location.pathname;
-    console.log("Handling route change for path:", path);
-
-    if (path.startsWith('/album/')) {
-        // If the URL is for an album (e.g., /album/12345)
-        const albumId = path.split('/')[2];
-        const albumData = allAlbumsData.find(a => a.id === albumId);
-
-        if (albumData) {
-            // We found the album, so make sure its overlay is open.
-            // This handles cases where a user directly lands on an album URL.
-            if (!albumOverlay.classList.contains('show')) {
-                 openAlbumDetails(albumData);
-            }
-        }
-    } else {
-        // If the URL is the home page ("/"), close the album overlay.
-        if (albumOverlay.classList.contains('show')) {
-            closeAlbumOverlay();
-        }
-    }
-}
-
-// START: Add these two new functions to script.js
-
-/**
- * Attaches a scroll event listener to the album overlay's content area.
- * It's crucial to remove any old listener first to prevent duplicates.
- */
 function setupAlbumScrollListener() {
     const scrollContent = document.getElementById('album-overlay-scroll-content');
     if (!scrollContent) return;
@@ -2869,133 +2513,7 @@ async function handleAlbumPlayButtonClick() {
     updatePlayerUI(); // Sync all player UI
     updateFixedTopHeadingVisibility(); // Sync fixed top heading
 }
-// REPLACE your existing closeAlbumOverlay function with this entire block
 
-async function closeAlbumOverlay(instant = false) {
-    const scrollContent = document.getElementById('album-overlay-scroll-content');
-    const albumFullEmbedContainer = document.getElementById('album-full-embed-container'); // Get the container
-        // --- ADD THIS BLOCK ---
-    const compactHeader = document.getElementById('embedded-compact-header');
-    if (compactHeader) {
-        compactHeader.remove();
-    }
-    // --- END OF ADDED BLOCK ---
-    // --- Case 1: Navigating BACK to a previous album in history ---
-    if (albumHistoryStack.length > 0) {
-        const previousState = albumHistoryStack.pop();
-        if (scrollContent) scrollContent.classList.add('is-transitioning');
-        await new Promise(resolve => setTimeout(resolve, 200));
-        await restoreAlbumDetails(previousState);
-        if (scrollContent) scrollContent.classList.remove('is-transitioning');
-        return;
-    }
-
-    // --- Case 2: Closing the overlay completely (no history left) ---
-    console.log("Closing album overlay completely.");
-    if (albumOverlay) {
-        currentAlbum = null;
-        history.replaceState(null, "", "/"); // This cleans the URL
-
-        // The main album overlay is always hidden
-        albumOverlay.classList.remove('active', 'show');
-
-        // --- THIS IS THE KEY FIX ---
-        // Check if the currently playing album is an embedded one.
-        const isPlayingEmbedded = playingAlbum && (playingAlbum.rawHtmlEmbed || playingAlbum.fullSoundcloudEmbed || playingAlbum.audiomackEmbed || playingAlbum.iframeSrc);
-
-        // We ONLY hide the iframe's container if we are NOT leaving an
-        // embedded player running in the background. If we are, we leave
-        // the container active so the music doesn't stop.
-        if (albumFullEmbedContainer && !isPlayingEmbedded) {
-            console.log("Not playing an embedded album, so hiding the embed container.");
-            albumFullEmbedContainer.style.display = 'none';
-        } else {
-            console.log("Playing an embedded album. Keeping its container active in the background.");
-        }
-        // --- END OF FIX ---
-
-        // The rest of the function remains the same, handling cleanup
-        if (instant) {
-            albumOverlay.style.transition = 'none';
-            const similarAlbumsSection = document.getElementById('similar-albums-section');
-            if (similarAlbumsSection) {
-                similarAlbumsSection.classList.add('hidden');
-            }
-            requestAnimationFrame(() => {
-                albumOverlay.style.transition = '';
-            });
-        } else {
-            setTimeout(() => {
-                const similarAlbumsSection = document.getElementById('similar-albums-section');
-                if (similarAlbumsSection) {
-                    similarAlbumsSection.classList.add('hidden');
-                }
-            }, 500);
-        }
-        
-        updateBodyForPopups();
-        updateFixedTopHeadingVisibility();
-    }
-}
-
-
-/**
- * Closes all major app popups and overlays.
- * This function ensures a single source of truth for managing popup state.
- */
-/**
- * Closes all major app popups and overlays, including the liked songs and library popups.
- */
-function closeAllOverlays() {
-    console.log("closeAllOverlays: Initiating a full closure of all popups and overlays.");
-    
-    // Close the main login/signup popup
-    const authPopup = document.getElementById('popup-overlay');
-    if (authPopup) {
-        authPopup.classList.add('invisible', 'opacity-0');
-        document.body.classList.remove('no-scroll');
-    }
-    
-    // Close the search overlays
-    const searchOverlay = document.getElementById('mobile-search-overlay');
-    if (searchOverlay) {
-        searchOverlay.classList.remove('open');
-        document.body.style.overflow = 'auto';
-    }
-    const searchPopup = document.getElementById('unique-search-popup');
-    if (searchPopup) {
-        searchPopup.classList.add('unique-hidden');
-    }
-    
-    // Close the album details overlay
-    const albumOverlay = document.getElementById('albumOverlay');
-    if (albumOverlay) {
-        albumOverlay.classList.add('hidden', 'opacity-0');
-        albumOverlay.classList.remove('show', 'active');
-        document.body.style.overflow = 'auto';
-    }
-    
-    // Close the library popups
-    const libraryPopup = document.getElementById('library-popup');
-    if (libraryPopup) {
-        libraryPopup.classList.add('hidden');
-    }
-    const likedSongsOverlay = document.getElementById('likedSongsOverlay');
-    if (likedSongsOverlay) {
-        likedSongsOverlay.classList.remove('open');
-        likedSongsOverlay.setAttribute('aria-hidden', 'true');
-    }
-    
-    // Close any smaller popups
-    const smallPopups = document.querySelectorAll('.swarify-add-popup-overlay, .song-options-popup-backdrop');
-    smallPopups.forEach(p => p.classList.remove('active'));
-    
-    console.log("closeAllOverlays: All known overlays and popups are now closed.");
-}
-
-// --- Player Controls (Play/Pause, Next, Previous, Volume, Progress) ---
-
-// Main Play/Pause button (compact playbar)
 if (playPauseBtn) {
     playPauseBtn.addEventListener('click', async (event) => {
         event.stopPropagation();
@@ -3850,29 +3368,7 @@ function clearSearchMessage() {
 
 // Global function to close all search UIs
 // This function is now the single source of truth for closing all search-related elements.
-window.closeAllSearchUi = function() {
-    const mobileOverlay = document.getElementById('mobile-search-overlay');
-    const smallPopup = document.getElementById('unique-search-popup');
-    const overlayBackdrop = document.getElementById('overlay');
-    const popupSearchInput = document.querySelector(".unique-search-input");
-    
-    if (mobileOverlay) {
-        mobileOverlay.classList.remove('open');
-        mobileOverlay.setAttribute('aria-hidden', 'true');
-        mobileOverlay.querySelector('#mobile-overlay-results').innerHTML = '';
-      updateBodyForPopups();
-    }
-    if (smallPopup) {
-        smallPopup.classList.add('unique-hidden');
-    }
-    if (overlayBackdrop) {
-        overlayBackdrop.style.display = 'none';
-    }
-    // Clear the input in the small popup on close
-    if (popupSearchInput) {
-        popupSearchInput.value = '';
-    }
-};
+
 
 // ---------------------------
 // Enhanced renderSuggestions + attachLiveSearch with `mode`
@@ -4179,36 +3675,7 @@ function createSuggestionsContainer(inputElement) {
    
 })();
 
-// ---------------------------
-// Small popup wiring (Corrected to open popup first)
-// ---------------------------
-function openSearchPopup() {
-    const mobileOverlay = document.getElementById('mobile-search-overlay');
-    const smallPopup = document.getElementById('unique-search-popup');
-    const overlayBackdrop = document.getElementById('overlay');
 
-    if (window.innerWidth <= 1024) {
-        // For mobile/tablet, open the full-screen overlay directly.
-        if (mobileOverlay) {
-            mobileOverlay.classList.add('open');
-            mobileOverlay.setAttribute('aria-hidden', 'false');
-            document.body.style.overflow = 'hidden'; // Disable background scrolling
-            window.renderMobileRecents(); // Display recent searches
-            setTimeout(() => {
-                const mobileInput = document.getElementById('mobile-overlay-input');
-                if (mobileInput) mobileInput.focus();
-            }, 80);
-        }
-    } else {
-        // For desktop, open the small search popup.
-        if (smallPopup) {
-            smallPopup.classList.remove('unique-hidden');
-            if (overlayBackdrop) overlayBackdrop.style.display = 'block';
-            const popupSearchInput = smallPopup.querySelector(".unique-search-input");
-            if (popupSearchInput) popupSearchInput.focus();
-        }
-    }
-}
 
 const bottomSearchLink = document.getElementById("unique-search-icon-link");
 if (bottomSearchLink) {
@@ -6287,50 +5754,6 @@ function updatePopupLikeState() {
     }
 }
 
-// NEW: Function to open the song options popup
-// --- START: REPLACEMENT for openSongOptionsPopup function ---
-// --- START: REPLACEMENT for openSongOptionsPopup function ---
-
-function openSongOptionsPopup(song) {
-     pushHistoryStateForPopup();
-    const popupBackdrop = document.getElementById('song-options-popup');
-    const popupPanel = document.querySelector('.song-options-panel');
-    const popupSongCover = document.getElementById('popup-song-cover');
-    const popupSongTitle = document.getElementById('popup-song-title');
-    const popupSongArtist = document.getElementById('popup-song-artist');
-    
-    if (!popupBackdrop || !popupPanel) {
-        console.error("Could not find the song options popup panel.");
-        return;
-    }
-
-    // Store the entire song object as a stringified JSON on the panel.
-    // This is the most important step.
-    popupPanel.dataset.song = JSON.stringify(song);
-
-    // Populate the popup's UI with song details
-    if (popupSongCover) popupSongCover.src = song.img || song.coverArt || '';
-    if (popupSongTitle) popupSongTitle.textContent = song.title;
-    if (popupSongArtist) popupSongArtist.textContent = song.artist;
-    
-    // Show the popup
-    popupBackdrop.style.display = 'flex';
-    setTimeout(() => popupBackdrop.classList.add('active'), 10);
-}
-
-// --- END: REPLACEMENT for openSongOptionsPopup function ---
-// --- END: REPLACEMENT for openSongOptionsPopup function ---
-
-// NEW: Function to close the song options popup
-function closeSongOptionsPopup() {
-    const popupBackdrop = document.getElementById('song-options-popup');
-    if (!popupBackdrop) return;
-    
-    popupBackdrop.classList.remove('active');
-    setTimeout(() => {
-        popupBackdrop.style.display = 'none';
-    }, 300); // Wait for the transition to finish
-}
 
 
 
@@ -6500,70 +5923,6 @@ document.addEventListener('trackChanged', () => {
 document.addEventListener('songLiked', updatePlaybarLikeState);
 document.addEventListener('songUnliked', updatePlaybarLikeState);
 
-
-// -------------------------------------------------------------------
-// --- START: NEW LOGIC FOR 'ADD TO PLAYLIST' OVERLAY ---
-// -------------------------------------------------------------------
-// --- START: REPLACEMENT CODE ---
-
-// --- START: REPLACEMENT for the final DOMContentLoaded block ---
-
-// --- START: REPLACEMENT CODE ---
-
-// --- Core Functions for "Add to Playlist" Overlay ---
-// By defining these in the global scope (outside of any event listener),
-// they are guaranteed to be available when needed.
-
-window.openAddToPlaylistOverlay = async (song) => {
-    const addToPlaylistOverlay = document.getElementById('add-to-playlist-overlay');
-    if (!addToPlaylistOverlay || !song) return;
-
-    addToPlaylistOverlay.dataset.song = JSON.stringify(song);
-    await fetchUserPlaylists(); // Assumes fetchUserPlaylists is globally available
-    
-    // Find the container and render the list inside this function
-    const playlistSelectionContainer = document.getElementById('playlist-selection-container');
-    if (!playlistSelectionContainer) return;
-    playlistSelectionContainer.innerHTML = ''; // Clear previous items
-
-    if (!currentUserPlaylists || currentUserPlaylists.length === 0) {
-        playlistSelectionContainer.innerHTML = '<p class="text-center text-gray-400 py-4">You have no playlists yet.</p>';
-    } else {
-        currentUserPlaylists.forEach(playlist => {
-            const item = document.createElement('div');
-            item.className = 'flex items-center gap-4 p-2 rounded-lg';
-            const isAlreadyInPlaylist = playlist.songs && playlist.songs.some(s => s.albumId === song.albumId && String(s.trackIndex) === String(song.trackIndex));
-            const coverArt = (playlist.coverArt && playlist.coverArt !== 'undefined') ? playlist.coverArt : 'https://placehold.co/64x64/333/fff?text=♫';
-            item.innerHTML = `
-                <img src="${coverArt}" alt="${escapeHtml(playlist.name)}" class="w-16 h-16 rounded-md object-cover">
-                <div class="flex-grow min-w-0">
-                    <p class="text-white font-semibold truncate">${escapeHtml(playlist.name)}</p>
-                    <p class="text-gray-400 text-sm">${playlist.songs ? playlist.songs.length : 0} song${(playlist.songs && playlist.songs.length === 1) ? '' : 's'}</p>
-                </div>
-                <input type="checkbox" class="playlist-select-checkbox" data-playlist-id="${playlist._id}" ${isAlreadyInPlaylist ? 'checked' : ''}>
-            `;
-            playlistSelectionContainer.appendChild(item);
-        });
-    }
-      addToPlaylistOverlay.classList.remove('hidden'); // <-- ADD THIS LINE    
-    addToPlaylistOverlay.classList.add('visible');
-    document.body.style.overflow = 'hidden';
-};
-
-window.closeAddToPlaylistOverlay = () => {
-    const addToPlaylistOverlay = document.getElementById('add-to-playlist-overlay');
-    const playlistSelectionContainer = document.getElementById('playlist-selection-container');
-    const doneAddingToPlaylistBtn = document.getElementById('done-adding-to-playlist-btn');
-
-    if (!addToPlaylistOverlay) return;
-    addToPlaylistOverlay.classList.remove('visible');
-    document.body.style.overflow = 'auto';
-    setTimeout(() => {
-        addToPlaylistOverlay.dataset.song = '';
-        if (playlistSelectionContainer) playlistSelectionContainer.innerHTML = '';
-        if (doneAddingToPlaylistBtn) doneAddingToPlaylistBtn.disabled = true;
-    }, 300);
-};
 
 
 
@@ -7025,30 +6384,7 @@ async function removeSongFromPlaylist(playlistId, songToRemove) {
         showMessageBox("A network error occurred.", 'error');
     }
 }
-// --- END: NEW FUNCTION ---
-// --- START: NEW FUNCTION to close the playlist details ---
-function closePlaylistDetailsOverlay() {
-    const overlay = document.getElementById('playlist-details-overlay');
-    if (!overlay) return;
 
-    overlay.classList.remove('active');
-    // Add hidden class after transition to ensure it's removed from the accessibility tree
-    setTimeout(() => {
-        overlay.classList.add('hidden');
-    }, 300); // Should match your CSS transition duration
-updateBodyForPopups(); 
-}
-// --- END: NEW FUNCTION ---
-/**
- * Updates the play/pause icon for all playlist play buttons
- * to reflect the current playback state.
- */
-/**
- * Updates the play/pause icon for all playlist play buttons
- * to reflect the current playback state.
- * 
- * 
- */
 
 function updatePlaylistPlayButton(isPlaying) {
     const playlistPlayBtn = document.getElementById('playlist-play-btn');
@@ -7116,149 +6452,146 @@ function updatePlaylistPlayButtons() {
 
     updatePlaylistPlayButton(isPlaying);
 }
+/**
+ * Populates a grid element with cloned album cards from a source container on the main page.
+ * @param {HTMLElement} gridContainer - The grid element inside the popup to populate.
+ * @param {string} sourceSelector - A CSS selector for the source album cards to clone.
+ */
+function populateRecordBreakingGrid(gridContainer, sourceSelector) {
+    if (!gridContainer) {
+        console.error("Popup grid container not found.");
+        return;
+    }
 
+    // 1. Clear any existing content from the popup grid
+    gridContainer.innerHTML = '';
 
-function showFullScreenPlayer() {
-      pushHistoryStateForPopup();
-    if (!fullScreenPlayer) return;
+    // 2. Find all the source cards on the main page
+    const sourceCards = document.querySelectorAll(sourceSelector);
 
-    fullScreenPlayer.classList.add('active');
-    document.body.style.overflow = 'hidden';
-    console.log("Full-screen player shown.");
+    if (sourceCards.length === 0) {
+        gridContainer.innerHTML = '<p class="text-gray-400 text-center col-span-full">No albums to display.</p>';
+        return;
+    }
 
-    // --- Dynamic Background Logic ---
-    const albumArt = document.getElementById('full-screen-album-art');
-    const setBackgroundColor = () => {
-        try {
-            const colorThief = new ColorThief();
-            const dominantColor = colorThief.getColor(albumArt);
-            const rgbColor = `rgb(${dominantColor[0]}, ${dominantColor[1]}, ${dominantColor[2]})`;
+    // 3. Loop through each source card, clone it, and add it to the popup
+    sourceCards.forEach(sourceCard => {
+        const newCard = sourceCard.cloneNode(true);
+
+       newCard.addEventListener('click', () => {
+            const albumId = newCard.dataset.albumId;
+            const albumData = allAlbumsData.find(a => a.id === albumId);
+
+            if (albumData && typeof openAlbumDetails === 'function') {
+                // Just open the album. The browser will correctly handle the history stack.
+                // The URL will change from /#record-breaking-1 to /album/your-album-id
+                openAlbumDetails(albumData);
+            }
+        });
+
+        // 5. Append the newly created card to the popup's grid
+        gridContainer.appendChild(newCard);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+
+// --- New: Centralized Footer Navigation Listeners ---
+    const navLinks = document.querySelectorAll('.unique-footer-nav .unique-nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', (event) => {
+            event.preventDefault();
+            const target = link.dataset.target || link.getAttribute('href').substring(1);
+            if (target) {
+                navigateTo(target);
+            }
+        });
+    });
+    
+
+   navigateTo('home');
+ 
+      const libraryLink1 = document.querySelector('.unique-footer-nav .unique-nav-item:nth-child(3) a');
+  const popup = document.getElementById('library-popup');
+  const closeBtn = document.getElementById('close-library-popup');
+
+  if(libraryLink1 && popup && closeBtn) {
+    libraryLink1.addEventListener('click', function(e) {
+      e.preventDefault();
+      popup.classList.remove('hidden');
+    });
+
+    closeBtn.addEventListener('click', function() {
+      popup.classList.add('hidden');
+    });
+  }
+
+   // Event listeners for UI components
+    const libraryLikedBtn = Array.from(document.querySelectorAll('h3.text-base.font-medium')).find(el => el.textContent.trim() === 'Liked Songs');
+    if (libraryLikedBtn) {
+        libraryLikedBtn.closest('div').addEventListener('click', () => {
+            const likedOverlay = document.getElementById('likedSongsOverlay');
+            if (likedOverlay) {
+                likedOverlay.classList.add('open');
+                likedOverlay.setAttribute('aria-hidden', 'false');
+                fetchAndRenderLikedSongs();
+            }
+        });
+    }
+
+    const closeLikedBtn = document.getElementById('closeLikedSongs');
+    if (closeLikedBtn) {
+        closeLikedBtn.addEventListener('click', () => {
+            const likedOverlay = document.getElementById('likedSongsOverlay');
+            if (likedOverlay) {
+                likedOverlay.classList.remove('open');
+                likedOverlay.setAttribute('aria-hidden', 'true');
+            }
+        });
+    }
+
+    // Wiring up the playbar like button
+    const playbarLikeBtn = document.getElementById('mobile-add-btn') || document.querySelector('.playbar-add-btn');
+    if (playbarLikeBtn && !playbarLikeBtn.dataset.swarifyLikeWired) {
+        playbarLikeBtn.dataset.swarifyLikeWired = 'true';
+        playbarLikeBtn.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            toggleLikeCurrentSong();
+        });
+    }
+    
+    // Wire up the add-to-playlist popup listener
+    const addPopupLikedItem = document.querySelector('#add-popup-overlay .swarify-add-popup-item');
+    if(addPopupLikedItem && addPopupLikedItem.textContent.toLowerCase().includes('liked songs')) {
+        addPopupLikedItem.addEventListener('click', (ev) => {
+            ev.preventDefault();
             
-            // Set a CSS variable for the gradient
-            fullScreenPlayer.style.setProperty('--dominant-color', rgbColor);
-        } catch (e) {
-            console.error("ColorThief error:", e);
-            // Fallback to a default color if there's an error
-            fullScreenPlayer.style.setProperty('--dominant-color', '#4a4a4a');
-        }
-    };
+            const song = getCurrentSongForLike();
+            if (song) {
+                const likedSong = LikedStore.get().find(x => LikedStore.isSame(x, song));
+                if (likedSong) {
+                    backendUnlikeSong(likedSong);
+                    LikedStore.remove(song);
+                } else {
+                    LikedStore.add(song);
+                    backendLikeSong(song);
+                }
+                updatePlaybarLikeState();
+                updatePopupLikeState();
+            }
 
-    // If the image is already loaded (e.g., from cache), set the color immediately.
-    if (albumArt.complete) {
-        setBackgroundColor();
-    } else {
-        // Otherwise, wait for it to load.
-        albumArt.onload = setBackgroundColor;
+            const overlay = document.getElementById('add-popup-overlay');
+            if(overlay) {
+                overlay.classList.remove('active');
+                overlay.style.display = 'none';
+            }
+        });
     }
 
-    // Update the rest of the player UI
-    updatePlayerUI();
-}
+    // Call the function to initialize the UI state
+    initializeUIState();
 
-// =======================================================
-// NEW: MOBILE BACK BUTTON & HISTORY MANAGEMENT
-// =======================================================
-
-/**
- * A helper function to check if a popup is currently visible to the user.
- * @param {string} elementId - The ID of the popup element to check.
- * @returns {boolean} - True if the popup is visible, false otherwise.
- */
-function isPopupVisible(elementId) {
-    const element = document.getElementById(elementId);
-    if (!element) return false;
-    
-    // Check for common 'hidden' classes used in the project
-    if (element.classList.contains('hidden') || element.classList.contains('unique-hidden') || element.classList.contains('invisible')) {
-        return false;
-    }
-    
-    // Check for 'active', 'open', or 'show' classes that indicate visibility
-    if (element.classList.contains('active') || element.classList.contains('open') || element.classList.contains('show')) {
-        return true;
-    }
-    
-    // Check computed style for display property
-    const style = window.getComputedStyle(element);
-    if (style.display === 'none' || style.visibility === 'hidden') {
-        return false;
-    }
-
-    return false; // Default to not visible if no explicit show state is found
-}
-
-/**
- * Pushes a new state to the browser's history.
- * This should be called every time a popup or overlay is opened.
- */
-function pushHistoryStateForPopup() {
-    history.pushState({ swarifyPopup: true }, "");
-    console.log("Pushed history state for a new popup.");
-}
-
-/**
- * Updates body scrolling based on whether any popups are open.
- * This prevents the page from scrolling when an overlay is active.
- */
-function updateBodyForPopups() {
-    // A slight delay to allow the DOM to update after a close function runs
-    setTimeout(() => {
-        const popupsToCheck = [
-            'song-options-popup', 'add-to-playlist-overlay', 'new-playlist-popup-overlay',
-            'mobile-search-overlay', 'unique-search-popup', 'full-screen-player',
-            'playlist-details-overlay', 'likedSongsOverlay', 'record-breaking-popup-overlay',
-            'record-breaking-popup-overlay2', 'library-popup', 'albumOverlay', 'popup-overlay'
-        ];
-
-        const isAnyPopupVisible = popupsToCheck.some(id => isPopupVisible(id));
-
-        if (isAnyPopupVisible) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
-    }, 50); // 50ms delay
-}
-
-
-/**
- * The main handler for the 'popstate' event (back button press).
- * It checks for open popups in order of priority and closes the top-most one.
- */
-function handleBackButton() {
-    console.log("Back button event detected. Checking for open popups...");
-
-    const popupsToClose = [
-        { id: 'song-options-popup', closeFunc: closeSongOptionsPopup },
-        { id: 'add-to-playlist-overlay', closeFunc: window.closeAddToPlaylistOverlay },
-        { id: 'new-playlist-popup-overlay', closeFunc: () => document.getElementById('new-playlist-popup-overlay')?.classList.add('hidden') },
-        { id: 'album-search-view', closeFunc: () => document.getElementById('albumOverlay')?.classList.remove('search-active') },
-        { id: 'mobile-search-overlay', closeFunc: () => document.getElementById('mobile-search-overlay')?.classList.remove('open') },
-        { id: 'unique-search-popup', closeFunc: () => document.getElementById('unique-search-popup')?.classList.add('unique-hidden') },
-        { id: 'full-screen-player', closeFunc: hideFullScreenPlayer },
-        { id: 'playlist-details-overlay', closeFunc: closePlaylistDetailsOverlay },
-        { id: 'likedSongsOverlay', closeFunc: () => document.getElementById('likedSongsOverlay')?.classList.remove('open') },
-        { id: 'record-breaking-popup-overlay', closeFunc: () => document.getElementById('record-breaking-popup-overlay')?.classList.remove('flex') },
-        { id: 'record-breaking-popup-overlay2', closeFunc: () => document.getElementById('record-breaking-popup-overlay2')?.classList.remove('flex') },
-        { id: 'library-popup', closeFunc: () => document.getElementById('library-popup')?.classList.add('hidden') },
-        {  id: 'albumOverlay', closeFunc: () => closeAlbumOverlay(true) },
-        { id: 'popup-overlay', closeFunc: closePopup }
-    ];
-
-    for (const popup of popupsToClose) {
-        if (isPopupVisible(popup.id)) {
-            console.log(`Closing popup via back button: ${popup.id}`);
-            popup.closeFunc();
-            updateBodyForPopups();
-            return; 
-        }
-    }
-    
-    updateBodyForPopups();
-}
-
-
-
+    });
 
 
 // --- All DOM Merged ---
@@ -7533,21 +6866,7 @@ if (viewEmbeddedPlayerBtn) {
         showMessageBox("Your browser does not support voice search.", 'info', 5000);
     }
 
-  // --- New: Centralized Footer Navigation Listeners ---
-    const navLinks = document.querySelectorAll('.unique-footer-nav .unique-nav-link');
-    navLinks.forEach(link => {
-        link.addEventListener('click', (event) => {
-            event.preventDefault();
-            const target = link.dataset.target || link.getAttribute('href').substring(1);
-            if (target) {
-                navigateTo(target);
-            }
-        });
-    });
-    
-
-   navigateTo('home');
-
+  
    
 
 
@@ -8428,71 +7747,7 @@ if (dropdownLogoutBtn) {
     }
 
 
-     // Event listeners for UI components
-    const libraryLikedBtn = Array.from(document.querySelectorAll('h3.text-base.font-medium')).find(el => el.textContent.trim() === 'Liked Songs');
-    if (libraryLikedBtn) {
-        libraryLikedBtn.closest('div').addEventListener('click', () => {
-            const likedOverlay = document.getElementById('likedSongsOverlay');
-            if (likedOverlay) {
-                likedOverlay.classList.add('open');
-                likedOverlay.setAttribute('aria-hidden', 'false');
-                fetchAndRenderLikedSongs();
-            }
-        });
-    }
-
-    const closeLikedBtn = document.getElementById('closeLikedSongs');
-    if (closeLikedBtn) {
-        closeLikedBtn.addEventListener('click', () => {
-            const likedOverlay = document.getElementById('likedSongsOverlay');
-            if (likedOverlay) {
-                likedOverlay.classList.remove('open');
-                likedOverlay.setAttribute('aria-hidden', 'true');
-            }
-        });
-    }
-
-    // Wiring up the playbar like button
-    const playbarLikeBtn = document.getElementById('mobile-add-btn') || document.querySelector('.playbar-add-btn');
-    if (playbarLikeBtn && !playbarLikeBtn.dataset.swarifyLikeWired) {
-        playbarLikeBtn.dataset.swarifyLikeWired = 'true';
-        playbarLikeBtn.addEventListener('click', (ev) => {
-            ev.preventDefault();
-            toggleLikeCurrentSong();
-        });
-    }
     
-    // Wire up the add-to-playlist popup listener
-    const addPopupLikedItem = document.querySelector('#add-popup-overlay .swarify-add-popup-item');
-    if(addPopupLikedItem && addPopupLikedItem.textContent.toLowerCase().includes('liked songs')) {
-        addPopupLikedItem.addEventListener('click', (ev) => {
-            ev.preventDefault();
-            
-            const song = getCurrentSongForLike();
-            if (song) {
-                const likedSong = LikedStore.get().find(x => LikedStore.isSame(x, song));
-                if (likedSong) {
-                    backendUnlikeSong(likedSong);
-                    LikedStore.remove(song);
-                } else {
-                    LikedStore.add(song);
-                    backendLikeSong(song);
-                }
-                updatePlaybarLikeState();
-                updatePopupLikeState();
-            }
-
-            const overlay = document.getElementById('add-popup-overlay');
-            if(overlay) {
-                overlay.classList.remove('active');
-                overlay.style.display = 'none';
-            }
-        });
-    }
-
-    // Call the function to initialize the UI state
-    initializeUIState();
-
     // --- NEW: Event listeners for the song options popup ---
     const popupBackdrop = document.getElementById('song-options-popup');
     const removeBtn = document.getElementById('popup-remove-from-liked');
@@ -8547,20 +7802,7 @@ if (goBtn) {
 
 
 
-      const libraryLink1 = document.querySelector('.unique-footer-nav .unique-nav-item:nth-child(3) a');
-  const popup = document.getElementById('library-popup');
-  const closeBtn = document.getElementById('close-library-popup');
-
-  if(libraryLink1 && popup && closeBtn) {
-    libraryLink1.addEventListener('click', function(e) {
-      e.preventDefault();
-      popup.classList.remove('hidden');
-    });
-
-    closeBtn.addEventListener('click', function() {
-      popup.classList.add('hidden');
-    });
-  }
+   
 
      // --- CSS Injection ---
     const addToPlaylistStyle = document.createElement('style');
@@ -9201,162 +8443,7 @@ audio.addEventListener('play', updateAllPlayButtonStates);
 
 
 
-    // Get references to all the necessary elements
-    const listenNowBtn = document.querySelector('.listen-now-btn');
-    const popupOverlay1 = document.getElementById('record-breaking-popup-overlay');
-    const closePopupBtn = document.getElementById('close-record-breaking-popup');
-    const popupGrid = document.getElementById('record-breaking-popup-grid');
-
-    // Function to open the popup
-    const openRecordBreakingPopup = () => {
-         pushHistoryStateForPopup();
-        if (!popupOverlay1 || !popupGrid) return;
-
-        // 1. Clear any old content from the grid
-        popupGrid.innerHTML = '';
-
-        // 2. Find the original mini-carousel albums
-        const originalCards = document.querySelectorAll('#record-breaking-albums-container .mini-album-card');
-
-        // 3. Create a new card in the popup for each original card
-        originalCards.forEach(originalCard => {
-            const albumId = originalCard.dataset.albumId;
-            const album = allAlbumsData.find(a => a.id === albumId);
-
-            if (album) {
-                const newCard = document.createElement('div');
-                newCard.className = 'record-breaking-popup-card';
-                // Set the data-album-id so we know which album to open on click
-                newCard.dataset.albumId = album.id;
-                newCard.innerHTML = `
-                    <img src="${album.coverArt}" alt="${album.title}">
-                    <div class="card-title">${album.title}</div>
-                `;
-
-                // 4. Add a click listener to the new card
-                newCard.addEventListener('click', () => {
-                    // Find the full album data and open the details overlay
-                    const albumToOpen = allAlbumsData.find(a => a.id === album.id);
-                    if (albumToOpen) {
-                        openAlbumDetails(albumToOpen);
-                        // REMOVED THE FOLLOWING LINE:
-                        // closeRecordBreakingPopup(); // Close the grid popup after opening the album
-                    }
-                });
-
-                popupGrid.appendChild(newCard);
-            }
-        });
-
-        // 5. Show the popup
-        popupOverlay1.classList.remove('hidden');
-        popupOverlay1.classList.add('flex'); // Use flex to center the content
-        document.body.classList.add('popup-active'); // Prevent background scrolling
-    };
-
-    // Function to close the popup
-    const closeRecordBreakingPopup = () => {
-        if (!popupOverlay1) return;
-        popupOverlay1.classList.add('hidden');
-        popupOverlay1.classList.remove('flex');
-        document.body.classList.remove('popup-active');
-    };
-
-    // Attach the event listeners
-    if (listenNowBtn) {
-        listenNowBtn.addEventListener('click', openRecordBreakingPopup);
-    }
-    if (closePopupBtn) {
-        closePopupBtn.addEventListener('click', closeRecordBreakingPopup);
-    }
-    // Also close the popup if the user clicks on the dark background
-    if (popupOverlay1) {
-        popupOverlay1.addEventListener('click', (e) => {
-            if (e.target === popupOverlay1) {
-                closeRecordBreakingPopup();
-            }
-        });
-    }
-
-
-
-
-    // Get references to all the necessary elements
-    const listenNowBtn2 = document.querySelector('.listen-now-btn2');
-    const popupOverlay2 = document.getElementById('record-breaking-popup-overlay2');
-    const closePopupBtn2 = document.getElementById('close-record-breaking-popup2');
-    const popupGrid2 = document.getElementById('record-breaking-popup-grid2');
-
-    // Function to open the popup
-    const openRecordBreakingPopup2 = () => {
-         pushHistoryStateForPopup();
-        if (!popupOverlay2 || !popupGrid2) return;
-
-        // 1. Clear any old content from the grid
-        popupGrid2.innerHTML = '';
-
-        // 2. Find the original mini-carousel albums
-        const originalCards = document.querySelectorAll('#record-breaking-albums-container2 .mini-album-card2');
-
-        // 3. Create a new card in the popup for each original card
-        originalCards.forEach(originalCard => {
-            const albumId = originalCard.dataset.albumId;
-            const album = allAlbumsData.find(a => a.id === albumId);
-
-            if (album) {
-                const newCard = document.createElement('div');
-                newCard.className = 'record-breaking-popup-card2';
-                // Set the data-album-id so we know which album to open on click
-                newCard.dataset.albumId = album.id;
-                newCard.innerHTML = `
-                    <img src="${album.coverArt}" alt="${album.title}">
-                    <div class="card-title2">${album.title}</div>
-                `;
-
-                // 4. Add a click listener to the new card
-                newCard.addEventListener('click', () => {
-                    // Find the full album data and open the details overlay
-                    const albumToOpen = allAlbumsData.find(a => a.id === album.id);
-                    if (albumToOpen) {
-                        openAlbumDetails(albumToOpen);
-                        // REMOVED THE FOLLOWING LINE:
-                        // closeRecordBreakingPopup2(); // Close the grid popup after opening the album
-                    }
-                });
-
-                popupGrid.appendChild(newCard);
-            }
-        });
-
-        // 5. Show the popup
-        popupOverlay2.classList.remove('hidden');
-        popupOverlay2.classList.add('flex'); // Use flex to center the content
-        document.body.classList.add('popup-active2'); // Prevent background scrolling
-    };
-
-    // Function to close the popup
-    const closeRecordBreakingPopup2 = () => {
-        if (!popupOverlay2) return;
-        popupOverlay2.classList.add('hidden');
-        popupOverlay2.classList.remove('flex');
-        document.body.classList.remove('popup-active2');
-    };
-
-    // Attach the event listeners
-    if (listenNowBtn2) {
-        listenNowBtn2.addEventListener('click', openRecordBreakingPopup2);
-    }
-    if (closePopupBtn2) {
-        closePopupBtn2.addEventListener('click', closeRecordBreakingPopup2);
-    }
-    // Also close the popup if the user clicks on the dark background
-    if (popupOverlay2) {
-        popupOverlay2.addEventListener('click', (e) => {
-            if (e.target === popupOverlay) {
-                closeRecordBreakingPopup2();
-            }
-        });
-    }
+    
 
 // REPLACE the existing 'blur' event listener inside your DOMContentLoaded with this one.
 
@@ -9398,7 +8485,7 @@ window.addEventListener('blur', () => {
 
 
 
-    window.addEventListener('popstate', handleBackButton);
+   
 });
 
 
@@ -9449,3 +8536,5 @@ async function fetchAndDisplayEmbeddedSimilarAlbums(albumToRecommendFor , wrappe
         container.innerHTML = `<p style="color: #ff4d4d; grid-column: 1 / -1; text-align: center;">Could not load recommendations.</p>`;
     }
 }
+
+//start-separation------------------------------------------------------------------

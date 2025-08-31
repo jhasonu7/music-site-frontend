@@ -6713,22 +6713,7 @@ if (window.location.pathname === '/' || window.location.pathname === '') {
             console.log("DOMContentLoaded: Initial native audio volume set.");
         }
 
-        // REPLACE the existing mainPlayBar click listener with this one
 
-if (mainPlayBar) {
-    mainPlayBar.addEventListener('click', (event) => {
-        // Stop if a specific control button was clicked
-        if (event.target.closest('button, input')) {
-            return;
-        }
-
-        // If a song/album is loaded, show the full-screen player
-        if (playingAlbum) {
-            console.log("Play bar clicked. Opening full-screen player.");
-            showFullScreenPlayer();
-        }
-    });
-}
 
 // ADD this new listener inside your DOMContentLoaded event
 
@@ -6744,11 +6729,7 @@ if (viewEmbeddedPlayerBtn) {
     });
 }
 
-        // NEW: Add minimize button listener for full-screen player
-        if (minimizePlayerBtn) {
-             minimizePlayerBtn.addEventListener('click', () => history.back());
-            console.log("DOMContentLoaded: minimizePlayerBtn click listener attached.");
-        }
+        
 
 
         // NEW: Add resize event listener to manage playbar view and scroll button visibility on window resize

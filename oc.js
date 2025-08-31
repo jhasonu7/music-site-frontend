@@ -1,29 +1,40 @@
 function handleRouteChange() {
     const path = window.location.pathname;
+    const albumOverlay = document.getElementById('albumOverlay');
+    const playlistOverlay = document.getElementById('playlist-details-overlay');
+    
     console.log("Handling route change for path:", path);
 
+    // --- THIS IS THE FIX ---
     if (path.startsWith('/album/')) {
         const albumId = path.split('/')[2];
         const albumData = allAlbumsData.find(a => a.id === albumId);
-        
         if (albumData) {
-            // This condition is key:
-            // It will call openAlbumDetails if:
-            // 1. The overlay is not currently shown at all.
-            // OR
-            // 2. The overlay IS shown, but it's for a DIFFERENT album (e.g., going back from C to B).
             if (!albumOverlay.classList.contains('show') || (currentAlbum && currentAlbum.id !== albumId)) {
-                 openAlbumDetails(albumData);
+                openAlbumDetails(albumData);
+            }
+        }
+    } else if (path.startsWith('/playlist/')) {
+        // 1. Added this block to specifically handle playlist URLs.
+        const playlistId = path.split('/')[2];
+        const playlistData = window.currentUserPlaylists.find(p => p._id === playlistId);
+        if (playlistData) {
+             // Only open the overlay if it's not already showing the correct playlist.
+             if (!playlistOverlay.classList.contains('active') || (currentPlaylist && currentPlaylist._id !== playlistId)) {
+                openPlaylistDetailsOverlay(playlistData);
             }
         }
     } else {
-        // If the path is not an album path (e.g., "/"), we ensure the overlay is closed.
-        if (albumOverlay.classList.contains('show')) {
+        // 2. Updated this block to close both album and playlist overlays when navigating away.
+        if (albumOverlay && albumOverlay.classList.contains('show')) {
             closeAlbumOverlay();
         }
+        if (playlistOverlay && playlistOverlay.classList.contains('active')) {
+            closePlaylistDetailsOverlay();
+        }
     }
+    // --- END OF FIX ---
 }
-
 
 
 function showFullScreenPlayer() {
@@ -135,7 +146,7 @@ function showPlaylistDetailsOverlay() {
     const overlay = document.getElementById('playlist-details-overlay');
     if (!overlay) return;
 
-    pushHistoryStateForPopup();
+   
     overlay.classList.remove('hidden', 'is-covered');
     document.body.style.overflow = 'hidden';
 
@@ -146,11 +157,12 @@ function showPlaylistDetailsOverlay() {
         }, 10);
     });
 
-    // Attach close listeners
     const mainBackBtn = document.getElementById('playlist-main-back-btn');
     const compactBackBtn = document.getElementById('playlist-compact-back-btn');
-    if (mainBackBtn) mainBackBtn.onclick = hidePlaylistDetailsOverlay;
-    if (compactBackBtn) compactBackBtn.onclick = hidePlaylistDetailsOverlay;
+    
+    // Change the onclick handlers to call history.back()
+    if (mainBackBtn) mainBackBtn.onclick = () => history.back();
+    if (compactBackBtn) compactBackBtn.onclick = () => history.back();
 }
 
 function hidePlaylistDetailsOverlay() {
@@ -164,7 +176,29 @@ function hidePlaylistDetailsOverlay() {
     updateBodyForPopups();
 }
 
+// ADD these new functions anywhere in oc.js
 
+function showSongActionsPopup() {
+    const popup = document.getElementById('add-popup-overlay');
+    if (popup) {
+        popup.style.display = 'block';
+        // A small delay ensures the transition is smooth
+        setTimeout(() => popup.classList.add('active'), 10);
+    }
+}
+
+function hideSongActionsPopup() {
+    const popup = document.getElementById('add-popup-overlay');
+    if (popup) {
+        popup.classList.remove('active');
+        // Hide the element completely after the transition ends
+        setTimeout(() => {
+            if (!popup.classList.contains('active')) {
+                popup.style.display = 'none';
+            }
+        }, 300); // This duration should match your CSS transition time
+    }
+}
 // --- Album Details Overlay ---
 
 function showAlbumOverlay() {
@@ -234,7 +268,7 @@ function showSongOptionsPopup() {
     const popupBackdrop = document.getElementById('song-options-popup');
     if (!popupBackdrop) return;
 
-    pushHistoryStateForPopup();
+  
     popupBackdrop.style.display = 'flex';
     setTimeout(() => popupBackdrop.classList.add('active'), 10);
 }
@@ -249,7 +283,27 @@ function hideSongOptionsPopup() {
     }, 300); // Wait for the transition to finish
 }
 
+// ADD these two new functions anywhere in oc.js
 
+function showNewPlaylistPopup() {
+    const popup = document.getElementById('new-playlist-popup-overlay');
+    const input = document.getElementById('new-playlist-name-input');
+    if (popup) {
+        popup.classList.remove('hidden');
+        // Automatically focus the input field for a better user experience
+        if (input) setTimeout(() => input.focus(), 50);
+    }
+}
+
+function hideNewPlaylistPopup() {
+    const popup = document.getElementById('new-playlist-popup-overlay');
+    const input = document.getElementById('new-playlist-name-input');
+    if (popup) {
+        popup.classList.add('hidden');
+        // Clear the input field when the popup is hidden
+        if (input) input.value = '';
+    }
+}
 // --- "Add to Playlist" Overlay ---
 
 function showAddToPlaylistOverlay() {
@@ -377,11 +431,7 @@ function openFullScreenPlayer() {
 
 // hideFullScreenPlayer is already in popup_controls.js as it's purely a UI function.
 
-// --- Song Options ---
-function openSongOptionsPopup(song) {
-    populateSongOptionsPopup(song);
-    showSongOptionsPopup();
-}
+
 
 function closeSongOptionsPopup() {
     hideSongOptionsPopup();
@@ -432,54 +482,32 @@ function isPopupVisible(elementId) {
            element.classList.contains('visible');
 }
 
+
+// in oc.js
+
 /**
  * Handles the `popstate` event (browser back button).
  * This is the MASTER function for closing all overlays sequentially and syncing the UI.
- */
-/**
- * Handles the `popstate` event (browser back button).
- * This is the MASTER function for closing all overlays sequentially and syncing the UI.
+ * This corrected version simplifies the logic by delegating to the existing router functions,
+ * ensuring the entire UI syncs with the URL after a back button press.
  */
 function handleBackButton() {
-    console.log("Back button pressed, handling pop state.");
+    console.log("Back button pressed, delegating to main routers to sync UI with URL.");
 
-   // Corrected Order in oc.js -> handleBackButton function
-// --- THIS IS THE NEW, CORRECTED ARRAY ---
-const popups = [
-    // This array now only contains popups that DO NOT have a URL hash.
-    { id: 'new-playlist-popup-overlay', close: () => document.getElementById('new-playlist-popup-overlay')?.classList.add('hidden') },
-    { id: 'add-to-playlist-overlay', close: window.closeAddToPlaylistOverlay },
-    { id: 'song-options-popup', close: window.closeSongOptionsPopup },
-    { id: 'likedSongsOverlay', close: window.closeLikedSongsOverlay },
-    { id: 'playlist-details-overlay', close: window.closePlaylistDetailsOverlay },
-    { 
-        id: 'popup-overlay', // The main authentication popup
-        close: () => {
-            if (window.closePopup) window.closePopup();
-            navigateTo('home');
-        }
-    },
-];
-
-    // Try to close a transient popup first.
-    for (const popup of popups) {
-        if (isPopupVisible(popup.id)) {
-            console.log(`Closing transient popup via back button: ${popup.id}`);
-            if (typeof popup.close === 'function') {
-                popup.close();
-            }
-            // If we closed any popup, we are done with this back button press.
-            return;
-        }
-    }
-
-    // If no other popups were closed, it means the navigation is for the main view (home or album).
-    // We delegate this task to handleRouteChange.
+    // This function handles views based on the URL path (e.g., /album/xyz vs /).
+    // It will correctly close the album overlay when you navigate away from an album path.
     if (typeof window.handleRouteChange === 'function') {
-        console.log("No transient popups found. Delegating to handleRouteChange to sync the main view.");
         window.handleRouteChange();
     }
+
+    // This function handles views based on the URL hash (e.g., #home vs #record-breaking-1).
+    // It will close the record-breaking popup when the hash changes to #home and update the footer.
+    if (typeof window.router === 'function') {
+        window.router();
+    }
 }
+
+// The event listener remains the same
 window.addEventListener('popstate', handleBackButton);
 
 
@@ -499,11 +527,45 @@ function router() {
     hideMainFooterViews();
 
     // Get references to popups
+      const albumSearchView = document.getElementById('album-search-view');
     const popupOverlay1 = document.getElementById('record-breaking-popup-overlay');
     const popupOverlay2 = document.getElementById('record-breaking-popup-overlay2');
      const fullScreenPlayer = document.getElementById('full-screen-player');
+     const playlistSearchView = document.getElementById('playlist-search-view');
 
     // Close popups by default if they are not the target route
+         // Handle the album search view
+
+      if (route !== 'new-playlist') {
+        hideNewPlaylistPopup();
+    }
+
+      if (route !== 'song-actions') {
+        hideSongActionsPopup();
+       }    
+    if (route === 'album-search') {
+        if (albumOverlay && albumSearchView) {
+            albumOverlay.classList.add('search-active');
+            if (typeof populateAlbumSearchResults === 'function') {
+                populateAlbumSearchResults();
+            }
+            const searchInput = document.getElementById('album-search-input');
+            if (searchInput) setTimeout(() => searchInput.focus(), 300);
+        }
+    }
+    else {
+        // This else block hides the search view when the route is not 'album-search'
+        if (albumOverlay) {
+            albumOverlay.classList.remove('search-active');
+        }
+    }
+     if (route !== 'liked-songs') {
+        const likedSongsOverlay = document.getElementById('likedSongsOverlay');
+        if (likedSongsOverlay && likedSongsOverlay.classList.contains('open')) {
+            // We use the existing close function to hide the overlay.
+            window.closeLikedSongsOverlay();
+        }
+    }
     
     if (popupOverlay1 && route !== 'record-breaking-1') {
         closeRecordBreakingPopup(popupOverlay1);
@@ -514,10 +576,46 @@ function router() {
     if (fullScreenPlayer && route !== 'player') {
         hideFullScreenPlayer();
     }
+   
+  if (route === 'playlist-search') {
+        if (playlistSearchView) {
+            playlistSearchView.classList.remove('hidden');
+            playlistSearchView.classList.add('flex');
+            const searchInput = document.getElementById('playlist-search-input');
+            if (searchInput) setTimeout(() => searchInput.focus(), 50); // Auto-focus the input
+        }
+    } else {
+        // If the route is anything else, ensure the search view is hidden
+        if (playlistSearchView) {
+            playlistSearchView.classList.remove('flex');
+            playlistSearchView.classList.add('hidden');
+        }
+    }
+
+      if (route !== 'song-options') {
+        const songOptionsPopup = document.getElementById('song-options-popup');
+        if (songOptionsPopup && songOptionsPopup.classList.contains('active')) {
+            hideSongOptionsPopup(); // This function just handles the CSS animations
+        }
+    }
 
 
     let viewToShow;
+
     switch (route) {
+         case 'new-playlist':
+            showNewPlaylistPopup();
+            break;
+        case 'song-actions':
+            showSongActionsPopup();
+            break;
+        case 'album-search':
+        
+            break;
+         case 'song-options':
+         
+            break;
+
         case 'search':
             const isMobile = window.innerWidth <= 1024;
             viewToShow = isMobile 
@@ -561,6 +659,15 @@ function router() {
                     case 'player':
             if(fullScreenPlayer && playingAlbum) {
                 openFullScreenPlayer();
+            }
+            break;
+            case 'liked-songs':
+            // The router is now responsible for showing the overlay and fetching its content.
+            if (typeof window.openLikedSongsOverlay === 'function') {
+                window.openLikedSongsOverlay();
+            }
+            if (typeof window.fetchAndRenderLikedSongs === 'function') {
+                window.fetchAndRenderLikedSongs();
             }
             break;
 
@@ -616,9 +723,11 @@ function navigateTo(target) {
 // SECTION 3: UNIFIED POPUP OPEN/CLOSE FUNCTIONS
 // =================================================================
 
+// in oc.js
+
 // --- LIKED SONGS ---
 window.openLikedSongsOverlay = function() {
-    pushHistoryState('liked-songs');
+    // pushHistoryState('liked-songs'); // <<< REMOVE THIS LINE
     const likedOverlay = document.getElementById('likedSongsOverlay');
     if (likedOverlay) {
         likedOverlay.classList.add('open', 'active');
@@ -639,7 +748,8 @@ window.openRecordBreakingPopup = () => {
     const popup = document.getElementById('record-breaking-popup-overlay');
     if (popup) popup.classList.add('flex', 'active');
 };
-window.closeRecordBreakingPopup = () => {
+// ✅ RENAMED to avoid conflict with the router's local function
+window.unifiedCloseRecordBreakingPopup1 = () => { 
     const popup = document.getElementById('record-breaking-popup-overlay');
     if (popup) popup.classList.remove('flex', 'active');
 };
@@ -787,6 +897,17 @@ document.addEventListener('DOMContentLoaded', () => {
              minimizePlayerBtn.addEventListener('click', () => history.back());
             console.log("DOMContentLoaded: minimizePlayerBtn click listener attached.");
         }
+
+
+        const songOptionsPopupBackdrop = document.getElementById('song-options-popup');
+if (songOptionsPopupBackdrop) {
+    songOptionsPopupBackdrop.addEventListener('click', (e) => {
+        // If the dark overlay itself is clicked, go back in history to close the popup.
+        if (e.target === songOptionsPopupBackdrop) {
+            history.back();
+        }
+    });
+}
 
       document.querySelector('.listen-now-btn')?.addEventListener('click', () => navigateTo('record-breaking-1'));
     document.querySelector('.listen-now-btn2')?.addEventListener('click', () => navigateTo('record-breaking-2'));

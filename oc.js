@@ -216,7 +216,7 @@ function showFullScreenPlayer() {
 }
 
 function hideFullScreenPlayer() {
-    pushHistoryStateForPopup();
+   
     const fullScreenPlayer = document.getElementById('full-screen-player');
     if (!fullScreenPlayer) return;
 
@@ -282,7 +282,7 @@ function hideAddToPlaylistOverlay() {
 
 function showRecordBreakingPopup(popupOverlay) {
     if (!popupOverlay) return;
-    // The pushHistoryStateForPopup() call is now removed.
+   
     popupOverlay.classList.remove('hidden');
     popupOverlay.classList.add('flex');
     document.body.classList.add('popup-active'); // A generic class might be better here
@@ -398,56 +398,7 @@ window.closeAddToPlaylistOverlay = () => {
 };
 
 
-// --- Initial DOM Event Listeners ---
-document.addEventListener('DOMContentLoaded', async () => {
 
-    const closeButtons = document.querySelectorAll('.close-overlay');
-    closeButtons.forEach(btn => {
-        btn.onclick = () => history.back();
-    });
-    
-    // --- Setup for Record Breaking Popup 1 ---
-    const listenNowBtn1 = document.querySelector('.listen-now-btn');
-    if (listenNowBtn1) {
-        listenNowBtn1.addEventListener('click', () => {
-            navigateTo('record-breaking-1');
-        });
-    }
-    const closePopupBtn1 = document.getElementById('close-record-breaking-popup');
-    if (closePopupBtn1) {
-        // Use history.back() to close, which correctly manages the URL hash
-        closePopupBtn1.addEventListener('click', () => history.back());
-    }
-    const popupOverlay1 = document.getElementById('record-breaking-popup-overlay');
-    if (popupOverlay1) {
-        popupOverlay1.addEventListener('click', (e) => {
-            if (e.target === popupOverlay1) {
-                history.back();
-            }
-        });
-    }
-
-    // --- Setup for Record Breaking Popup 2 ---
-    const listenNowBtn2 = document.querySelector('.listen-now-btn2');
-    if (listenNowBtn2) {
-        listenNowBtn2.addEventListener('click', () => {
-            navigateTo('record-breaking-2');
-        });
-    }
-    const closePopupBtn2 = document.getElementById('close-record-breaking-popup2');
-    if (closePopupBtn2) {
-        closePopupBtn2.addEventListener('click', () => history.back());
-    }
-    const popupOverlay2 = document.getElementById('record-breaking-popup-overlay2');
-    if (popupOverlay2) {
-        popupOverlay2.addEventListener('click', (e) => {
-            if (e.target === popupOverlay2) { 
-                history.back();
-            }
-        });
-    }
-
-});
 
 //--------------------------------------------------------------------------------------------------------------
 
@@ -550,14 +501,20 @@ function router() {
     // Get references to popups
     const popupOverlay1 = document.getElementById('record-breaking-popup-overlay');
     const popupOverlay2 = document.getElementById('record-breaking-popup-overlay2');
+     const fullScreenPlayer = document.getElementById('full-screen-player');
 
     // Close popups by default if they are not the target route
+    
     if (popupOverlay1 && route !== 'record-breaking-1') {
         closeRecordBreakingPopup(popupOverlay1);
     }
     if (popupOverlay2 && route !== 'record-breaking-2') {
         closeRecordBreakingPopup(popupOverlay2);
     }
+    if (fullScreenPlayer && route !== 'player') {
+        hideFullScreenPlayer();
+    }
+
 
     let viewToShow;
     switch (route) {
@@ -601,6 +558,12 @@ function router() {
                 showRecordBreakingPopup(popupOverlay2);
             }
             break;
+                    case 'player':
+            if(fullScreenPlayer && playingAlbum) {
+                openFullScreenPlayer();
+            }
+            break;
+
 
         case 'home':
         default:
@@ -750,6 +713,81 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    document.querySelector('.listen-now-btn')?.addEventListener('click', window.openRecordBreakingPopup);
-    document.querySelector('.listen-now-btn2')?.addEventListener('click', window.openRecordBreakingPopup2);
+     const closeButtons = document.querySelectorAll('.close-overlay');
+    closeButtons.forEach(btn => {
+        btn.onclick = () => history.back();
+    });
+    
+ //
+// 🔴 IN FILE: oc.js
+//
+
+// Inside the DOMContentLoaded event listener...
+// Find the setup blocks for the popups.
+
+// ✅ REPLACE your existing setup blocks for both popups with this corrected version:
+
+    // --- Setup for Record Breaking Popup 1 ---
+    const listenNowBtn1 = document.querySelector('.listen-now-btn');
+    if (listenNowBtn1) {
+        listenNowBtn1.addEventListener('click', () => {
+            navigateTo('record-breaking-1');
+        });
+    }
+    const closePopupBtn1 = document.getElementById('close-record-breaking-popup');
+    if (closePopupBtn1) {
+        // Use history.back() to correctly go to the previous state (e.g., an album page).
+        closePopupBtn1.addEventListener('click', () => history.back());
+    }
+    const popupOverlay1 = document.getElementById('record-breaking-popup-overlay');
+    if (popupOverlay1) {
+        popupOverlay1.addEventListener('click', (e) => {
+            if (e.target === popupOverlay1) {
+                history.back();
+            }
+        });
+    }
+
+    // --- Setup for Record Breaking Popup 2 ---
+    const listenNowBtn2 = document.querySelector('.listen-now-btn2');
+    if (listenNowBtn2) {
+        listenNowBtn2.addEventListener('click', () => {
+            navigateTo('record-breaking-2');
+        });
+    }
+    const closePopupBtn2 = document.getElementById('close-record-breaking-popup2');
+    if (closePopupBtn2) {
+        // Use history.back() here as well. This will now work.
+        closePopupBtn2.addEventListener('click', () => history.back());
+    }
+    const popupOverlay2 = document.getElementById('record-breaking-popup-overlay2');
+    if (popupOverlay2) {
+        popupOverlay2.addEventListener('click', (e) => {
+            if (e.target === popupOverlay2) { 
+                history.back();
+            }
+        });
+    }
+
+ if (mainPlayBar) {
+    mainPlayBar.addEventListener('click', (event) => {
+        if (event.target.closest('button, input')) {
+            return;
+        }
+
+        if (playingAlbum) {
+            console.log("Play bar clicked. Navigating to #player.");
+            if (typeof navigateTo === 'function') {
+                navigateTo('player');
+            }
+        }
+    });
+}
+        if (minimizePlayerBtn) {
+             minimizePlayerBtn.addEventListener('click', () => history.back());
+            console.log("DOMContentLoaded: minimizePlayerBtn click listener attached.");
+        }
+
+      document.querySelector('.listen-now-btn')?.addEventListener('click', () => navigateTo('record-breaking-1'));
+    document.querySelector('.listen-now-btn2')?.addEventListener('click', () => navigateTo('record-breaking-2'));
 })

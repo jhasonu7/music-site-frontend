@@ -205,7 +205,8 @@ document.head.appendChild(styleSheet);
 
 let iframeCache = {};
 let processedCarouselSongs = []; // <<< ADD THIS LINE
-
+let currentPlaylistForView = null;
+let songForPlaylistAddition = null;
 // --- DOM Elements (assuming these exist in your HTML) ---
 const trendingSongsContainer = document.querySelector('.trending-songs-container'); // Adjust selector as needed
 const popularAlbumsContainer = document.querySelector('.popular-albums-container'); // Adjust selector as needed
@@ -564,7 +565,7 @@ const SPOTIFY_SCOPES = 'user-read-playback-state user-modify-playback-state stre
 // ... (existing code)
 
 // --- New Global Variables for Playlists ---
-let currentUserPlaylists = []; // To store all the user's playlists
+window.currentUserPlaylists = [];
 let currentPlaylist = null; // To store the currently viewed playlist
 
 // --- New Element References for Playlists ---
@@ -1262,41 +1263,37 @@ async function fetchUserPlaylists() {
         return false; // Return failure
     }
 }
-// --- END: REPLACEMENT for fetchUserPlaylists function ---
-
-/**
- * Renders the user's playlists in the library sidebar.
- */
-// in script.js
-// REPIACE the old renderUserPlaylistsInLibrary function with this one
-
 function renderUserPlaylistsInLibrary() {
-    // Find the container fresh every time to avoid issues with global variables
     const container = document.getElementById('user-playlists-container');
     if (!container) {
         console.error("Playlist container not found in the DOM.");
         return;
     }
 
-    // Clear previous playlists
     container.innerHTML = '';
 
-    // Attach the click listener to the container if it's not already there
     if (!container.dataset.listenerAttached) {
         container.addEventListener('click', (event) => {
             const playlistItem = event.target.closest('.swarify-playlist-item');
             if (playlistItem) {
                 const playlistId = playlistItem.dataset.playlistId;
-                // Find the clicked playlist from the global list of playlists
-                const clickedPlaylist = currentUserPlaylists.find(p => p._id === playlistId);
+                const clickedPlaylist = window.currentUserPlaylists.find(p => p._id === playlistId);
                 if (clickedPlaylist) {
                     currentPlaylist = clickedPlaylist;
-                    // This function makes the playlist details view appear
+                    
+                    // --- THIS IS THE FIX ---
+                    // 1. Update the URL path, just like for albums.
+                    const newPath = `/playlist/${clickedPlaylist._id}`;
+                    if (window.location.pathname !== newPath) {
+                        history.pushState({ playlistId: clickedPlaylist._id }, clickedPlaylist.name, newPath);
+                    }
+                    // 2. Directly call the function to open the overlay.
                     openPlaylistDetailsOverlay(clickedPlaylist);
+                    // --- END OF FIX ---
                 }
             }
         });
-        container.dataset.listenerAttached = 'true'; // Mark that the listener has been added
+        container.dataset.listenerAttached = 'true';
     }
 
     const token = localStorage.getItem('userToken');
@@ -1305,13 +1302,12 @@ function renderUserPlaylistsInLibrary() {
         return;
     }
 
-    if (currentUserPlaylists.length === 0) {
+    if (window.currentUserPlaylists.length === 0) {
         container.innerHTML = '<div class="p-2 text-gray-500 text-sm text-center">You have no playlists yet.</div>';
         return;
     }
 
-    // Create and append each playlist item
-    currentUserPlaylists.forEach(playlist => {
+    window.currentUserPlaylists.forEach(playlist => {
         const playlistItem = document.createElement('div');
         playlistItem.className = 'swarify-playlist-item flex items-center p-2 rounded-lg hover:bg-[#282828] cursor-pointer';
         playlistItem.dataset.playlistId = playlist._id;
@@ -1331,15 +1327,6 @@ function renderUserPlaylistsInLibrary() {
         container.appendChild(playlistItem);
     });
 }
-
-/**
- * Creates a new playlist with the given name and adds the current song if available.
- */
-/**
- * Creates a new playlist. If a song was selected to be added before creation,
- * it adds that song to the new playlist. Otherwise, it adds the currently playing song.
- */
-// in script.js, find and replace the entire createPlaylist function
 
 async function createPlaylist(name) {
     const token = localStorage.getItem('userToken');
@@ -1505,7 +1492,7 @@ function renderPlaylistSongs(playlist) {
             optionsBtn.addEventListener('click', (event) => {
                 event.stopPropagation(); // Stop the click from bubbling up to the row
                 // This function opens the popup with the correct song's details
-                openPlaylistSongOptionsPopup(song, playlist._id);
+                openSongOptionsPopup(song, playlist._id);
             });
         }
         
@@ -1979,45 +1966,37 @@ function updateFixedTopHeadingVisibility() {
     }
 }
 
-/**
- * Attaches event listeners for the in-album search functionality.
- */
 function setupAlbumSearchListeners() {
     const overlay = document.getElementById('albumOverlay');
-    const searchTrigger = document.getElementById('album-search-trigger');
-    const searchView = document.getElementById('album-search-view');
+    // Corrected ID for the trigger
+      const searchTrigger = document.getElementById('album-search-trigger');
     const searchBackBtn = document.getElementById('album-search-back-btn');
     const searchInput = document.getElementById('album-search-input');
     const clearSearchBtn = document.getElementById('album-search-clear-btn');
-    const resultsContainer = document.getElementById('album-search-results');
 
-    if (!overlay || !searchTrigger || !searchView || !searchBackBtn || !searchInput || !clearSearchBtn) {
+    if (!overlay || !searchTrigger || !searchBackBtn || !searchInput || !clearSearchBtn) {
         console.error("One or more album search elements are missing.");
         return;
     }
 
-    // --- Event Listeners ---
-    
-    // Open the search view
+    // --- START: MODIFIED LISTENERS ---
+    // Open the search view by changing the URL hash
     searchTrigger.onclick = () => {
-        overlay.classList.add('search-active');
-        populateAlbumSearchResults(); // Populate with all songs initially
-        setTimeout(() => searchInput.focus(), 300); // Focus after transition
+        navigateTo('album-search');
     };
 
-    // Close the search view
+    // Close the search view using the browser's history
     searchBackBtn.onclick = () => {
-        overlay.classList.remove('search-active');
-        searchInput.value = ''; // Clear input on close
+        history.back();
     };
+    // --- END: MODIFIED LISTENERS ---
 
-    // Filter results on input
+    // The rest of the function remains the same
     searchInput.oninput = () => {
         filterAlbumSearchResults();
         clearSearchBtn.classList.toggle('hidden', searchInput.value.length === 0);
     };
 
-    // Clear the input field
     clearSearchBtn.onclick = () => {
         searchInput.value = '';
         searchInput.focus();
@@ -2025,18 +2004,6 @@ function setupAlbumSearchListeners() {
         clearSearchBtn.classList.add('hidden');
     };
 }
-
-/**
- * Populates the search results container with all tracks from the current album.
- */
-/**
- * Populates the search results container with all tracks from the current album.
- 
-
-
-/**
- * Highlights the currently playing track in the album search results.
- */
 function populateAlbumSearchResults() {
     const resultsContainer = document.getElementById('album-search-results');
     resultsContainer.innerHTML = ''; // Clear previous results
@@ -2159,23 +2126,29 @@ function updatePlayingTrackIndicator() {
 
 
 
+// in script.js
 
 async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = true) {
     console.log(`Populating UI for album: "${albumData.title}"`);
     currentAlbum = albumData;
+
+    // --- START: FIX FOR THE LAG ---
+    // The 'await' keyword is removed from the line below.
+    // This allows the recommendations to load in the background without blocking the UI.
+    if (shouldFetchRecommendations) {
+        fetchAndDisplaySimilarAlbums(albumData);
+    }
+    // --- END: FIX FOR THE LAG ---
 
     const isEmbeddedAlbum = !!(albumData.rawHtmlEmbed || albumData.fullSoundcloudEmbed || albumData.audiomackEmbed || albumData.iframeSrc);
 
     const albumDetailsContent = document.getElementById('album-overlay-scroll-content');
     const albumFullEmbedContainer = document.getElementById('album-full-embed-container');
     
-    // --- START: NEW LOGIC FOR MANAGING THE COMPACT HEADER ---
-    // Remove any old compact header to prevent duplicates
     const oldCompactHeader = document.getElementById('embedded-compact-header');
     if (oldCompactHeader) {
         oldCompactHeader.remove();
     }
-    // --- END: NEW LOGIC ---
 
     if (albumDetailsContent) albumDetailsContent.scrollTop = 0;
 
@@ -2185,6 +2158,19 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
         }
     });
 
+    // --- START: FIX FOR THE RACE CONDITION ---
+    // After all the logic to prepare the UI is done, we add this final check.
+    // It compares the album we just prepared against the current URL.
+    const currentPathAlbumId = window.location.pathname.split('/')[2];
+    if (currentPathAlbumId !== albumData.id) {
+        console.warn(`Aborting UI population for "${albumData.title}" because the user has already navigated away.`);
+        // If they don't match, it means the user hit "back" or clicked something else.
+        // We stop the function here to prevent the "phantom" album from appearing.
+        return; 
+    }
+    // --- END: FIX FOR THE RACE CONDITION ---
+
+    // The rest of the function remains the same...
     if (isEmbeddedAlbum) {
         albumDetailsContent.style.display = 'none';
         albumFullEmbedContainer.style.display = 'block';
@@ -2229,17 +2215,13 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
                         </div>
                      </div>`;
         wrapper.insertAdjacentHTML('afterbegin', topMaskHTML);
-        // --- START: FIX for embedded album back button ---
         const embeddedBackBtn = wrapper.querySelector('.embedded-header-back-btn');
         if (embeddedBackBtn) {
             embeddedBackBtn.addEventListener('click', () => {
                 history.back();
             });
         }
-        // --- END: FIX ---
 
-        // --- START: CORRECTED COMPACT HEADER CREATION ---
-        // Create and inject the compact header INSIDE the main album overlay
         const compactHeader = document.createElement('div');
         compactHeader.id = 'embedded-compact-header';
         compactHeader.innerHTML = `
@@ -2248,7 +2230,7 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
             </button>
             <span class="embedded-compact-header-title">${albumData.title || 'Embedded Content'}</span>
         `;
-     wrapper.insertAdjacentElement('afterbegin', compactHeader);
+        wrapper.insertAdjacentElement('afterbegin', compactHeader);
         
         const topMask = wrapper.querySelector('#embedded-overlay-top-mask');
         const coverImg = topMask.querySelector('.embedded-header-cover');
@@ -2285,12 +2267,9 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
           
          setTimeout(() => {
             checkEmbeddedHeaderVisibility(wrapper);
-        }, 0); // 50ms is usually enough time.
-        // --- END OF FIX -
+        }, 0);
 
-        // --- END: CORRECTED COMPACT HEADER CREATION ---
     } else {
-        // This is the logic for regular, non-embedded albums. It remains the same.
         albumDetailsContent.style.display = 'block';
         albumFullEmbedContainer.style.display = 'none';
         albumOverlay.classList.remove('embedded-view');
@@ -2322,10 +2301,6 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
             });
         }
 
-        if (shouldFetchRecommendations) {
-            await fetchAndDisplaySimilarAlbums(albumData);
-        }
-
         togglePlayerControls(true);
     }
 
@@ -2343,13 +2318,10 @@ async function populateAlbumOverlayUI(albumData, shouldFetchRecommendations = tr
         };
     }
 
-   
-
     updatePlayingTrackIndicator();
     updateAlbumPlayButtonIcon();
     setupAlbumScrollListener();
 }
-
 // in script.js
 
 /**
@@ -3271,6 +3243,84 @@ function populateRecordBreakingSection2() {
     });
 }
 
+// Add this line at the top of script.js with your other global variables
+
+
+// Add this entire new function to script.js
+async function populatePlaylistDetails(playlist) {
+    currentPlaylistForView = playlist; // Set the global context for other functions
+    const overlay = document.getElementById('playlist-details-overlay');
+    const scrollContent = document.getElementById('playlist-scroll-content');
+    const coverArt = document.getElementById('playlist-cover-art');
+    const title = document.getElementById('playlist-title-h1');
+    const compactTitle = document.getElementById('playlist-compact-title');
+    const creatorName = document.getElementById('playlist-creator-name');
+    const creatorAvatar = document.getElementById('playlist-creator-avatar');
+    const durationInfo = document.getElementById('playlist-duration-info');
+    const backgroundGradient = document.getElementById('playlist-background-gradient');
+
+    if (!overlay || !coverArt || !title || !scrollContent) {
+        console.error("One or more elements for the playlist details overlay are missing.");
+        return;
+    }
+
+    // Reset scroll position and scroll-related classes
+    scrollContent.scrollTop = 0;
+    overlay.classList.remove('is-scrolled');
+
+    // Populate header info
+    const songCount = playlist.songs ? playlist.songs.length : 0;
+    const totalSeconds = playlist.songs ? playlist.songs.reduce((acc, s) => acc + parseDurationToSeconds(s.duration), 0) : 0;
+    const totalMinutes = Math.round(totalSeconds / 60);
+
+    title.textContent = playlist.name;
+    if (compactTitle) compactTitle.textContent = playlist.name;
+    if (creatorName) creatorName.textContent = playlist.creatorName || 'Swarify';
+    if (creatorAvatar) creatorAvatar.textContent = (playlist.creatorName || 'S').charAt(0).toUpperCase();
+    if (durationInfo) durationInfo.textContent = `${totalMinutes} min`;
+
+    coverArt.src = playlist.coverArt || 'https://placehold.co/192x192/4a4a4a/ffffff?text=Playlist';
+    
+    // Dynamic background color
+    coverArt.crossOrigin = "Anonymous";
+    const setColor = () => {
+        try {
+            const colorThief = new ColorThief();
+            const dominantColor = colorThief.getColor(coverArt);
+            // Use a helper to make the color darker for the background
+            const vibrantColor = `rgb(${darkenColor(dominantColor, 0.5).join(',')})`;
+            if(backgroundGradient) {
+                backgroundGradient.style.setProperty('--playlist-bg-color', vibrantColor);
+            }
+        } catch (e) {
+            console.error("ColorThief error for playlist:", e);
+            if(backgroundGradient) {
+                // Set a fallback color if ColorThief fails
+                backgroundGradient.style.setProperty('--playlist-bg-color', '#2a2a2a');
+            }
+        }
+    };
+
+    if (coverArt.complete) {
+        setColor();
+    } else {
+        coverArt.onload = setColor;
+    }
+
+    // Render songs and recommendations using existing functions
+    renderPlaylistSongs(playlist);
+    fetchAndRenderRecommendedSongs(playlist._id);
+    
+    // Setup listeners for this specific view (search and scroll)
+    setupPlaylistSearchListeners();
+    setupPlaylistScrollListener();
+}
+
+// Also, add this small helper function if it's not already in your script.js
+function darkenColor(rgbArray, factor) {
+    return rgbArray.map(color => Math.max(0, Math.floor(color * factor)));
+}
+
 /**
  * Sets up the navigation arrows for the new mini-carousel.
  */
@@ -3677,13 +3727,7 @@ function createSuggestionsContainer(inputElement) {
 
 
 
-const bottomSearchLink = document.getElementById("unique-search-icon-link");
-if (bottomSearchLink) {
-    bottomSearchLink.addEventListener("click", (e) => {
-        e.preventDefault();
-        openSearchPopup();
-    });
-}
+
 
 
 
@@ -5475,36 +5519,34 @@ function setDynamicBackground() {
 
 
 
-        // NEW: Event listener for the mobile add button to open the popup
-        document.getElementById('mobile-add-btn').addEventListener('click', function() {
-            const popupOverlay = document.getElementById('add-popup-overlay');
-            popupOverlay.classList.add('active');
-        });
+       // NEW listener for opening the popup (goes in script.js)
+document.getElementById('mobile-add-btn').addEventListener('click', function() {
+    // This now changes the URL hash, triggering the router in oc.js
+    navigateTo('song-actions');
+});
 
-        // NEW: Event listener to close the popup when clicking outside
-        document.getElementById('add-popup-overlay').addEventListener('click', function(event) {
-            // Check if the click occurred on the overlay itself, not a child element
-            if (event.target === this) {
-                this.classList.remove('active');
-            }
-        });
+// NEW listener for closing the popup (goes in script.js)
+document.getElementById('add-popup-overlay').addEventListener('click', function(event) {
+    // If the click is on the dark background, go back in history to close it
+    if (event.target === this) {
+        history.back();
+    }
+});
 
         // Intercept any click on + button before other scripts can react
+// REPLACE the old document.addEventListener in script.js with this
+
+// This listener correctly navigates to the song-actions route
 document.addEventListener("click", function(e) {
     const plusBtn = e.target.closest("#mobile-add-btn");
     if (plusBtn) {
+        // Prevent default button behavior
         e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-
-        // Show only the liked popup
-        const likedPopup = document.querySelector(".swarify-add-popup-overlay");
-        if (likedPopup) {
-            likedPopup.classList.add("active");
-            likedPopup.style.display = "block";
-        }
+        
+        // Use the router to open the popup, which will change the URL hash
+        navigateTo('song-actions');
     }
-}, true);
+});
   
 
 // ======== Liked Songs: storage + UI + backend sync ========
@@ -6168,6 +6210,8 @@ function handlePlaylistScroll() {
 // --- END: NEW FUNCTION for Playlist Scrolling Header ---
 // --- START: NEW FUNCTIONS for Playlist Search ---
 
+// in script.js
+
 function setupPlaylistSearchListeners() {
     const searchTrigger = document.getElementById('playlist-search-trigger');
     const searchView = document.getElementById('playlist-search-view');
@@ -6177,19 +6221,19 @@ function setupPlaylistSearchListeners() {
 
     if (!searchTrigger || !searchView || !searchBackBtn || !searchInput || !clearSearchBtn) return;
 
+    // --- CORRECTION 1: Trigger now changes the URL hash ---
     searchTrigger.addEventListener('click', () => {
-        searchView.classList.remove('hidden');
-        searchView.classList.add('flex'); // Use flex to show it
-        renderFullPlaylistForSearch(); // Show all songs initially
-        setTimeout(() => searchInput.focus(), 50);
+        // This will change the hash to #playlist-search, which the router will then handle.
+        navigateTo('playlist-search'); 
     });
 
+    // --- CORRECTION 2: Back button now uses browser history ---
     searchBackBtn.addEventListener('click', () => {
-        searchView.classList.remove('flex');
-        searchView.classList.add('hidden');
-        searchInput.value = '';
+        // This correctly goes back, removing the #playlist-search from the URL.
+        history.back();
     });
 
+    // The rest of the listeners remain the same
     clearSearchBtn.addEventListener('click', () => {
         searchInput.value = '';
         searchInput.focus();
@@ -6278,61 +6322,79 @@ function createPlaylistSongRow(song, playlistId) {
     const optionsBtn = songRow.querySelector('.playlist-song-options-btn');
     optionsBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        openPlaylistSongOptionsPopup(song, playlistId);
+         openSongOptionsPopup(song, playlistId);
     });
 
     return songRow;
 }
-// --- END: NEW HELPER FUNCTION ---
-// --- START: NEW FUNCTION to Open Song Options for Playlist Songs ---
-function openPlaylistSongOptionsPopup(song, playlistId) {
-    // This reuses your existing song options popup
+// in script.js
+
+/**
+ * A unified function to open the song options popup.
+ * It populates the popup with the correct song data and configures its buttons
+ * based on whether it was opened from "Liked Songs" or a specific playlist.
+ * @param {object} song - The song data object.
+ * @param {string|null} [playlistId=null] - The ID of the playlist, if applicable.
+ */
+function openSongOptionsPopup(song, playlistId = null) {
     const popupBackdrop = document.getElementById('song-options-popup');
     const popupPanel = document.querySelector('.song-options-panel');
     const popupSongCover = document.getElementById('popup-song-cover');
     const popupSongTitle = document.getElementById('popup-song-title');
     const popupSongArtist = document.getElementById('popup-song-artist');
-    
     const removeFromPlaylistBtn = document.getElementById('popup-remove-from-liked');
     const goToAlbumBtn = document.getElementById('popup-go-to-album');
 
-    if (!popupBackdrop || !removeFromPlaylistBtn || !goToAlbumBtn) return;
+    if (!popupBackdrop || !removeFromPlaylistBtn || !goToAlbumBtn || !popupPanel) return;
 
-    // 1. Populate UI
+    // 1. Populate UI with song details
     popupSongCover.src = song.img || song.coverArt || '';
     popupSongTitle.textContent = song.title;
     popupSongArtist.textContent = song.artist;
 
-    // 2. Configure the "Remove" button
-    removeFromPlaylistBtn.querySelector('span').textContent = 'Remove from this playlist';
+    // 2. Configure the action buttons with one-time event listeners
+    // By cloning the node, we safely remove any previous listeners
+    const newRemoveBtn = removeFromPlaylistBtn.cloneNode(true);
+    const newGoToAlbumBtn = goToAlbumBtn.cloneNode(true);
     
-    // Use a one-time event listener for the remove action
-    const removeHandler = async () => {
-        await removeSongFromPlaylist(playlistId, song);
-        closeSongOptionsPopup();
-    };
-    removeFromPlaylistBtn.replaceWith(removeFromPlaylistBtn.cloneNode(true)); // Clones the button to remove old listeners
-    document.getElementById('popup-remove-from-liked').addEventListener('click', removeHandler, { once: true });
+    // Configure the "Remove" button based on the context
+    if (playlistId) {
+        newRemoveBtn.querySelector('span').textContent = 'Remove from this playlist';
+        newRemoveBtn.onclick = async () => {
+            await removeSongFromPlaylist(playlistId, song);
+            history.back(); // Go back to close the popup
+        };
+    } else { // This is for "Liked Songs"
+        newRemoveBtn.querySelector('span').textContent = 'Remove from Liked Songs';
+        newRemoveBtn.onclick = () => {
+            const likedSong = LikedStore.find(song);
+            if (likedSong) {
+                backendUnlikeSong(likedSong);
+                LikedStore.remove(song);
+                showMessageBox(`Removed "${song.title}" from Liked Songs.`, 'success');
+                renderLikedSongsOverlay(); // Re-render the list
+            }
+            history.back(); // Go back to close the popup
+        };
+    }
 
-
-    // 3. Configure the "Go to album" button
-    const albumHandler = () => {
+    // Configure the "Go to album" button
+    newGoToAlbumBtn.onclick = () => {
         const album = allAlbumsData.find(a => a.id === song.albumId);
         if (album) {
-            closeSongOptionsPopup();
-            // We might need a small delay to prevent click-through issues
-            setTimeout(() => {
-                openAlbumDetails(album);
-            }, 50);
+            // First, close the popup via history, then navigate to the album.
+            // A small delay ensures the navigation doesn't interfere with the closing transition.
+            history.back();
+            setTimeout(() => openAlbumDetails(album), 50);
         }
     };
-    goToAlbumBtn.replaceWith(goToAlbumBtn.cloneNode(true));
-    document.getElementById('popup-go-to-album').addEventListener('click', albumHandler, { once: true });
-
-
-    // 4. Show the popup
-    popupBackdrop.style.display = 'flex';
-    setTimeout(() => popupBackdrop.classList.add('active'), 10);
+    
+    removeFromPlaylistBtn.parentNode.replaceChild(newRemoveBtn, removeFromPlaylistBtn);
+    goToAlbumBtn.parentNode.replaceChild(newGoToAlbumBtn, goToAlbumBtn);
+    
+    // 3. Show the popup and update the URL hash
+    showSongOptionsPopup(); // This function will now be in oc.js
+    navigateTo('song-options'); // This adds the hash to the URL
 }
 // --- END: NEW FUNCTION ---
 // --- START: NEW FUNCTION to Remove Song from a Playlist ---
@@ -6526,29 +6588,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-   // Event listeners for UI components
-    const libraryLikedBtn = Array.from(document.querySelectorAll('h3.text-base.font-medium')).find(el => el.textContent.trim() === 'Liked Songs');
-    if (libraryLikedBtn) {
-        libraryLikedBtn.closest('div').addEventListener('click', () => {
-            const likedOverlay = document.getElementById('likedSongsOverlay');
-            if (likedOverlay) {
-                likedOverlay.classList.add('open');
-                likedOverlay.setAttribute('aria-hidden', 'false');
-                fetchAndRenderLikedSongs();
-            }
-        });
-    }
-
-    const closeLikedBtn = document.getElementById('closeLikedSongs');
-    if (closeLikedBtn) {
-        closeLikedBtn.addEventListener('click', () => {
-            const likedOverlay = document.getElementById('likedSongsOverlay');
-            if (likedOverlay) {
-                likedOverlay.classList.remove('open');
-                likedOverlay.setAttribute('aria-hidden', 'true');
-            }
-        });
-    }
+ // in script.js
+const libraryLikedBtn = Array.from(document.querySelectorAll('h3.text-base.font-medium')).find(el => el.textContent.trim() === 'Liked Songs');
+if (libraryLikedBtn) {
+    libraryLikedBtn.closest('div').addEventListener('click', () => {
+        // This now changes the hash to #liked-songs, which triggers the router.
+        navigateTo('liked-songs');
+    });
+}
+   
 
     // Wiring up the playbar like button
     const playbarLikeBtn = document.getElementById('mobile-add-btn') || document.querySelector('.playbar-add-btn');
@@ -6560,7 +6608,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
     
-    // Wire up the add-to-playlist popup listener
+    
+   // Wire up the add-to-playlist popup listener
     const addPopupLikedItem = document.querySelector('#add-popup-overlay .swarify-add-popup-item');
     if(addPopupLikedItem && addPopupLikedItem.textContent.toLowerCase().includes('liked songs')) {
         addPopupLikedItem.addEventListener('click', (ev) => {
@@ -6580,11 +6629,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 updatePopupLikeState();
             }
 
-            const overlay = document.getElementById('add-popup-overlay');
-            if(overlay) {
-                overlay.classList.remove('active');
-                overlay.style.display = 'none';
-            }
+            // The code that closed the popup has been removed from here.
         });
     }
 
@@ -6854,6 +6899,8 @@ if (viewEmbeddedPlayerBtn) {
     // NEW: Add click listener to the "New playlist" item in the `add-popup-overlay`
   // in script.js, inside the 'DOMContentLoaded' listener
 
+// REPLACE with this version in script.js
+
 const newPlaylistPopupItem = document.querySelector('#add-popup-overlay .swarify-add-popup-item:last-child');
 if (newPlaylistPopupItem) {
     newPlaylistPopupItem.addEventListener('click', (e) => {
@@ -6864,38 +6911,33 @@ if (newPlaylistPopupItem) {
             return;
         }
 
-        // --- FIX: Add this line ---
         if (song) {
             localStorage.setItem('songToAddAfterCreatingPlaylist', JSON.stringify(song));
         }
-        // --- End of Fix ---
 
-        // Close the main add popup first
-        addPopupOverlay.classList.remove('active');
-        // Show the new playlist name popup
-        if(newPlaylistPopupOverlay) {
-            newPlaylistPopupOverlay.classList.remove('hidden');
-            setTimeout(() => newPlaylistNameInput.focus(), 10);
-        }
+        // This now uses the router to open the popup.
+        // The router will automatically handle closing the previous popup and opening the new one.
+        navigateTo('new-playlist');
     });
 }
 
-    // NEW: Add listeners for the "Create Playlist" popup buttons
-    if (createNewPlaylistBtn) {
-        createNewPlaylistBtn.addEventListener('click', () => {
-            const playlistName = newPlaylistNameInput.value.trim() || 'My new playlist';
-            createPlaylist(playlistName);
-            newPlaylistPopupOverlay.classList.add('hidden');
-            newPlaylistNameInput.value = '';
-        });
-    }
+   // REPLACE with this version in script.js
 
-    if (cancelNewPlaylistBtn) {
-        cancelNewPlaylistBtn.addEventListener('click', () => {
-            newPlaylistPopupOverlay.classList.add('hidden');
-            newPlaylistNameInput.value = '';
-        });
-    }
+if (createNewPlaylistBtn) {
+    createNewPlaylistBtn.addEventListener('click', () => {
+        const playlistName = newPlaylistNameInput.value.trim() || 'My New Playlist';
+        createPlaylist(playlistName);
+        // Go back in history to close the popup. The router will handle hiding it.
+        history.back();
+    });
+}
+
+if (cancelNewPlaylistBtn) {
+    cancelNewPlaylistBtn.addEventListener('click', () => {
+        // Just go back in history to close the popup.
+        history.back();
+    });
+}
 
     // NEW: Add listener for the library link in the footer
     const libraryLink = document.getElementById('your-library-link');
@@ -7843,23 +7885,27 @@ if (goBtn) {
         });
     }
 
-    if (doneAddingToPlaylistBtn) {
+   if (doneAddingToPlaylistBtn) {
         doneAddingToPlaylistBtn.addEventListener('click', async () => {
             const songDataString = addToPlaylistOverlay.dataset.song;
             if (!songDataString) return;
             const song = JSON.parse(songDataString);
             const checkboxes = playlistSelectionContainer.querySelectorAll('input:checked');
             if (checkboxes.length === 0) return;
+
             doneAddingToPlaylistBtn.disabled = true;
             doneAddingToPlaylistBtn.textContent = 'Adding...';
+
             const promises = Array.from(checkboxes).map(cb => addSongToPlaylist(cb.dataset.playlistId, song));
             const results = await Promise.all(promises);
+
             if (results.some(Boolean)) {
                 showMessageBox(`Added to ${results.filter(Boolean).length} playlist(s).`, 'success');
                 await fetchUserPlaylists();
             }
-            doneAddingToPlaylistBtn.textContent = 'Done';
-            window.closeAddToPlaylistOverlay();
+
+            // After finishing, go back in history instead of closing directly
+            history.back();
         });
     }
 
@@ -7867,23 +7913,13 @@ if (goBtn) {
         closeAddToPlaylistBtn.addEventListener('click', window.closeAddToPlaylistOverlay);
     }
     
-    if (newPlaylistFromAddScreenBtn) {
+ if (newPlaylistFromAddScreenBtn) {
         newPlaylistFromAddScreenBtn.addEventListener('click', () => {
             const songDataString = addToPlaylistOverlay.dataset.song;
             if (songDataString) {
                 localStorage.setItem('songToAddAfterCreatingPlaylist', songDataString);
-                window.closeAddToPlaylistOverlay();
-                setTimeout(() => {
-                    if (newPlaylistPopupOverlay) {
-                        newPlaylistPopupOverlay.classList.remove('hidden');
-                        newPlaylistPopupOverlay.style.display = 'flex';
-                        newPlaylistPopupOverlay.style.visibility = 'visible';
-                        newPlaylistPopupOverlay.style.opacity = '1';
-                        if (newPlaylistNameInput) {
-                            setTimeout(() => newPlaylistNameInput.focus(), 50);
-                        }
-                    }
-                }, 350);
+                // Navigate to the new-playlist view
+                navigateTo('new-playlist');
             }
         });
     }
@@ -7935,7 +7971,7 @@ if (goBtn) {
         }
     };
    document.getElementById('closeLikedSongs').addEventListener('click', () => history.back());
-if(compactCloseBtn) compactCloseBtn.addEventListener('click', () => history.back());
+
 
 
     searchInput1.addEventListener('input', () => {

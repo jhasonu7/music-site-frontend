@@ -6677,36 +6677,47 @@ async function initializeApp() {
 
     try {
         await fetchAlbums();
-     const pullToRefreshContainer = document.querySelector('.right');
-        let startY = 0;
-        let isTouching = false;
-        
-        if (pullToRefreshContainer) {
-            pullToRefreshContainer.addEventListener('touchstart', (e) => {
-                // We only care about gestures when at the very top of the page
-                if (pullToRefreshContainer.scrollTop === 0) {
+       function disablePullToRefresh(elementId) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            let startY = 0;
+            let isTouching = false;
+            
+            element.addEventListener('touchstart', (e) => {
+                if (element.scrollTop === 0) {
                     isTouching = true;
                     startY = e.touches[0].clientY;
                 }
-            }, { passive: true }); // Use passive listener for performance
+            }, { passive: true });
 
-            pullToRefreshContainer.addEventListener('touchmove', (e) => {
+            element.addEventListener('touchmove', (e) => {
                 if (!isTouching) return;
-
+                
                 const pullDistance = e.touches[0].clientY - startY;
-
-                // --- KEY FIX: Prevent default for any downward movement at the top ---
-                // This reliably stops the browser's native refresh action
-                if (pullDistance > 0 && pullToRefreshContainer.scrollTop === 0) {
+                if (pullDistance > 0 && element.scrollTop === 0) {
                     e.preventDefault();
                 }
-            }, { passive: false }); // Needs to be non-passive to call preventDefault
+            }, { passive: false });
 
-            pullToRefreshContainer.addEventListener('touchend', () => {
+            element.addEventListener('touchend', () => {
                 isTouching = false;
                 startY = 0;
             });
         }
+        // --- END OF NEW FUNCTION ---
+
+        // --- Apply the function to ALL scrollable containers in your app ---
+        disablePullToRefresh('right');
+        disablePullToRefresh('full-screen-player');
+        disablePullToRefresh('album-overlay-scroll-content');
+        disablePullToRefresh('playlist-scroll-content');
+        disablePullToRefresh('likedContent');
+        disablePullToRefresh('record-breaking-popup-grid');
+        disablePullToRefresh('record-breaking-popup-grid2');
+        disablePullToRefresh('album-full-embed-container');
+        disablePullToRefresh('unique-search-popup');
+        disablePullToRefresh('library-popup');
 
 
         window.addEventListener('hashchange', router);

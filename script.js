@@ -118,15 +118,8 @@ function attachEventListenersToHtmlCards() {
     });
 }
 
-/* In script.js */
-
-const offlineMessageEl = document.getElementById('offline-message');
-const offlineMessageTextEl = offlineMessageEl ? offlineMessageEl.querySelector('p') : null;
-
 window.addEventListener('offline', () => {
     if (offlineMessageEl && offlineMessageTextEl) {
-        // Explicitly show the message and remove the timer
-        clearTimeout(offlineMessageEl.offlineTimeout);
         offlineMessageTextEl.textContent = "You're offline";
         offlineMessageEl.classList.add('visible');
     }
@@ -136,9 +129,7 @@ window.addEventListener('online', async () => {
     if (offlineMessageEl && offlineMessageTextEl) {
         offlineMessageTextEl.textContent = "You're back online";
         offlineMessageEl.classList.add('visible');
-        
-        // Hide the "back online" message after 2 seconds
-        offlineMessageEl.offlineTimeout = setTimeout(() => {
+        setTimeout(() => {
             offlineMessageEl.classList.remove('visible');
         }, 2000);
     }

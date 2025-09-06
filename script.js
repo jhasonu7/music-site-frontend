@@ -118,6 +118,9 @@ function attachEventListenersToHtmlCards() {
     });
 }
 
+const offlineMessageEl = document.getElementById('offline-message');
+const offlineMessageTextEl = offlineMessageEl ? offlineMessageEl.querySelector('p') : null;
+
 window.addEventListener('offline', () => {
     if (offlineMessageEl && offlineMessageTextEl) {
         offlineMessageTextEl.textContent = "You're offline";

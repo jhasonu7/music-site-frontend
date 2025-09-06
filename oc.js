@@ -366,7 +366,9 @@ function closePlaylistDetailsOverlay() {
 // --- Album Details (CORRECTED) ---
 async function openAlbumDetails(albumData) {
     // This function now contains all the necessary logic to show the album overlay.
-
+ if (offlineMessageEl) {
+        offlineMessageEl.classList.add('offline-message-in-overlay');
+    }
     // 1. Update browser history
     const currentPath = window.location.pathname;
     const newPath = `/album/${albumData.id}`;
@@ -392,6 +394,9 @@ async function openAlbumDetails(albumData) {
 }
 
 async function closeAlbumOverlay(instant = false) {
+    if (offlineMessageEl) {
+        offlineMessageEl.classList.remove('offline-message-in-overlay');
+    }
     // This function now contains all the necessary logic to hide the album overlay.
     currentAlbum = null; // Clear the global album state
 
@@ -783,5 +788,4 @@ window.closeLibraryPopup = function() {
         libraryPopup.classList.remove('active', 'open');
     }
 };
-
 

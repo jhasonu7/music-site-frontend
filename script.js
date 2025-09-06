@@ -1,19 +1,10 @@
 
+// Check if the browser supports service workers
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js').then((registration) => {
+    navigator.serviceWorker.register('/sw.js').then((registration) => {
       // Registration was successful
       console.log('ServiceWorker registration successful with scope: ', registration.scope);
-        navigator.serviceWorker.addEventListener('message', event => {
-        if (event.data === 'offline') {
-            // This now correctly calls the showMessageBox function
-            showMessageBox("You're offline", "error");
-        } else if (event.data === 'online') {
-            // This new condition handles the 'online' message
-            showMessageBox("You're back online", "success");
-            fetchAlbums();
-        }
-    });
 
       // Request notification permission and subscribe to push notifications
       if ('Notification' in window) {
@@ -127,7 +118,26 @@ function attachEventListenersToHtmlCards() {
     });
 }
 
+const offlineMessageEl = document.getElementById('offline-message');
+const offlineMessageTextEl = offlineMessageEl ? offlineMessageEl.querySelector('p') : null;
 
+window.addEventListener('offline', () => {
+    if (offlineMessageEl && offlineMessageTextEl) {
+        offlineMessageTextEl.textContent = "You're offline";
+        offlineMessageEl.classList.add('visible');
+    }
+});
+
+window.addEventListener('online', async () => {
+    if (offlineMessageEl && offlineMessageTextEl) {
+        offlineMessageTextEl.textContent = "You're back online";
+        offlineMessageEl.classList.add('visible');
+        setTimeout(() => {
+            offlineMessageEl.classList.remove('visible');
+        }, 2000);
+    }
+    await fetchAlbums();
+});
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual ngrok static domain if you are using ngrok for your backend.
 // If your backend is hosted directly (e.g., on Render, Heroku), use that URL.
@@ -6667,36 +6677,53 @@ async function initializeApp() {
 
     try {
         await fetchAlbums();
-     const pullToRefreshContainer = document.querySelector('.right');
-        let startY = 0;
-        let isTouching = false;
-        
-        if (pullToRefreshContainer) {
-            pullToRefreshContainer.addEventListener('touchstart', (e) => {
-                // We only care about gestures when at the very top of the page
-                if (pullToRefreshContainer.scrollTop === 0) {
-                    isTouching = true;
-                    startY = e.touches[0].clientY;
-                }
-            }, { passive: true }); // Use passive listener for performance
+        const pullToRefreshContainer = document.querySelector('.right');
+let startY = 0;
+let pullDistance = 0;
+const refreshThreshold = 100; // Pixels to pull down to trigger refresh
+let isRefreshing = false;
 
-            pullToRefreshContainer.addEventListener('touchmove', (e) => {
-                if (!isTouching) return;
+if (pullToRefreshContainer) {
+  pullToRefreshContainer.addEventListener('touchstart', (e) => {
+    if (pullToRefreshContainer.scrollTop === 0) {
+      startY = e.touches[0].clientY;
+    }
+  });
 
-                const pullDistance = e.touches[0].clientY - startY;
+  pullToRefreshContainer.addEventListener('touchmove', (e) => {
+    if (startY === 0) return;
 
-                // --- KEY FIX: Prevent default for any downward movement at the top ---
-                // This reliably stops the browser's native refresh action
-                if (pullDistance > 0 && pullToRefreshContainer.scrollTop === 0) {
-                    e.preventDefault();
-                }
-            }, { passive: false }); // Needs to be non-passive to call preventDefault
+    pullDistance = e.touches[0].clientY - startY;
 
-            pullToRefreshContainer.addEventListener('touchend', () => {
-                isTouching = false;
-                startY = 0;
-            });
-        }
+    // Only allow pull-to-refresh when at the very top
+    if (pullDistance > 0) {
+        e.preventDefault();
+        pullToRefreshContainer.style.transform = `translateY(${Math.min(pullDistance, refreshThreshold * 1.5)}px)`;
+    }
+  });
+
+  pullToRefreshContainer.addEventListener('touchend', async () => {
+    pullToRefreshContainer.style.transform = '';
+    if (pullDistance > refreshThreshold && !isRefreshing) {
+      isRefreshing = true;
+      console.log("Pull-to-refresh triggered. Reloading data...");
+
+      // Show a spinner or message here.
+      // For now, we'll just log and reload.
+      try {
+        await fetchAlbums();
+        showMessageBox("Content refreshed!", "success");
+      } catch (e) {
+        console.error("Failed to refresh content on pull.", e);
+        showMessageBox("Failed to refresh content.", "error");
+      } finally {
+        isRefreshing = false;
+        pullDistance = 0;
+        startY = 0;
+      }
+    }
+  });
+}
 
 
         window.addEventListener('hashchange', router);
@@ -8865,3 +8892,5 @@ async function fetchAndDisplayEmbeddedSimilarAlbums(albumToRecommendFor , wrappe
         container.innerHTML = `<p style="color: #ff4d4d; grid-column: 1 / -1; text-align: center;">Could not load recommendations.</p>`;
     }
 }
+
+//start-separation------------------------------------------------------------------

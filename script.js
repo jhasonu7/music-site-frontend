@@ -6677,60 +6677,36 @@ async function initializeApp() {
 
     try {
         await fetchAlbums();
-       const pullToRefreshContainer = document.querySelector('.right');
-let isTouching = false;
-let startY = 0;
-const refreshThreshold = 100; // Pixels to pull down to trigger refresh
-let pullDistance = 0;
-let isRefreshing = false;
+     const pullToRefreshContainer = document.querySelector('.right');
+        let startY = 0;
+        let isTouching = false;
+        
+        if (pullToRefreshContainer) {
+            pullToRefreshContainer.addEventListener('touchstart', (e) => {
+                // We only care about gestures when at the very top of the page
+                if (pullToRefreshContainer.scrollTop === 0) {
+                    isTouching = true;
+                    startY = e.touches[0].clientY;
+                }
+            }, { passive: true }); // Use passive listener for performance
 
-if (pullToRefreshContainer) {
-    pullToRefreshContainer.addEventListener('touchstart', (e) => {
-        if (pullToRefreshContainer.scrollTop === 0) {
-            isTouching = true;
-            startY = e.touches[0].clientY;
-        }
-    });
+            pullToRefreshContainer.addEventListener('touchmove', (e) => {
+                if (!isTouching) return;
 
-    pullToRefreshContainer.addEventListener('touchmove', (e) => {
-        if (!isTouching || pullToRefreshContainer.scrollTop > 0) return;
+                const pullDistance = e.touches[0].clientY - startY;
 
-        pullDistance = e.touches[0].clientY - startY;
+                // --- KEY FIX: Prevent default for any downward movement at the top ---
+                // This reliably stops the browser's native refresh action
+                if (pullDistance > 0 && pullToRefreshContainer.scrollTop === 0) {
+                    e.preventDefault();
+                }
+            }, { passive: false }); // Needs to be non-passive to call preventDefault
 
-        if (pullDistance > 0) {
-            // Prevent the browser's native pull-to-refresh behavior
-            e.preventDefault();
-            pullToRefreshContainer.style.transform = `translateY(${Math.min(pullDistance, refreshThreshold * 1.5)}px)`;
-        }
-    });
-
-    pullToRefreshContainer.addEventListener('touchend', async () => {
-        if (!isTouching) return;
-        isTouching = false;
-
-        pullToRefreshContainer.style.transform = '';
-
-        if (pullDistance > refreshThreshold && !isRefreshing) {
-            isRefreshing = true;
-            console.log("Pull-to-refresh triggered. Reloading data...");
-
-            try {
-                await fetchAlbums();
-                showMessageBox("Content refreshed!", "success");
-            } catch (e) {
-                console.error("Failed to refresh content on pull.", e);
-                showMessageBox("Failed to refresh content.", "error");
-            } finally {
-                isRefreshing = false;
-                pullDistance = 0;
+            pullToRefreshContainer.addEventListener('touchend', () => {
+                isTouching = false;
                 startY = 0;
-            }
-        } else {
-            pullDistance = 0;
-            startY = 0;
+            });
         }
-    });
-}
 
 
         window.addEventListener('hashchange', router);

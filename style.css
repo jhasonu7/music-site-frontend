@@ -13753,74 +13753,48 @@ bottom:-11px;
     }
 
 
-    /* --- Styles for the Offline/Online Message (`offline-message`) --- */
-    .offline-message {
-        /* 1. Force a fixed position to pin it to the viewport */
-        position: fixed !important;
-        
-        /* 2. Place it just ABOVE the footer */
-        bottom: 69px !important; /* Adjust this value if your footer's height changes */
-        left: 0 !important;
-        width: 100% !important;
-
-        /* 3. Give it an even HIGHER z-index to ensure it's on top of the footer */
-        z-index: 100000 !important;
-
-        /* 4. Retain its visual and animation properties */
-        background-color: #333 !important;
-        color: white !important;
-        text-align: center !important;
-        padding: 12px 0 !important;
-        transition: transform 0.3s ease-in-out !important;
-        transform: translateY(100%) !important;
-        font-family: 'Inter', sans-serif !important;
-    }
-
-    .offline-message.visible {
-        transform: translateY(0) !important;
-    }
+  
 }
 
 
-/* --- New Offline Banner Styles --- */
-.offline-banner {
-    position: absolute;
-    top: 60px; /* Position below the top bar */
-    left: 10px;
-    right: 10px;
-    z-index: 50; /* A high z-index to appear above content */
-    background-color: #282828;
-    color: #ffffff;
-    border-radius: 12px;
-    padding: 20px;
+/* --- NEW: Compact Offline Banner --- */
+#compact-offline-banner {
+    position: fixed;
+    bottom: 80px; /* Position it just above the mobile play bar */
+    left: 8px; /* Match the left position of the mobile play bar */
+    width: calc(100% - 16px); /* Match the width of the mobile play bar */
+    height: 35px; /* Set a specific height */
+    background-color: #e91e63; /* Pink background color */
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    text-align: center;
+    justify-content: center;
+    border-radius: 8px; /* Match play bar border radius */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    z-index: 10002; /* A high z-index to ensure visibility */
     opacity: 0;
-    pointer-events: none;
-    transform: translateY(-20px);
+    transform: translateY(10px);
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-.offline-banner.visible {
+#compact-offline-banner.visible {
     opacity: 1;
-    pointer-events: auto;
     transform: translateY(0);
 }
 
-.offline-title {
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin-bottom: 8px;
+/* Hide the new banner on desktop */
+@media (min-width: 769px) {
+    #compact-offline-banner {
+        display: none !important;
+    }
 }
 
-.offline-message-text {
-    font-size: 1rem;
-    color: #b3b3b3;
+/* Hide the original banner on all screen sizes as it's no longer needed */
+.offline-banner {
+    display: none !important;
 }
-
-
 
 
 

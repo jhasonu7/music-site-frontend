@@ -1,4 +1,4 @@
-const offlineMessageBox = document.getElementById('offline-message-box');
+
 // Check if the browser supports service workers
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

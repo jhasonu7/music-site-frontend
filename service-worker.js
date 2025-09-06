@@ -1,4 +1,4 @@
-const CACHE_NAME = 'swarify-cache-v2';
+const CACHE_NAME = 'swarify-cache-v3'; // Renamed to v3 to force a new cache update
 const urlsToCache = [
   '/',
   '/index.html',
@@ -33,32 +33,54 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        if (response) {
+  // Check if the request is for a dynamic URL from your backend API
+  const isApiRequest = event.request.url.startsWith('https://music-site-backend.onrender.com/api/');
+
+  if (isApiRequest) {
+    // For API requests, use a "cache-first, then network" strategy
+    event.respondWith(
+      caches.open(CACHE_NAME).then(cache => {
+        // Try to fetch from the network first
+        return fetch(event.request).then(response => {
+          // If the network is successful, cache the new response and return it
+          cache.put(event.request, response.clone());
           return response;
-        }
-
-        const fetchRequest = event.request.clone();
-
-        return fetch(fetchRequest)
-          .then((response) => {
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
-            const responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
-          });
+        }).catch(() => {
+          // If the network fails (user is offline), return the cached response
+          console.log('API request failed, serving from cache:', event.request.url);
+          return caches.match(event.request);
+        });
       })
-  );
+    );
+  } else {
+    // For all other requests (static assets), use the "cache-first" strategy
+    event.respondWith(
+      caches.match(event.request)
+        .then((response) => {
+          if (response) {
+            return response;
+          }
+
+          const fetchRequest = event.request.clone();
+
+          return fetch(fetchRequest)
+            .then((response) => {
+              if (!response || response.status !== 200 || response.type !== 'basic') {
+                return response;
+              }
+
+              const responseToCache = response.clone();
+
+              caches.open(CACHE_NAME)
+                .then((cache) => {
+                  cache.put(event.request, responseToCache);
+                });
+
+              return response;
+            });
+        })
+    );
+  }
 });
 
 self.addEventListener('activate', (event) => {
@@ -77,6 +99,7 @@ self.addEventListener('activate', (event) => {
 });
 
 // Advanced Features: Push Notifications and Background Synchronization
+// (This section is unchanged as it was already correct)
 
 self.addEventListener('push', (event) => {
   console.log('Push received:', event);
@@ -122,7 +145,6 @@ self.addEventListener('sync', (event) => {
   console.log('Background sync triggered:', event.tag);
   if (event.tag === 'send-data-to-backend') {
     event.waitUntil(
-      
       console.log('Performing background sync task for sending data...')
     );
   }

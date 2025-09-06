@@ -13774,3 +13774,8 @@ bottom:-11px;
     align-items: center;
     opacity: 1;
 }
+.offline-message-in-overlay {
+  position: absolute;
+  top: auto;
+  bottom: 0;
+}

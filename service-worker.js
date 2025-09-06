@@ -1,4 +1,5 @@
-const CACHE_NAME = 'swarify-cache-v3'; // Renamed to v3 to force a new cache update
+// service-worker.js
+const CACHE_NAME = 'swarify-cache-v3'; 
 const urlsToCache = [
   '/',
   '/index.html',
@@ -33,11 +34,22 @@ self.addEventListener('install', (event) => {
 });
 
 // Add this new function to handle a message from the service worker.
-function sendOfflineMessageToClient(event) {
+function sendOfflineMessageToClient() {
     self.clients.matchAll().then(clients => {
         clients.forEach(client => {
             if (client.url.startsWith(self.location.origin)) {
                 client.postMessage('offline');
+            }
+        });
+    });
+}
+
+// Add a new function to send an "online" message
+function sendOnlineMessageToClient() {
+    self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+            if (client.url.startsWith(self.location.origin)) {
+                client.postMessage('online');
             }
         });
     });
@@ -51,12 +63,13 @@ self.addEventListener('fetch', (event) => {
         event.respondWith(
             caches.open(CACHE_NAME).then(cache => {
                 return fetch(event.request).then(response => {
+                    // Call the new function to send an 'online' message
+                    sendOnlineMessageToClient();
                     cache.put(event.request, response.clone());
                     return response;
                 }).catch(() => {
                     // This is the network failure handler.
-                    // Instead of just serving from cache, send a message to the main thread.
-                    sendOfflineMessageToClient(event);
+                    sendOfflineMessageToClient();
                     return caches.match(event.request).then(cachedResponse => {
                         return cachedResponse || new Response(JSON.stringify({ message: "You are currently offline." }), { status: 503, statusText: "Service Unavailable" });
                     });
@@ -80,7 +93,6 @@ self.addEventListener('fetch', (event) => {
                     });
                     return response;
                 }).catch(() => {
-                
                     return caches.match('index.html');
                 });
             })
@@ -103,9 +115,6 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Advanced Features: Push Notifications and Background Synchronization
-// (This section is unchanged as it was already correct)
-
 self.addEventListener('push', (event) => {
   console.log('Push received:', event);
   const payload = event.data ? event.data.json() : {
@@ -118,7 +127,7 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(payload.title, {
       body: payload.body,
       icon: payload.icon,
-      badge: '/fav.svg', // A small icon shown on some platforms
+      badge: '/fav.svg',
       actions: [
         {
           action: 'open_app',

@@ -13748,34 +13748,24 @@ bottom:-11px;
         padding: 0.5rem 0.5rem !important;
     }
 }
-/* This rule defines the base state: hidden and off-screen */
 .offline-message {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    text-align: center;
-    background-color: #333;
-    color: white;
-    padding: 12px 0;
-    /* Correct z-index to be definitively higher than anything else */
-    z-index: 100001; 
-    /* The message will be hidden by default */
-    display: none;
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
+  /* Set a fixed position at the bottom of the screen */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #333; /* Dark gray background */
+  color: white;
+  text-align: center;
+  padding: 12px 0;
+  /* Use a lower z-index than the footer navigation if necessary */
+  z-index: 10000;
+  transition: transform 0.3s ease-in-out;
+  transform: translateY(100%);
+  font-family: 'Inter', sans-serif;
 }
 
-/* This rule defines the visible state: on-screen and fully opaque */
 .offline-message.visible {
-    /* We use display: flex here to force it to show up */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    opacity: 1;
+  transform: translateY(0);
 }
-.offline-message-in-overlay {
-  position: absolute;
-  top: auto;
-  bottom: 0;
-}
+

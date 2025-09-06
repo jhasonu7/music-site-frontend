@@ -1,4 +1,4 @@
-
+const offlineMessageBox = document.getElementById('offline-message-box');
 // Check if the browser supports service workers
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -120,32 +120,26 @@ function attachEventListenersToHtmlCards() {
 
 // --- Network Status Message Listeners ---
 // This function handles the persistent "While you're offline" banner
-const offlineBannerEl = document.getElementById('offline-banner');
-
-function updateOfflineBannerState() {
-    if (navigator.onLine) {
-        if (offlineBannerEl) offlineBannerEl.classList.remove('visible');
-    } else {
-        if (offlineBannerEl) offlineBannerEl.classList.add('visible');
-    }
-}
-
+// Replace the old offline/online event listeners with this code
 window.addEventListener('offline', () => {
-    // Show the small "You're offline" toast message
-    showMessageBox("You're offline", 'error', 0);
-    // Show the large persistent banner
-    updateOfflineBannerState();
+    if (offlineMessageBox) {
+        offlineMessageBox.textContent = "You're offline. Some features may not be available.";
+        offlineMessageBox.classList.add('show');
+    }
+    // You can still use the old showMessageBox for other purposes if you like
+    // showMessageBox("You're offline", 'error', 0);
 });
 
 window.addEventListener('online', () => {
-    // Hide the persistent banner first
-    updateOfflineBannerState();
-    // Show the small "You're back online" toast message
-    showMessageBox("You're back online", 'success', 2000);
+    if (offlineMessageBox) {
+        // Hide the box after a delay
+        setTimeout(() => {
+            offlineMessageBox.classList.remove('show');
+        }, 3000); // Hides the box after 3 seconds
+    }
+    // You can still use the old showMessageBox for other purposes if you like
+    showMessageBox("You're back online!", 'success', 2000);
 });
-
-// We need an initial check to set the correct state on page load
-updateOfflineBannerState();
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual ngrok static domain if you are using ngrok for your backend.
 // If your backend is hosted directly (e.g., on Render, Heroku), use that URL.

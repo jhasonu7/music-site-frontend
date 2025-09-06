@@ -13844,6 +13844,9 @@ bottom:-11px;
         /* 5. Set a higher z-index to sit on top of content, but below the offline message */
         z-index: 10005 !important;
     }
+    .albumoverlay{
+        height:100%
+    }
 
 }
 

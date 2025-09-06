@@ -1,12 +1,17 @@
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-  navigator.serviceWorker.register('/service-worker.js').then((registration) => {
+    navigator.serviceWorker.register('/service-worker.js').then((registration) => {
       // Registration was successful
       console.log('ServiceWorker registration successful with scope: ', registration.scope);
         navigator.serviceWorker.addEventListener('message', event => {
         if (event.data === 'offline') {
+            // This now correctly calls the showMessageBox function
             showMessageBox("You're offline", "error");
+        } else if (event.data === 'online') {
+            // This new condition handles the 'online' message
+            showMessageBox("You're back online", "success");
+            fetchAlbums();
         }
     });
 
@@ -122,26 +127,7 @@ function attachEventListenersToHtmlCards() {
     });
 }
 
-const offlineMessageEl = document.getElementById('offline-message');
-const offlineMessageTextEl = offlineMessageEl ? offlineMessageEl.querySelector('p') : null;
 
-window.addEventListener('offline', () => {
-    if (offlineMessageEl && offlineMessageTextEl) {
-        offlineMessageTextEl.textContent = "You're offline";
-        offlineMessageEl.classList.add('visible');
-    }
-});
-
-window.addEventListener('online', async () => {
-    if (offlineMessageEl && offlineMessageTextEl) {
-        offlineMessageTextEl.textContent = "You're back online";
-        offlineMessageEl.classList.add('visible');
-        setTimeout(() => {
-            offlineMessageEl.classList.remove('visible');
-        }, 2000);
-    }
-    await fetchAlbums();
-});
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual ngrok static domain if you are using ngrok for your backend.
 // If your backend is hosted directly (e.g., on Render, Heroku), use that URL.
@@ -8879,5 +8865,3 @@ async function fetchAndDisplayEmbeddedSimilarAlbums(albumToRecommendFor , wrappe
         container.innerHTML = `<p style="color: #ff4d4d; grid-column: 1 / -1; text-align: center;">Could not load recommendations.</p>`;
     }
 }
-
-//start-separation------------------------------------------------------------------

@@ -13777,41 +13777,29 @@ bottom:-11px;
 }
 
 
-/* --- New Offline Banner Styles --- */
-.offline-banner {
-    position: absolute;
-    top: 60px; /* Position below the top bar */
-    left: 10px;
-    right: 10px;
-    z-index: 50; /* A high z-index to appear above content */
-    background-color: #282828;
-    color: #ffffff;
-    border-radius: 12px;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(-20px);
-    transition: opacity 0.3s ease, transform 0.3s ease;
+/*
+ * This block defines the style for the small, pink-background message box.
+ */
+.offline-message {
+  position: fixed; /* Stays in place when the page scrolls */
+  left: 50%; /* Starts at the horizontal center */
+  bottom: 90px; /* Positions it above the footer */
+  transform: translateX(-50%) translateY(100%); /* Hides it off-screen at the bottom */
+  background: #E53935; /* Your desired pink/red background color */
+  color: #FFFFFF; /* White text color */
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35);
+  opacity: 0; /* Starts invisible */
+  pointer-events: none; /* Prevents it from being clickable when hidden */
+  transition: opacity 0.25s ease, transform 0.25s ease; /* Adds a smooth animation */
+  z-index: 100000; /* Ensures it is on top of all other content */
 }
 
-.offline-banner.visible {
-    opacity: 1;
-    pointer-events: auto;
-    transform: translateY(0);
-}
-
-.offline-title {
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin-bottom: 8px;
-}
-
-.offline-message-text {
-    font-size: 1rem;
-    color: #b3b3b3;
+.offline-message.show {
+  opacity: 1; /* Makes it visible */
+  transform: translateX(-50%) translateY(0); /* Slides it up into view */
 }
 

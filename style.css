@@ -13752,32 +13752,34 @@ bottom:-11px;
         z-index: 10005 !important;
     }
 
+/* --- Styles for the Offline/Online Message (`offline-message`) --- */
+.offline-message {
+    /* 1. Force a fixed position to pin it to the viewport */
+    position: fixed !important;
 
-    /* --- Styles for the Offline/Online Message (`offline-message`) --- */
-    .offline-message {
-        /* 1. Force a fixed position to pin it to the viewport */
-        position: fixed !important;
-        
-        /* 2. Place it just ABOVE the footer */
-        bottom: 69px !important; /* Adjust this value if your footer's height changes */
-        left: 0 !important;
-        width: 100% !important;
+    /* 2. Place it just BELOW the top bar */
+    top: 60px !important; /* Adjust this value if your header's height changes. */
+    left: 0 !important;
+    width: 100% !important;
 
-        /* 3. Give it an even HIGHER z-index to ensure it's on top of the footer */
-        z-index: 100000 !important;
+    /* 3. Give it a high z-index to ensure it's on top of content */
+    z-index: 100000 !important;
 
-        /* 4. Retain its visual and animation properties */
-        background-color: #333 !important;
-        color: white !important;
-        text-align: center !important;
-        padding: 12px 0 !important;
-        transition: transform 0.3s ease-in-out !important;
-        transform: translateY(100%) !important;
-        font-family: 'Inter', sans-serif !important;
-    }
+    /* 4. Retain its visual and animation properties */
+    background-color: #333 !important;
+    color: white !important;
+    text-align: center !important;
+    padding: 12px 0 !important;
+    transition: transform 0.3s ease-in-out !important;
+    /* Start off-screen at the top */
+    transform: translateY(-100%) !important;
+    font-family: 'Inter', sans-serif !important;
+}
 
-    .offline-message.visible {
-        transform: translateY(0) !important;
-    }
+.offline-message.visible {
+    /* Slide it down from the top */
+    transform: translateY(0) !important;
+}
+    
 }
 

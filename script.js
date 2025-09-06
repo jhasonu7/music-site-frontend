@@ -118,25 +118,14 @@ function attachEventListenersToHtmlCards() {
     });
 }
 
-const offlineMessageEl = document.getElementById('offline-message');
-const offlineMessageTextEl = offlineMessageEl ? offlineMessageEl.querySelector('p') : null;
-
 window.addEventListener('offline', () => {
-    if (offlineMessageEl && offlineMessageTextEl) {
-        offlineMessageTextEl.textContent = "You're offline";
-        offlineMessageEl.classList.add('visible');
-    }
+    // This part is the key. When the network is lost, you call the function.
+    showMessageBox("You're offline", 'error', 0); // Duration 0 means it won't automatically disappear.
 });
 
-window.addEventListener('online', async () => {
-    if (offlineMessageEl && offlineMessageTextEl) {
-        offlineMessageTextEl.textContent = "You're back online";
-        offlineMessageEl.classList.add('visible');
-        setTimeout(() => {
-            offlineMessageEl.classList.remove('visible');
-        }, 2000);
-    }
-    await fetchAlbums();
+window.addEventListener('online', () => {
+    // When the network is back, you show a success message that disappears.
+    showMessageBox("You're back online", 'success', 2000); // Disappears in 2 seconds.
 });
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual ngrok static domain if you are using ngrok for your backend.

@@ -13885,5 +13885,28 @@ bottom:-11px;
     display: none !important;
 }
 
-
+/* Styling for the Install button in the sidebar */
+#install-app-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    list-style: none;
+    padding: 14px 10px;
+    font-weight: bold;
+    font-size: 14px;
+    color: gold; /* Change the color to match your theme */
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: background-color 0.2s ease-in-out;
+}
+#install-app-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+#install-app-button svg {
+    filter: drop-shadow(0 0 1px gold);
+}
 

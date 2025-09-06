@@ -13723,6 +13723,11 @@ bottom:-11px;
       .message-box.success{ background:#1DB954; color:#000; }
       .message-box.error{ background:#e02424; }
 
+/* ======================================================= */
+/* UNIFIED FIX FOR MOBILE FOOTER AND OFFLINE MESSAGE     */
+/* Place this block at the VERY END of your style.css file. */
+/* It will handle styles for screens up to 768px.        */
+/* ======================================================= */
 @media (max-width: 768px) {
     
     /* --- Styles for the Mobile Footer (`unique-footer-nav`) --- */
@@ -13777,7 +13782,6 @@ bottom:-11px;
 }
 
 
-
 /* --- New Offline Banner Styles --- */
 .offline-banner {
     position: absolute;
@@ -13815,6 +13819,8 @@ bottom:-11px;
     font-size: 1rem;
     color: #b3b3b3;
 }
+
+
 
 
 

@@ -12,57 +12,18 @@ window.addEventListener('beforeinstallprompt', (e) => {
     }
     console.log("PWA install prompt deferred.");
 });
+window.addEventListener('appinstalled', (e) => {
+  console.log('PWA was installed.');
+  // Hide the install button immediately after the app is installed.
+  if (installAppButton) {
+      installAppButton.classList.add('hidden');
+  }
+});
 
 // Now, add the click listener for the button here as well
-if (installAppButton) {
-    installAppButton.addEventListener('click', async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                console.log('User accepted the PWA install prompt.');
-                installAppButton.classList.add('hidden');
-            } else {
-                console.log('User dismissed the PWA install prompt.');
-            }
-            deferredPrompt = null;
-        }
-    });
-}
+
 
 // ... (rest of your code, like the DOMContentLoaded listener) ...
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js').then((registration) => {
-      // Registration was successful
-      console.log('ServiceWorker registration successful with scope: ', registration.scope);
-
-      // Request notification permission and subscribe to push notifications
-      if ('Notification' in window) {
-        Notification.requestPermission().then((permission) => {
-          if (permission === 'granted') {
-            console.log('Notification permission granted.');
-            subscribeToPush(registration);
-          } else {
-            console.log('Notification permission denied.');
-          }
-        });
-      }
-
-      // Register for background synchronization
-      if ('SyncManager' in window) {
-        registration.sync.register('send-data-to-backend').then(() => {
-          console.log('Background sync registered.');
-        });
-      }
-
-    }, (err) => {
-      // registration failed :(
-      console.log('ServiceWorker registration failed: ', err);
-    });
-  });
-}
-// Check if the browser supports service workers
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js').then((registration) => {
@@ -225,6 +186,8 @@ window.addEventListener('online', () => {
 document.addEventListener('DOMContentLoaded', () => {
     updateOfflineBannerState();
 });
+// --- Configuration ---
+// IMPORTANT: Replace this with your actual ngrok static domain if you are using ngrok for your backend.
 // If your backend is hosted directly (e.g., on Render, Heroku), use that URL.
 const BACKEND_BASE_URL = 'https://music-site-backend.onrender.com'; // Example: 'https://your-ngrok-subdomain.ngrok-free.app' or 'https://your-backend-api.com'
 
@@ -6762,7 +6725,7 @@ async function initializeApp() {
 
     try {
         await fetchAlbums();
-     
+
 
 
         window.addEventListener('hashchange', router);
@@ -8877,6 +8840,21 @@ window.addEventListener('blur', () => {
 
 // Ensure the code runs after the DOM is fully loaded.
 document.addEventListener('DOMContentLoaded', () => {
+              if (installAppButton) {
+    installAppButton.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                console.log('User accepted the PWA install prompt.');
+                installAppButton.classList.add('hidden');
+            } else {
+                console.log('User dismissed the PWA install prompt.');
+            }
+            deferredPrompt = null;
+        }
+    });
+}
     initializeApp();
 });
 
@@ -8931,5 +8909,3 @@ async function fetchAndDisplayEmbeddedSimilarAlbums(albumToRecommendFor , wrappe
         container.innerHTML = `<p style="color: #ff4d4d; grid-column: 1 / -1; text-align: center;">Could not load recommendations.</p>`;
     }
 }
-
-//start-separation------------------------------------------------------------------

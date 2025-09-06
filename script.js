@@ -1,4 +1,67 @@
+// ... (existing global variable declarations) ...
 
+let deferredPrompt;
+const installAppButton = document.getElementById('install-app-button');
+
+// Add this block here
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (installAppButton) {
+        installAppButton.classList.remove('hidden');
+    }
+    console.log("PWA install prompt deferred.");
+});
+
+// Now, add the click listener for the button here as well
+if (installAppButton) {
+    installAppButton.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                console.log('User accepted the PWA install prompt.');
+                installAppButton.classList.add('hidden');
+            } else {
+                console.log('User dismissed the PWA install prompt.');
+            }
+            deferredPrompt = null;
+        }
+    });
+}
+
+// ... (rest of your code, like the DOMContentLoaded listener) ...
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js').then((registration) => {
+      // Registration was successful
+      console.log('ServiceWorker registration successful with scope: ', registration.scope);
+
+      // Request notification permission and subscribe to push notifications
+      if ('Notification' in window) {
+        Notification.requestPermission().then((permission) => {
+          if (permission === 'granted') {
+            console.log('Notification permission granted.');
+            subscribeToPush(registration);
+          } else {
+            console.log('Notification permission denied.');
+          }
+        });
+      }
+
+      // Register for background synchronization
+      if ('SyncManager' in window) {
+        registration.sync.register('send-data-to-backend').then(() => {
+          console.log('Background sync registered.');
+        });
+      }
+
+    }, (err) => {
+      // registration failed :(
+      console.log('ServiceWorker registration failed: ', err);
+    });
+  });
+}
 // Check if the browser supports service workers
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

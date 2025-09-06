@@ -32,55 +32,60 @@ self.addEventListener('install', (event) => {
   );
 });
 
-self.addEventListener('fetch', (event) => {
-  // Check if the request is for a dynamic URL from your backend API
-  const isApiRequest = event.request.url.startsWith('https://music-site-backend.onrender.com/api/');
-
-  if (isApiRequest) {
-    // For API requests, use a "cache-first, then network" strategy
-    event.respondWith(
-      caches.open(CACHE_NAME).then(cache => {
-        // Try to fetch from the network first
-        return fetch(event.request).then(response => {
-          // If the network is successful, cache the new response and return it
-          cache.put(event.request, response.clone());
-          return response;
-        }).catch(() => {
-          // If the network fails (user is offline), return the cached response
-          console.log('API request failed, serving from cache:', event.request.url);
-          return caches.match(event.request);
+// Add this new function to handle a message from the service worker.
+function sendOfflineMessageToClient(event) {
+    self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+            if (client.url.startsWith(self.location.origin)) {
+                client.postMessage('offline');
+            }
         });
-      })
-    );
-  } else {
-    // For all other requests (static assets), use the "cache-first" strategy
-    event.respondWith(
-      caches.match(event.request)
-        .then((response) => {
-          if (response) {
-            return response;
-          }
+    });
+}
 
-          const fetchRequest = event.request.clone();
+self.addEventListener('fetch', (event) => {
+    // Check if the request is for a dynamic URL from your backend API
+    const isApiRequest = event.request.url.startsWith('https://music-site-backend.onrender.com/api/');
 
-          return fetch(fetchRequest)
-            .then((response) => {
-              if (!response || response.status !== 200 || response.type !== 'basic') {
-                return response;
-              }
-
-              const responseToCache = response.clone();
-
-              caches.open(CACHE_NAME)
-                .then((cache) => {
-                  cache.put(event.request, responseToCache);
+    if (isApiRequest) {
+        event.respondWith(
+            caches.open(CACHE_NAME).then(cache => {
+                return fetch(event.request).then(response => {
+                    cache.put(event.request, response.clone());
+                    return response;
+                }).catch(() => {
+                    // This is the network failure handler.
+                    // Instead of just serving from cache, send a message to the main thread.
+                    sendOfflineMessageToClient(event);
+                    return caches.match(event.request).then(cachedResponse => {
+                        return cachedResponse || new Response(JSON.stringify({ message: "You are currently offline." }), { status: 503, statusText: "Service Unavailable" });
+                    });
                 });
-
-              return response;
-            });
-        })
-    );
-  }
+            })
+        );
+    } else {
+        event.respondWith(
+            caches.match(event.request).then((response) => {
+                if (response) {
+                    return response;
+                }
+                const fetchRequest = event.request.clone();
+                return fetch(fetchRequest).then((response) => {
+                    if (!response || response.status !== 200 || response.type !== 'basic') {
+                        return response;
+                    }
+                    const responseToCache = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseToCache);
+                    });
+                    return response;
+                }).catch(() => {
+                
+                    return caches.match('index.html');
+                });
+            })
+        );
+    }
 });
 
 self.addEventListener('activate', (event) => {

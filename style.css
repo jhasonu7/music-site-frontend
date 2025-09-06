@@ -13782,4 +13782,16 @@ bottom:-11px;
 }
     
 }
-
+#album-overlay-scroll-content,
+#full-screen-player,
+.liked-content,
+#playlist-scroll-content,
+#record-breaking-popup-grid,
+#record-breaking-popup-grid2,
+#add-to-playlist-overlay,
+#new-playlist-popup-overlay,
+#song-options-popup,
+#library-popup {
+  /* This prevents the browser's native pull-to-refresh gesture from being triggered on the main page. */
+  overscroll-behavior-y: contain;
+}

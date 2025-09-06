@@ -2,7 +2,7 @@
   "name": "Swarify",
   "short_name": "Swarify",
   "description": "Your music, your way.",
-  "start_url": "/index.html",
+  "start_url": "/#home",
   "display": "standalone",
   "background_color": "#121212",
   "theme_color": "#1DB954",

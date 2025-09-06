@@ -117,6 +117,27 @@ function attachEventListenersToHtmlCards() {
         button.addEventListener('click', handlePlayButtonClick);
     });
 }
+
+const offlineMessageEl = document.getElementById('offline-message');
+const offlineMessageTextEl = offlineMessageEl ? offlineMessageEl.querySelector('p') : null;
+
+window.addEventListener('offline', () => {
+    if (offlineMessageEl && offlineMessageTextEl) {
+        offlineMessageTextEl.textContent = "You're offline";
+        offlineMessageEl.classList.add('visible');
+    }
+});
+
+window.addEventListener('online', async () => {
+    if (offlineMessageEl && offlineMessageTextEl) {
+        offlineMessageTextEl.textContent = "You're back online";
+        offlineMessageEl.classList.add('visible');
+        setTimeout(() => {
+            offlineMessageEl.classList.remove('visible');
+        }, 2000);
+    }
+    await fetchAlbums();
+});
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual ngrok static domain if you are using ngrok for your backend.
 // If your backend is hosted directly (e.g., on Render, Heroku), use that URL.
@@ -2987,11 +3008,16 @@ function attachEventListenersToHtmlCards() {
  * @param {Event} event
  */
 function handleCardClick(event) {
+     if (!navigator.onLine) {
+        showMessageBox("You're offline. Please connect to the internet to open new albums.", "error");
+        return;
+    }
     // Prevent opening the album details if the play button was clicked
     if (event.target.closest('.card-play-button')) {
         return; // Let the play button's specific handler take over
     }
 
+    
     const card = event.currentTarget; // The .card element itself
     const albumId = card.dataset.albumId; // Get album ID from the card's dataset
 
@@ -3024,7 +3050,10 @@ function handleCardClick(event) {
  */
 function handlePlayButtonClick(event) {
     event.stopPropagation(); // Prevent the parent card's click event from firing
-
+ if (!navigator.onLine) {
+        showMessageBox("You're offline. Please connect to the internet to play music.", "error");
+        return;
+    }
     const button = event.currentTarget; // The .card-play-button element
     const card = button.closest('.card'); // Get the parent card element
     const albumId = card.dataset.albumId; // Get album ID from the card's dataset
@@ -6648,6 +6677,55 @@ async function initializeApp() {
 
     try {
         await fetchAlbums();
+        const pullToRefreshContainer = document.querySelector('.right');
+let startY = 0;
+let pullDistance = 0;
+const refreshThreshold = 100; // Pixels to pull down to trigger refresh
+let isRefreshing = false;
+
+if (pullToRefreshContainer) {
+  pullToRefreshContainer.addEventListener('touchstart', (e) => {
+    if (pullToRefreshContainer.scrollTop === 0) {
+      startY = e.touches[0].clientY;
+    }
+  });
+
+  pullToRefreshContainer.addEventListener('touchmove', (e) => {
+    if (startY === 0) return;
+
+    pullDistance = e.touches[0].clientY - startY;
+
+    // Only allow pull-to-refresh when at the very top
+    if (pullDistance > 0) {
+        e.preventDefault();
+        pullToRefreshContainer.style.transform = `translateY(${Math.min(pullDistance, refreshThreshold * 1.5)}px)`;
+    }
+  });
+
+  pullToRefreshContainer.addEventListener('touchend', async () => {
+    pullToRefreshContainer.style.transform = '';
+    if (pullDistance > refreshThreshold && !isRefreshing) {
+      isRefreshing = true;
+      console.log("Pull-to-refresh triggered. Reloading data...");
+
+      // Show a spinner or message here.
+      // For now, we'll just log and reload.
+      try {
+        await fetchAlbums();
+        showMessageBox("Content refreshed!", "success");
+      } catch (e) {
+        console.error("Failed to refresh content on pull.", e);
+        showMessageBox("Failed to refresh content.", "error");
+      } finally {
+        isRefreshing = false;
+        pullDistance = 0;
+        startY = 0;
+      }
+    }
+  });
+}
+
+
         window.addEventListener('hashchange', router);
     router();
 

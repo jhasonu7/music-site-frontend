@@ -119,35 +119,49 @@ function attachEventListenersToHtmlCards() {
 }
 
 // --- Network Status Message Listeners ---
-// This function handles the persistent "While you're offline" banner
-const offlineBannerEl = document.getElementById('offline-banner');
+const compactOfflineBannerEl = document.getElementById('compact-offline-banner');
+
 
 function updateOfflineBannerState() {
     if (navigator.onLine) {
-        if (offlineBannerEl) offlineBannerEl.classList.remove('visible');
+        if (compactOfflineBannerEl) {
+            compactOfflineBannerEl.classList.remove('visible');
+            compactOfflineBannerEl.classList.add('hidden');
+        }
+        // Adjust play bar position back to normal if needed
+        if (mainPlayBar) {
+            mainPlayBar.style.bottom = '59px'; // Normal position
+        }
     } else {
-        if (offlineBannerEl) offlineBannerEl.classList.add('visible');
+        if (compactOfflineBannerEl) {
+            compactOfflineBannerEl.classList.remove('hidden');
+            compactOfflineBannerEl.classList.add('visible');
+        }
+        // Move the play bar up to accommodate the new banner
+        if (mainPlayBar) {
+            const bannerHeight = compactOfflineBannerEl.offsetHeight || 35;
+            const newBottomPosition = 80 + bannerHeight + 8; // banner height + spacing
+            mainPlayBar.style.bottom = `${newBottomPosition}px`;
+        }
     }
 }
 
 window.addEventListener('offline', () => {
-    // Show the small "You're offline" toast message
-    showMessageBox("You're offline", 'error', 0);
-    // Show the large persistent banner
+    console.log("Offline event detected.");
     updateOfflineBannerState();
+    showMessageBox("You're offline", 'error', 2000);
 });
 
 window.addEventListener('online', () => {
-    // Hide the persistent banner first
+    console.log("Online event detected.");
     updateOfflineBannerState();
-    // Show the small "You're back online" toast message
     showMessageBox("You're back online", 'success', 2000);
 });
 
-// We need an initial check to set the correct state on page load
-updateOfflineBannerState();
-// --- Configuration ---
-// IMPORTANT: Replace this with your actual ngrok static domain if you are using ngrok for your backend.
+// Initial check on page load
+document.addEventListener('DOMContentLoaded', () => {
+    updateOfflineBannerState();
+});
 // If your backend is hosted directly (e.g., on Render, Heroku), use that URL.
 const BACKEND_BASE_URL = 'https://music-site-backend.onrender.com'; // Example: 'https://your-ngrok-subdomain.ngrok-free.app' or 'https://your-backend-api.com'
 

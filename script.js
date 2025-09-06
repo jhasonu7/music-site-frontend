@@ -6695,7 +6695,7 @@ async function initializeApp() {
       e.preventDefault();
     }
   }, { passive: false });
-});
+
               
 
         window.addEventListener('hashchange', router);

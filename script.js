@@ -1,10 +1,14 @@
 
-// Check if the browser supports service workers
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then((registration) => {
+  navigator.serviceWorker.register('/service-worker.js').then((registration) => {
       // Registration was successful
       console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        navigator.serviceWorker.addEventListener('message', event => {
+        if (event.data === 'offline') {
+            showMessageBox("You're offline", "error");
+        }
+    });
 
       // Request notification permission and subscribe to push notifications
       if ('Notification' in window) {

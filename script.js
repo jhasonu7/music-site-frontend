@@ -6677,8 +6677,26 @@ async function initializeApp() {
 
     try {
         await fetchAlbums();
-     
-
+             document.body.addEventListener('touchmove', (e) => {
+    // This function checks if ANY of your popup overlays are currently visible.
+    const isAnyPopupVisible = 
+      document.getElementById('albumOverlay')?.classList.contains('show') ||
+      document.getElementById('full-screen-player')?.classList.contains('active') ||
+      document.getElementById('likedSongsOverlay')?.classList.contains('open') ||
+      document.getElementById('playlist-details-overlay')?.classList.contains('active') ||
+      document.getElementById('record-breaking-popup-overlay')?.classList.contains('flex') ||
+      document.getElementById('record-breaking-popup-overlay2')?.classList.contains('flex') ||
+      document.getElementById('add-to-playlist-overlay')?.classList.contains('visible') ||
+      document.getElementById('new-playlist-popup-overlay')?.classList.contains('active') ||
+      document.getElementById('song-options-popup')?.classList.contains('active');
+    
+    // We only prevent the default touch behavior if a popup is visible.
+    if (isAnyPopupVisible) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+});
+              
 
         window.addEventListener('hashchange', router);
     router();

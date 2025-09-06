@@ -13723,11 +13723,6 @@ bottom:-11px;
       .message-box.success{ background:#1DB954; color:#000; }
       .message-box.error{ background:#e02424; }
 
-/* ======================================================= */
-/* UNIFIED FIX FOR MOBILE FOOTER AND OFFLINE MESSAGE     */
-/* Place this block at the VERY END of your style.css file. */
-/* It will handle styles for screens up to 768px.        */
-/* ======================================================= */
 @media (max-width: 768px) {
     
     /* --- Styles for the Mobile Footer (`unique-footer-nav`) --- */
@@ -13752,34 +13747,71 @@ bottom:-11px;
         z-index: 10005 !important;
     }
 
-/* --- Styles for the Offline/Online Message (`offline-message`) --- */
-.offline-message {
-    /* 1. Force a fixed position to pin it to the viewport */
-    position: fixed !important;
 
-    /* 2. Place it just BELOW the top bar */
-    top: 60px !important; /* Adjust this value if your header's height changes. */
-    left: 0 !important;
-    width: 100% !important;
+    /* --- Styles for the Offline/Online Message (`offline-message`) --- */
+    .offline-message {
+        /* 1. Force a fixed position to pin it to the viewport */
+        position: fixed !important;
+        
+        /* 2. Place it just ABOVE the footer */
+        bottom: 69px !important; /* Adjust this value if your footer's height changes */
+        left: 0 !important;
+        width: 100% !important;
 
-    /* 3. Give it a high z-index to ensure it's on top of content */
-    z-index: 100000 !important;
+        /* 3. Give it an even HIGHER z-index to ensure it's on top of the footer */
+        z-index: 100000 !important;
 
-    /* 4. Retain its visual and animation properties */
-    background-color: #333 !important;
-    color: white !important;
-    text-align: center !important;
-    padding: 12px 0 !important;
-    transition: transform 0.3s ease-in-out !important;
-    /* Start off-screen at the top */
-    transform: translateY(-100%) !important;
-    font-family: 'Inter', sans-serif !important;
+        /* 4. Retain its visual and animation properties */
+        background-color: #333 !important;
+        color: white !important;
+        text-align: center !important;
+        padding: 12px 0 !important;
+        transition: transform 0.3s ease-in-out !important;
+        transform: translateY(100%) !important;
+        font-family: 'Inter', sans-serif !important;
+    }
+
+    .offline-message.visible {
+        transform: translateY(0) !important;
+    }
 }
 
-.offline-message.visible {
-    /* Slide it down from the top */
-    transform: translateY(0) !important;
+
+/* --- New Offline Banner Styles --- */
+.offline-banner {
+    position: absolute;
+    top: 60px; /* Position below the top bar */
+    left: 10px;
+    right: 10px;
+    z-index: 50; /* A high z-index to appear above content */
+    background-color: #282828;
+    color: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
-    
+
+.offline-banner.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.offline-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.offline-message-text {
+    font-size: 1rem;
+    color: #b3b3b3;
 }
 

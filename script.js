@@ -6677,53 +6677,7 @@ async function initializeApp() {
 
     try {
         await fetchAlbums();
-        const pullToRefreshContainer = document.querySelector('.right');
-let startY = 0;
-let pullDistance = 0;
-const refreshThreshold = 100; // Pixels to pull down to trigger refresh
-let isRefreshing = false;
-
-if (pullToRefreshContainer) {
-  pullToRefreshContainer.addEventListener('touchstart', (e) => {
-    if (pullToRefreshContainer.scrollTop === 0) {
-      startY = e.touches[0].clientY;
-    }
-  });
-
-  pullToRefreshContainer.addEventListener('touchmove', (e) => {
-    if (startY === 0) return;
-
-    pullDistance = e.touches[0].clientY - startY;
-
-    // Only allow pull-to-refresh when at the very top
-    if (pullDistance > 0) {
-        e.preventDefault();
-        pullToRefreshContainer.style.transform = `translateY(${Math.min(pullDistance, refreshThreshold * 1.5)}px)`;
-    }
-  });
-
-  pullToRefreshContainer.addEventListener('touchend', async () => {
-    pullToRefreshContainer.style.transform = '';
-    if (pullDistance > refreshThreshold && !isRefreshing) {
-      isRefreshing = true;
-      console.log("Pull-to-refresh triggered. Reloading data...");
-
-      // Show a spinner or message here.
-      // For now, we'll just log and reload.
-      try {
-        await fetchAlbums();
-        showMessageBox("Content refreshed!", "success");
-      } catch (e) {
-        console.error("Failed to refresh content on pull.", e);
-        showMessageBox("Failed to refresh content.", "error");
-      } finally {
-        isRefreshing = false;
-        pullDistance = 0;
-        startY = 0;
-      }
-    }
-  });
-}
+     
 
 
         window.addEventListener('hashchange', router);

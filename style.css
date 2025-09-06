@@ -13750,20 +13750,20 @@ bottom:-11px;
 }
 .offline-message {
     position: fixed;
-    bottom: 0;
+    top: 0; /* Changed from bottom */
     left: 0;
     width: 100%;
-    background-color: #333; /* Dark gray background */
+    background-color: #333;
     color: white;
     text-align: center;
     padding: 12px 0;
-    z-index: 10000;
+    z-index: 100000; /* Increased z-index to appear on top of everything */
     transition: transform 0.3s ease-in-out;
-    transform: translateY(100%);
+    transform: translateY(-100%); /* Changed from 100% to -100% to hide it at the top */
     font-family: 'Inter', sans-serif;
 }
 
 .offline-message.visible {
-  transform: translateY(0);
+    transform: translateY(0);
 }
 

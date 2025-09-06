@@ -6677,30 +6677,7 @@ async function initializeApp() {
 
     try {
         await fetchAlbums();
-       function isAnyPopupOpen() {
-    return document.getElementById('albumOverlay')?.classList.contains('show') ||
-           document.getElementById('full-screen-player')?.classList.contains('active') ||
-           document.getElementById('likedSongsOverlay')?.classList.contains('open') ||
-           document.getElementById('playlist-details-overlay')?.classList.contains('active') ||
-           document.getElementById('record-breaking-popup-overlay')?.classList.contains('flex') ||
-           document.getElementById('record-breaking-popup-overlay2')?.classList.contains('flex') ||
-           document.getElementById('add-to-playlist-overlay')?.classList.contains('visible') ||
-           document.getElementById('new-playlist-popup-overlay')?.classList.contains('active') ||
-           document.getElementById('song-options-popup')?.classList.contains('active') ||
-           document.getElementById('popup-overlay')?.classList.contains('active') ||
-           document.getElementById('unique-search-popup')?.classList.contains('active') ||
-           document.getElementById('mobile-search-overlay')?.classList.contains('active') ||
-           document.getElementById('library-popup')?.classList.contains('open');
-  }
-
-  // The universal touchmove listener that blocks pull-to-refresh.
-  document.body.addEventListener('touchmove', (e) => {
-    if (isAnyPopupOpen()) {
-      // Prevents the browser's default touch behavior, such as scrolling.
-      // This is the key to blocking pull-to-refresh.
-      e.preventDefault();
-    }
-  }, { passive: false });
+    
               
 
         window.addEventListener('hashchange', router);

@@ -3437,18 +3437,7 @@ body {
     background: linear-gradient(135deg, #C08518, #9B6A14);
 }
 
-/* --- Navigation Bar Styles --- */
-.unique-footer-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background-color: rgba(18, 18, 18, 0.7);
-    backdrop-filter: blur(8px);
-    border-top: 1px solid #383838;
-    padding: 0.5rem 0.5rem;
-    z-index: 10005;
-}
+
 
 .unique-nav-container {
     width: 100%;
@@ -3497,11 +3486,7 @@ body {
     font-size: 0.75rem;
     font-weight: 600;
 }
-@media (min-width: 768px) {
-    .unique-footer-nav {
-        display: none;
-    }
-}
+
 .unique-search-popup {
     position: fixed;
     top: 0;
@@ -12942,62 +12927,6 @@ font-weight: 500;
 
 
 
-/* --- Navigation Bar Styles --- */
-.unique-footer-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    /* MODIFIED: Set the background to transparent for the glass effect */
-    background-color: transparent;
-    /* MODIFIED: Increased blur for a more pronounced glassmorphism effect */
-    -webkit-backdrop-filter: blur(12px); /* Safari compatibility */
-    backdrop-filter: blur(12px);
-    /* MODIFIED: Softer, semi-transparent top border to blend better */
-    border-top: 1px solid rgba(255, 255, 255, 0.1); 
-    padding: 0.5rem 0.5rem;
-    z-index: 10005;
-}
-
-/* ======================================================= */
-/* FINAL FIX: Transparent Mobile Footer                    */
-/* Place this at the VERY END of your style.css file.    */
-/* ======================================================= */
-
-/* This rule targets screens 768px wide or smaller */
-@media (max-width: 768px) {
-    .unique-footer-nav {
-        /* This is the key change to make the background transparent */
-        background-color: transparent !important;
-
-        /* This creates the blurred glass effect */
-        
-
-        /* This creates a soft, subtle top border for the glass edge */
-        border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
-    }
-}
-
-/* ======================================================= */
-/* FINAL FIX: Truly Transparent Mobile Footer (No Blur)    */
-/* Place this at the VERY END of your style.css file.      */
-/* ======================================================= */
-
-/* This rule targets screens 768px wide or smaller */
-@media (max-width: 768px) {
-    .unique-footer-nav {
-        /* 1. Remove the blur effect completely */
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-
-        /* 2. Make the background fully transparent */
-        background: transparent !important;
-        background-color: transparent !important;
-
-        /* 3. Remove the top border for a seamless look */
-        border-top: none !important;
-    }
-}
 
 @media (max-width: 375px) {
     body {
@@ -13005,55 +12934,7 @@ font-weight: 500;
     }
 }
 
-/* ======================================================= */
-/* FINAL FIX: Transparent Footer with Dark Gradient        */
-/* Place this at the VERY END of your style.css file.      */
-/* ======================================================= */
-/* ======================================================= */
-/* FINAL FIX: Increased Darkness for Transparent Footer    */
-/* Place this at the VERY END of your style.css file.    */
-/* ======================================================= */
 
-/* This rule targets screens 768px wide or smaller */
-@media (max-width: 768px) {
-    .unique-footer-nav {
-        /* 1. Ensure there is no blur effect */
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-
-        /* 2. Increased darkness in the gradient */
-        /* This gradient is now darker (90% opacity) and covers more area at the bottom */
-        background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 20%, transparent) !important;
-
-        /* 3. Remove the top border for a clean, fading look */
-        border-top: none !important;
-    }
-}
-
-
-/* ======================================================= */
-/* FINAL FIX: Stronger Gradient for Transparent Footer     */
-/* Place this at the VERY END of your style.css file.    */
-/* ======================================================= */
-
-/* This rule targets screens 768px wide or smaller */
-@media (max-width: 768px) {
-    .unique-footer-nav {
-        /* 1. Ensure there is no blur effect */
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-
-        /* 2. Apply a stronger and taller dark gradient */
-        /* This gradient is very dark at the bottom and extends 60% of the way up before fading. */
-        background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 30%, transparent) !important;
-
-        /* 3. Remove the top border for a clean, fading look */
-        border-top: none !important;
-    }
-    .album-overlay {
-        height:100%;
-    }
-}
 
 .carousel-dot.active{
     background-color: rgb(223,188,115);
@@ -13844,33 +13725,63 @@ bottom:-11px;
 
 
 /* ======================================================= */
-/* FINAL FIX: Force Offline/Online Message to the Bottom */
-/* Place this block at the VERY END of your style.css file. */
+/* UNIFIED FIX FOR MOBILE FOOTER AND OFFLINE MESSAGE     */
+/* This single block handles all mobile-specific styles.   */
 /* ======================================================= */
-
-.offline-message {
-    /* Critical positioning and stacking properties */
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    z-index: 100000 !important; /* Extremely high z-index to always be on top */
+@media (max-width: 768px) {
     
-    /* Appearance and animation properties */
-    background-color: #333 !important;
-    color: white !important;
-    text-align: center !important;
-    padding: 12px 0 !important;
-    transition: transform 0.3s ease-in-out !important;
-    transform: translateY(100%) !important; /* Hidden off-screen by default */
-    font-family: 'Inter', sans-serif !important;
-}
+    /* --- Styles for the Mobile Footer (`unique-footer-nav`) --- */
+    .unique-footer-nav {
+        /* 1. Remove the blur effect completely */
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
 
-.offline-message.visible {
-    transform: translateY(0) !important; /* Visible on-screen when active */
-}
+        /* 2. Apply a strong, fading dark gradient */
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 30%, transparent) !important;
 
-/* Ensure the message also appears correctly inside popups/overlays */
-.offline-message-in-overlay {
-    z-index: 100001 !important; /* A higher z-index to appear on top of any other overlay */
+        /* 3. Remove the top border for a clean, seamless look */
+        border-top: none !important;
+
+        /* 4. Ensure it's a fixed element at the very bottom */
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+
+        /* 5. Set a high z-index to sit on top of content, but below the offline message */
+        z-index: 10005 !important;
+    }
+
+
+    /* --- Styles for the Offline/Online Message (`offline-message`) --- */
+    .offline-message {
+        /* 1. Force a fixed position to pin it to the viewport */
+        position: fixed !important;
+        
+        /* 2. Place it just ABOVE the footer */
+        bottom: 69px !important; /* This positions it directly above the mobile playbar */
+        left: 0 !important;
+        width: 100% !important;
+
+        /* 3. Give it an even HIGHER z-index to ensure it's on top of everything */
+        z-index: 100000 !important;
+
+        /* 4. Retain its visual and animation properties */
+        background-color: #333 !important;
+        color: white !important;
+        text-align: center !important;
+        padding: 12px 0 !important;
+        transition: transform 0.3s ease-in-out !important;
+        transform: translateY(100%) !important;
+        font-family: 'Inter', sans-serif !important;
+    }
+
+    .offline-message.visible {
+        transform: translateY(0) !important;
+    }
+
+    /* --- The album overlay must also be styled correctly --- */
+    .album-overlay {
+        height: calc(100vh - 69px) !important; /* Ensure the overlay doesn't overlap the mobile footer */
+    }
 }

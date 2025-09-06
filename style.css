@@ -13689,10 +13689,7 @@ bottom:-11px;
     pointer-events: none;
 }
 
-.splash-logo {
-    width: 150px;
-    height: auto;
-}
+
 
 /* Simple loading spinner */
 .loading-spinner {

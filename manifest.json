@@ -9,7 +9,7 @@
   "icons": [
     {
       "src": "fav.png",
-      "sizes": "512x410",
+      "sizes": "512x512",
       "type": "image/png"
     },
     {

@@ -118,6 +118,8 @@ function attachEventListenersToHtmlCards() {
     });
 }
 
+/* In script.js, replace the existing window.addEventListener('offline', ...) and window.addEventListener('online', ...) blocks with this corrected version. */
+
 const offlineMessageEl = document.getElementById('offline-message');
 const offlineMessageTextEl = offlineMessageEl ? offlineMessageEl.querySelector('p') : null;
 

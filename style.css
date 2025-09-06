@@ -13829,29 +13829,7 @@ bottom:-11px;
     100% { transform: rotate(360deg); }
 }
 
-.offline-message {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background-color: #333; /* Dark gray background */
-    color: white;
-    text-align: center;
-    padding: 12px 0;
-    z-index: 10000;
-    transition: transform 0.3s ease-in-out;
-    transform: translateY(100%);
-    font-family: 'Inter', sans-serif;
-}
 
-.offline-message.visible {
-    transform: translateY(0);
-}
-.offline-message-in-overlay {
-    bottom: 0;
-    left: 0;
-    z-index: 10001;
-}
       .message-box{
         position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%);
         background: rgba(20,20,20,.95); color: #fff; padding: 12px 16px;
@@ -13865,20 +13843,34 @@ bottom:-11px;
       .message-box.error{ background:#e02424; }
 
 
+/* ======================================================= */
+/* FINAL FIX: Force Offline/Online Message to the Bottom */
+/* Place this block at the VERY END of your style.css file. */
+/* ======================================================= */
+
 .offline-message {
+    /* Critical positioning and stacking properties */
     position: fixed !important;
     bottom: 0 !important;
     left: 0 !important;
     width: 100% !important;
-    background-color: #333 !important; /* Dark gray background */
+    z-index: 100000 !important; /* Extremely high z-index to always be on top */
+    
+    /* Appearance and animation properties */
+    background-color: #333 !important;
     color: white !important;
     text-align: center !important;
     padding: 12px 0 !important;
-    z-index: 10000 !important;
     transition: transform 0.3s ease-in-out !important;
-    transform: translateY(100%) !important;
+    transform: translateY(100%) !important; /* Hidden off-screen by default */
     font-family: 'Inter', sans-serif !important;
 }
+
 .offline-message.visible {
-    transform: translateY(0) !important;
+    transform: translateY(0) !important; /* Visible on-screen when active */
+}
+
+/* Ensure the message also appears correctly inside popups/overlays */
+.offline-message-in-overlay {
+    z-index: 100001 !important; /* A higher z-index to appear on top of any other overlay */
 }

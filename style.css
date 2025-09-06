@@ -13865,4 +13865,20 @@ bottom:-11px;
       .message-box.error{ background:#e02424; }
 
 
-
+.offline-message {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    background-color: #333 !important; /* Dark gray background */
+    color: white !important;
+    text-align: center !important;
+    padding: 12px 0 !important;
+    z-index: 10000 !important;
+    transition: transform 0.3s ease-in-out !important;
+    transform: translateY(100%) !important;
+    font-family: 'Inter', sans-serif !important;
+}
+.offline-message.visible {
+    transform: translateY(0) !important;
+}

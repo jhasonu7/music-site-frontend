@@ -118,26 +118,34 @@ function attachEventListenersToHtmlCards() {
     });
 }
 
-const offlineMessageEl = document.getElementById('offline-message');
-const offlineMessageTextEl = offlineMessageEl ? offlineMessageEl.querySelector('p') : null;
+// --- Network Status Message Listeners ---
+// This function handles the persistent "While you're offline" banner
+const offlineBannerEl = document.getElementById('offline-banner');
+
+function updateOfflineBannerState() {
+    if (navigator.onLine) {
+        if (offlineBannerEl) offlineBannerEl.classList.remove('visible');
+    } else {
+        if (offlineBannerEl) offlineBannerEl.classList.add('visible');
+    }
+}
 
 window.addEventListener('offline', () => {
-    if (offlineMessageEl && offlineMessageTextEl) {
-        offlineMessageTextEl.textContent = "You're offline";
-        offlineMessageEl.classList.add('visible');
-    }
+    // Show the small "You're offline" toast message
+    showMessageBox("You're offline", 'error', 0);
+    // Show the large persistent banner
+    updateOfflineBannerState();
 });
 
-window.addEventListener('online', async () => {
-    if (offlineMessageEl && offlineMessageTextEl) {
-        offlineMessageTextEl.textContent = "You're back online";
-        offlineMessageEl.classList.add('visible');
-        setTimeout(() => {
-            offlineMessageEl.classList.remove('visible');
-        }, 2000);
-    }
-    await fetchAlbums();
+window.addEventListener('online', () => {
+    // Hide the persistent banner first
+    updateOfflineBannerState();
+    // Show the small "You're back online" toast message
+    showMessageBox("You're back online", 'success', 2000);
 });
+
+// We need an initial check to set the correct state on page load
+updateOfflineBannerState();
 // --- Configuration ---
 // IMPORTANT: Replace this with your actual ngrok static domain if you are using ngrok for your backend.
 // If your backend is hosted directly (e.g., on Render, Heroku), use that URL.
@@ -6677,8 +6685,8 @@ async function initializeApp() {
 
     try {
         await fetchAlbums();
-    
-              
+     
+
 
         window.addEventListener('hashchange', router);
     router();

@@ -4,8 +4,8 @@
   "description": "Your music, your way.",
   "start_url": "/index.html",
   "display": "standalone",
-  "background_color": "#121212",
-  "theme_color": "#1DB954",
+  "background_color": "#4A6DE9",
+  "theme_color": "#E94AD4",
   "icons": [
     {
       "src": "fav.svg",

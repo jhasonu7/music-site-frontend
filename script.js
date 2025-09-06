@@ -6625,9 +6625,152 @@ function populateRecordBreakingGrid(gridContainer, sourceSelector) {
     });
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
 
-// --- New: Centralized Footer Navigation Listeners ---
+// Await all the backend data to load
+async function initializeApp() {
+    const splashScreen = document.getElementById('splash-screen');
+    const container = document.querySelector('.container');
+
+    if (splashScreen) {
+        // Ensure splash screen is visible while loading
+        splashScreen.classList.remove('hidden'); 
+    }
+    if (container) {
+        // Hide the main content initially to prevent abrupt loading
+        container.style.display = 'none';
+    }
+    
+    // Set up the basic player UI and other non-data-dependent elements
+    // This is a good place for code that doesn't need to wait for `fetchAlbums`
+    if (mainPlayBar) {
+        mainPlayBar.style.display = 'none';
+    }
+
+    try {
+        await fetchAlbums();
+        window.addEventListener('hashchange', router);
+    router();
+
+    document.querySelectorAll('.unique-footer-nav .unique-nav-link').forEach(link => {
+        link.addEventListener('click', (event) => {
+            event.preventDefault();
+            const target = link.dataset.target || link.getAttribute('href')?.substring(1);
+            if (target) navigateTo(target);
+        });
+    });
+
+    const backButtons = [
+        'close-library-popup', 'unique-close-search-popup', 'mobile-overlay-back',
+        'closeLikedSongs', 'close-record-breaking-popup', 'close-record-breaking-popup2',
+        'close-playlist-details', 'cancel-new-playlist',
+    ];
+    backButtons.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                history.back();
+            });
+        }
+    });
+
+    const libraryLikedBtn = Array.from(document.querySelectorAll('h3.text-base.font-medium')).find(el => el.textContent.trim() === 'Liked Songs');
+    if (libraryLikedBtn) {
+        libraryLikedBtn.closest('div').addEventListener('click', () => {
+            window.openLikedSongsOverlay();
+            if (typeof fetchAndRenderLikedSongs === 'function') fetchAndRenderLikedSongs();
+        });
+    }
+
+     const closeButtons = document.querySelectorAll('.close-overlay');
+    closeButtons.forEach(btn => {
+        btn.onclick = () => history.back();
+    });
+    
+ //
+// 🔴 IN FILE: oc.js
+//
+
+// Inside the DOMContentLoaded event listener...
+// Find the setup blocks for the popups.
+
+// ✅ REPLACE your existing setup blocks for both popups with this corrected version:
+
+    // --- Setup for Record Breaking Popup 1 ---
+    const listenNowBtn1 = document.querySelector('.listen-now-btn');
+    if (listenNowBtn1) {
+        listenNowBtn1.addEventListener('click', () => {
+            navigateTo('record-breaking-1');
+        });
+    }
+    const closePopupBtn1 = document.getElementById('close-record-breaking-popup');
+    if (closePopupBtn1) {
+        // Use history.back() to correctly go to the previous state (e.g., an album page).
+        closePopupBtn1.addEventListener('click', () => history.back());
+    }
+    const popupOverlay1 = document.getElementById('record-breaking-popup-overlay');
+    if (popupOverlay1) {
+        popupOverlay1.addEventListener('click', (e) => {
+            if (e.target === popupOverlay1) {
+                history.back();
+            }
+        });
+    }
+
+    // --- Setup for Record Breaking Popup 2 ---
+    const listenNowBtn2 = document.querySelector('.listen-now-btn2');
+    if (listenNowBtn2) {
+        listenNowBtn2.addEventListener('click', () => {
+            navigateTo('record-breaking-2');
+        });
+    }
+    const closePopupBtn2 = document.getElementById('close-record-breaking-popup2');
+    if (closePopupBtn2) {
+        // Use history.back() here as well. This will now work.
+        closePopupBtn2.addEventListener('click', () => history.back());
+    }
+    const popupOverlay2 = document.getElementById('record-breaking-popup-overlay2');
+    if (popupOverlay2) {
+        popupOverlay2.addEventListener('click', (e) => {
+            if (e.target === popupOverlay2) { 
+                history.back();
+            }
+        });
+    }
+
+ if (mainPlayBar) {
+    mainPlayBar.addEventListener('click', (event) => {
+        if (event.target.closest('button, input')) {
+            return;
+        }
+
+        if (playingAlbum) {
+            console.log("Play bar clicked. Navigating to #player.");
+            if (typeof navigateTo === 'function') {
+                navigateTo('player');
+            }
+        }
+    });
+}
+        if (minimizePlayerBtn) {
+             minimizePlayerBtn.addEventListener('click', () => history.back());
+            console.log("DOMContentLoaded: minimizePlayerBtn click listener attached.");
+        }
+
+
+        const songOptionsPopupBackdrop = document.getElementById('song-options-popup');
+if (songOptionsPopupBackdrop) {
+    songOptionsPopupBackdrop.addEventListener('click', (e) => {
+        // If the dark overlay itself is clicked, go back in history to close the popup.
+        if (e.target === songOptionsPopupBackdrop) {
+            history.back();
+        }
+    });
+}
+
+      document.querySelector('.listen-now-btn')?.addEventListener('click', () => navigateTo('record-breaking-1'));
+    document.querySelector('.listen-now-btn2')?.addEventListener('click', () => navigateTo('record-breaking-2'));
+          // --- New: Centralized Footer Navigation Listeners ---
     const navLinks = document.querySelectorAll('.unique-footer-nav .unique-nav-link');
     navLinks.forEach(link => {
         link.addEventListener('click', (event) => {
@@ -6658,9 +6801,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
  // in script.js
-const libraryLikedBtn = Array.from(document.querySelectorAll('h3.text-base.font-medium')).find(el => el.textContent.trim() === 'Liked Songs');
-if (libraryLikedBtn) {
-    libraryLikedBtn.closest('div').addEventListener('click', () => {
+const libraryLikedBtn1 = Array.from(document.querySelectorAll('h3.text-base.font-medium')).find(el => el.textContent.trim() === 'Liked Songs');
+if (libraryLikedBtn1) {
+    libraryLikedBtn1.closest('div').addEventListener('click', () => {
         // This now changes the hash to #liked-songs, which triggers the router.
         navigateTo('liked-songs');
     });
@@ -6705,13 +6848,8 @@ if (libraryLikedBtn) {
     // Call the function to initialize the UI state
     initializeUIState();
 
-    });
 
-
-// --- All DOM Merged ---
-document.addEventListener('DOMContentLoaded', async () => {
-
-     // --- START: NEW CODE BLOCK TO ADD ---
+    // --- START: NEW CODE BLOCK TO ADD ---
     // Immediately attach a temporary click handler to all cards on the page.
     // This "catches" the very first click and prevents the browser from replaying it later.
     const allInitialCards = document.querySelectorAll('.card');
@@ -8568,11 +8706,65 @@ window.addEventListener('blur', () => {
     }, 50);
 });
 
+        if (typeof populateRecordBreakingSection === 'function') {
+            populateRecordBreakingSection();
+        }
+        if (typeof populateRecordBreakingSection2 === 'function') {
+            populateRecordBreakingSection2();
+        }
+        if (typeof setupMiniCarouselScroll === 'function') {
+            setupMiniCarouselScroll();
+        }
+        if (typeof setupMiniCarouselScroll2 === 'function') {
+            setupMiniCarouselScroll2();
+        }
+        if (typeof attachEventListenersToHtmlCards === 'function') {
+            attachEventListenersToHtmlCards();
+        }
+        // This reliably checks if you are on the homepage
+        if (window.location.pathname === '/' || window.location.pathname === '') {
+            await loadPlayerState();
+            await loadLatestLikedSongAsFallback();
+        }
+        // The rest of your existing initialization code goes here:
+        // You can copy and paste the rest of your original `DOMContentLoaded` logic here
+        // (e.g., setting up scroll listeners, resize listeners, etc.).
+    
+        if (typeof setupHorizontalScroll === 'function') {
+            setupHorizontalScroll('trending-songs-cards');
+            setupHorizontalScroll('popular-albums-cards');
+            setupHorizontalScroll('popular-artists-cards');
+            setupHorizontalScroll('more-trending-songs-cards');
+            setupHorizontalScroll('explore-popular-albums-cards');
+            setupHorizontalScroll('explore-popular-artists-cards');
+        }
+    
+        window.addEventListener('resize', () => {
+            if (typeof toggleMainPlaybarView === 'function') toggleMainPlaybarView();
+            if (typeof updateFixedTopHeadingVisibility === 'function') updateFixedTopHeadingVisibility();
+        });
+        
+    } catch (error) {
+        console.error("Failed to load initial app data.", error);
+    } finally {
+        // This block will execute regardless of success or failure.
+        // It's the perfect place to hide the splash screen and show the main content.
+        if (splashScreen) {
+            splashScreen.classList.add('hidden'); // Hide splash screen
+        }
+        if (container) {
+            container.style.display = 'block'; // Show the main content
+        }
+    }
+}
 
-
-
-   
+// Ensure the code runs after the DOM is fully loaded.
+document.addEventListener('DOMContentLoaded', () => {
+    initializeApp();
 });
+
+
+
 
 
 

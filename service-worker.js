@@ -1,4 +1,4 @@
-const CACHE_NAME = 'swarify-cache-v3'; // Renamed to v3 to force a new cache update
+const CACHE_NAME = 'swarify-cache-v4';
 const urlsToCache = [
   '/',
   '/index.html',

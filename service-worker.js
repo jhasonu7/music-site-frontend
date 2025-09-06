@@ -56,16 +56,18 @@ function sendOnlineMessageToClient() {
 }
 
 self.addEventListener('fetch', (event) => {
-    // Check if the request is for a dynamic URL from your backend API
     const isApiRequest = event.request.url.startsWith('https://music-site-backend.onrender.com/api/');
 
     if (isApiRequest) {
         event.respondWith(
             caches.open(CACHE_NAME).then(cache => {
                 return fetch(event.request).then(response => {
-                    // Call the new function to send an 'online' message
-                    sendOnlineMessageToClient();
-                    cache.put(event.request, response.clone());
+                    // Check for successful response status before caching
+                    if (response.status === 200) {
+                        // On a successful response, send an 'online' message
+                        sendOnlineMessageToClient();
+                        cache.put(event.request, response.clone());
+                    }
                     return response;
                 }).catch(() => {
                     // This is the network failure handler.
@@ -77,6 +79,7 @@ self.addEventListener('fetch', (event) => {
             })
         );
     } else {
+        // ... (rest of your fetch logic for non-API requests remains the same)
         event.respondWith(
             caches.match(event.request).then((response) => {
                 if (response) {
@@ -93,6 +96,8 @@ self.addEventListener('fetch', (event) => {
                     });
                     return response;
                 }).catch(() => {
+                    // When any fetch fails, assume offline and try to return a cached version
+                    sendOfflineMessageToClient();
                     return caches.match('index.html');
                 });
             })
